@@ -90,3 +90,5 @@ ENV/
 # Additional folders
 bin/
 include/
+pip-selfcheck.json
+

@@ -1,0 +1,5 @@
+{
+  "model": "Post",
+  "path": "/{{ date|date '%Y/%m/%d' }}/{{ slug }}",
+  "template": "fullpost.html"
+}

@@ -1,0 +1,52 @@
+# -*- coding:utf-8 -*-
+"""
+Central source file for Statik, the static web site generator.
+"""
+
+import logging
+from project import StatikProject
+from exceptions import *
+
+logger = logging.getLogger(__name__)
+
+
+def statik(path):
+    """Executes the Statik web site generator using the specified path as the
+    working directory and source path.
+
+    Args:
+        path: The source path of the project to compile.
+
+    Returns:
+        The system exit value. This will be 0 on success, or non-zero on
+        some kind of failure.
+    """
+    project = None
+
+    logger.info("Attempting to load Statik project from path: %s" % path)
+    try:
+        project = StatikProject(path)
+    except Exception as e:
+        logger.exception("Caught exception while attempting to create project for path: %s" % path)
+        return e.code if isinstance(e, StatikException) else 100
+
+    logger.info("Project successfully loaded. Attempting to build project...")
+    try:
+        project.build()
+    except Exception as e:
+        logger.exception("Failed to build project")
+        return e.code if isinstance(e, StatikException) else 101
+
+    logger.info("Project successfully built.")
+    # all's well that ends well
+    return 0
+
+
+if __name__ == "__main__":
+    import argparse
+    import sys
+
+    parser = argparse.ArgumentParser()
+    # TODO: finalise these parameters
+
+    sys.exit(statik(path))

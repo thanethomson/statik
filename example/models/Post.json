@@ -1,0 +1,8 @@
+{
+  "slug": "string",
+  "created": "datetime",
+  "published": "datetime",
+  "title": "string",
+  "author": "fk|Author",
+  "content": "content"
+}

@@ -1,0 +1,41 @@
+# -*- coding:utf-8 -*-
+"""
+Basic Jinja2 filters for Statik.
+"""
+
+import utils
+
+__all__ = [
+    'date',
+    'slug',
+]
+
+
+def date(dateval, fmt="%Y-%m-%d"):
+    """Formats the specified date/datetime value using the given string
+    formatting specifier (as per strftime).
+
+    Args:
+        dateval: A date or datetime object.
+        fmt: An optional string formatting specifier, as per the
+            strftime() function for date and datetime.
+
+    Returns:
+        A string containing the formatting date/datetime value.
+    """
+    return dateval.strftime(fmt)
+
+
+def slug(s):
+    """Converts the specified string to its slugified value.
+
+    For example, for an input string "Hello world!", the slugified value
+    will be "hello-world".
+
+    Args:
+        s: The input string.
+
+    Returns:
+        A string containing the slugified version of the input string.
+    """
+    return utils.slugify(s)

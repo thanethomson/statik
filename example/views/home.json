@@ -1,0 +1,10 @@
+{
+  "path": "/",
+  "template": "home.html",
+  "data": {
+    "title": "Welcome to my blog",
+    "posts": {
+      "$": "SELECT * FROM Post WHERE draft=0 ORDER BY published DESC LIMIT 10"
+    }
+  }
+}

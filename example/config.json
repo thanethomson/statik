@@ -1,0 +1,9 @@
+{
+  "projectName": "My personal blog",
+  "profiles": ["dev", "prod"],
+  "profileConfig": {
+    "prod": {
+      "baseUrl": "/myblog"
+    }
+  }
+}

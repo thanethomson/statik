@@ -10,8 +10,7 @@ web site generators, is *not* geared towards building blogs by default.
 Before you begin, make sure you know your HTML (especially
 [Jinja2](http://jinja.pocoo.org/) templates),
 [Markdown](https://en.wikipedia.org/wiki/Markdown) and
-[JSON](https://en.wikipedia.org/wiki/JSON) or
-[YAML](https://en.wikipedia.org/wiki/YAML). If you really want to get fancy
+[JSON](https://en.wikipedia.org/wiki/JSON). If you really want to get fancy
 with your site, you can learn some
 [SQL](https://en.wikipedia.org/wiki/SQL) - specifically the
 [SQLite](https://en.wikipedia.org/wiki/SQLite) dialect.
@@ -28,10 +27,7 @@ TBC
 ## Project Structure
 By default we refer to a single site's data and generated HTML content into a
 *project*, and projects have a very specific structure. Your base project
-structure should look similar to the following example. *Note* that any `json`
-file can be replaced with a `yaml` file. By default, if there are two files of
-the same name but with `json` and `yaml` extensions, Statik prefers the `json`
-file.
+structure should look similar to the following example.
 
 ```
 config.json              - Overall configuration for the project
