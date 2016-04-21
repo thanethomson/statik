@@ -12,6 +12,7 @@ __all__ = [
     "InvalidFieldTypeException",
     "InvalidModelConfigException",
     "UnsupportedDataFileException",
+    "InvalidDataException",
 ]
 
 class StatikException(Exception):
@@ -58,3 +59,6 @@ class InvalidModelConfigException(StatikException):
 
 class UnsupportedDataFileException(StatikException):
     code = 9
+
+class InvalidDataException(StatikException):
+    code = 10

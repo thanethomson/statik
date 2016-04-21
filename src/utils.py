@@ -5,12 +5,14 @@ Utility functions for Statik.
 
 import os.path
 import pprint
+import json
 from slugify import slugify as _slugify
 
 __all__ = [
     'get_abs_path',
     'pretty',
     'slugify',
+    'load_json_file',
     'list_dir',
 ]
 
@@ -62,6 +64,22 @@ def slugify(s):
         A string containing the slugified version of the input string.
     """
     return _slugify(s)
+
+
+def load_json_file(filename):
+    """Loads data from the specified JSON file.
+
+    Args:
+        filename: The absolute path of the file to read.
+
+    Returns:
+        A string containing a Python dictionary of the interpreted JSON from
+        the contents of the specified file.
+    """
+    result = {}
+    with open(filename, 'rt') as f:
+        result = json.load(f)
+    return result
 
 
 def list_dir(path, exts):

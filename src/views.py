@@ -42,11 +42,7 @@ class StatikViewConfig:
         """
         logger.debug("Attempting to parse view configuration: %s" % filename)
         self._filename = filename
-
-        self._config = {}
-        with open(filename, 'rt') as f:
-            self._config = json.load(f)
-
+        self._config = utils.load_json_file(filename)
         logger.debug("Loaded view configuration as: %s" % utils.pretty(self._config))
 
         # check for a name

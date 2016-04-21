@@ -6,6 +6,8 @@ Model management for Statik.
 import logging
 import json
 import os.path
+from datetime import datetime
+import dateutil
 
 import utils
 from exceptions import *
@@ -37,12 +39,9 @@ class StatikModel:
         """
         logger.debug("Attempting to load model configuration from: %s" % filename)
         self._filename = filename
-
-        self._config = {}
-        with open(filename, "rt") as f:
-            self._config = json.load(f)
-
+        self._config = utils.load_json_file(filename)
         logger.debug("Loaded model configuration as: %s" % utils.pretty(self._config))
+
         if not isinstance(self._config, dict):
             raise InvalidModelConfigException("Invalid model configuration for model: %s" % filename)
 
@@ -70,6 +69,9 @@ class StatikModel:
         """Attempts to make an instance of this model from the given object,
         filling in non-existent attributes as None values.
 
+        Note that this attempts to perform automatic conversion from the field
+        values to the required data type, for example, date/time conversions.
+
         Args:
             obj: A dictionary containing some or none of the possible field
                 values for this model.
@@ -82,8 +84,30 @@ class StatikModel:
         _obj = obj if isinstance(obj, dict) else {}
         result = {}
 
+        # if we have a value for the content field in this dictionary
+        content = _obj.get('_content', None)
+
         for field_name, field in self.fields.iteritems():
-            result[field_name] = _obj.get(field_name, None)
+            result[field_name] = content if field.field_type == "content" else \
+                _obj.get(field_name, None)
+
+            # if we have data in the field, try to force it to its intended type
+            if result[field_name]:
+                # if it's a date/time value
+                if field.field_type in ["datetime", "date"]:
+                    # try to convert it
+                    dt = dateutil.parser.parse(result[field_name])
+                    result[field_name] = dt if field.field_type == "datetime" else \
+                        dt.date()
+
+                elif field.field_type == "int":
+                    result[field_name] = int(result[field_name])
+
+                elif field.field_type in ["double", "float"]:
+                    result[field_name] = float(result[field_name])
+
+                elif field.field_type in ["string", "content"]:
+                    result[field_name] = "%s" % result[field_name]
 
         return result
 
@@ -112,6 +136,17 @@ class StatikModel:
         logger.debug("Generated table creation query for model: %s" % self.name)
         logger.debug("  %s" % query)
         return query
+
+
+    def get_foreign_classes(self):
+        """Helper function to retrieve a list of all of the classes to which
+        this class has foreign keys.
+
+        Returns:
+            A list containing the names of the models to which this class has
+            foreign keys.
+        """
+        return [field.foreign_class for field_name, field in self.fields.iteritems() if field.foreign_class]
 
 
 class StatikField:

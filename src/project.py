@@ -62,11 +62,7 @@ class StatikProject:
             raise MissingConfigException("Missing \"config.json\" file in project path: %s" % self._path)
 
         logger.debug("Attempting to read project configuration from: %s" % config_path)
-        config = {}
-        # load up the configuration
-        with open(config_path, "rt") as f:
-            config = json.load(f)
-
+        config = utils.load_json_file(config_path)
         logger.debug("Instantiating StatikProject object with configuration: %s" % utils.pretty(config))
         self._config = StatikConfig(self._path, config)
 
@@ -129,8 +125,12 @@ class StatikProject:
 
         # load the views
         logger.info("Loading views...")
-        view_config = self.load_views(views_path, template_path, models=models,
-            data=data)
+        view_config = self.load_views(views_path, template_path, models, data)
+
+        # finally, write the output data from the view config
+        logger.info("Writing output files...")
+        self.write_output(view_config)
+        logger.info("Done!")
 
 
     def load_models(self, path):
@@ -173,6 +173,8 @@ class StatikProject:
         per_model_count = {}
         total_count = 0
 
+        logger.debug("Loading data instances from path: %s" % path)
+
         for model_name, model in models.iteritems():
             cur_path = os.path.join(path, model_name)
             # first look in our data path for a folder corresponding to this model
@@ -188,11 +190,22 @@ class StatikProject:
                     data_file_fullpath = os.path.join(cur_path, data_file)
                     # load the instance
                     inst = StatikInstance(model, data_file_fullpath)
+                    # keep track of its data
+                    result[model_name][inst.id] = inst.data
+
                     per_model_count[model_name] += 1
                     total_count += 1
 
+        for model_name, count in per_model_count.iteritems():
+            logger.debug("Loaded %d instance(s) of model %s" % (count, model_name))
+        logger.info("Loaded %d instance(s) in total" % (total_count))
 
-    def load_views(self, path):
+        logger.debug("Populating in-memory SQLite database...")
+
+        return result
+
+
+    def load_views(self, views_path, templates_path, models, data):
         """Loads the view configuration from the specified path.
 
         Args:
@@ -204,3 +217,12 @@ class StatikProject:
             configuration for the project.
         """
         pass
+
+
+    def write_output(self, view_config):
+        """Writes all of the output files using the specified view
+        configuration, using all of our other configured parameters.
+
+        Args:
+            view_config: The output from load_views()
+        """
