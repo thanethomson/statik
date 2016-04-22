@@ -7,7 +7,7 @@ import logging
 import os.path
 
 import utils
-from exceptions import *
+from errors import *
 
 logger = logging.getLogger(__name__)
 __all__ = ["StatikConfig"]
@@ -90,6 +90,18 @@ class StatikConfig:
         )
 
 
+    def get_output_mode(self):
+        """Attempts to get the output mode for this project.
+
+        Returns:
+            A string containing the output mode for this project. This can
+            either be "standard" (the default), which renders URLs as
+            "/path/to/url.html", or "pretty", which renders URLs as
+            "/path/to/url/index.html".
+        """
+        return self._cfg.get("outputMode", "standard")
+
+
     def get_string_opt(self, param, default=None):
         """Tries to retrieve the specified profile-aware parameter, checking
         that it is actually a string.
@@ -120,9 +132,9 @@ class StatikConfig:
         # first check the per-profile configuration for the parameter
         if 'profileConfig' in self._cfg \
             and isinstance(self._cfg['profileConfig'], dict) \
-            and if self._profile in self._cfg['profileConfig'] \
-            and if isinstance(self._cfg['profileConfig'][self._profile], dict) \
-            and if param in self._cfg['profileConfig'][self._profile]:
+            and self._profile in self._cfg['profileConfig'] \
+            and isinstance(self._cfg['profileConfig'][self._profile], dict) \
+            and param in self._cfg['profileConfig'][self._profile]:
             return self._cfg['profileConfig'][self._profile][param]
 
         # otherwise get the global-level parameter value

@@ -4,5 +4,6 @@
   "published": "datetime",
   "title": "string",
   "author": "fk|Author",
+  "draft": "int",
   "content": "content"
 }

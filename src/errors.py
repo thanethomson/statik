@@ -13,6 +13,9 @@ __all__ = [
     "InvalidModelConfigException",
     "UnsupportedDataFileException",
     "InvalidDataException",
+    "ModelDoesNotExistException",
+    "CircularDependencyException",
+    "MissingDatabaseException",
 ]
 
 class StatikException(Exception):
@@ -62,3 +65,12 @@ class UnsupportedDataFileException(StatikException):
 
 class InvalidDataException(StatikException):
     code = 10
+
+class ModelDoesNotExistException(StatikException):
+    code = 11
+
+class CircularDependencyException(StatikException):
+    code = 12
+
+class MissingDatabaseException(StatikException):
+    code = 13

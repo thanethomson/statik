@@ -5,7 +5,7 @@ Central source file for Statik, the static web site generator.
 
 import logging
 from project import StatikProject
-from exceptions import *
+from errors import *
 
 logger = logging.getLogger(__name__)
 
@@ -42,11 +42,24 @@ def statik(path):
     return 0
 
 
+def configure_logging():
+    """Sets up the global configuration for our logging."""
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    )
+
+
 if __name__ == "__main__":
     import argparse
     import sys
 
-    parser = argparse.ArgumentParser()
-    # TODO: finalise these parameters
+    configure_logging()
 
-    sys.exit(statik(path))
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-p", "--project",
+        help="The path to the project to be processed.",
+        default="./")
+    args = parser.parse_args()
+
+    sys.exit(statik(args.project))

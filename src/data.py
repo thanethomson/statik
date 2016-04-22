@@ -8,9 +8,10 @@ import json
 import os.path
 import markdown
 import sqlite3
+from copy import copy
 
 import utils
-from exceptions import *
+from errors import *
 
 logger = logging.getLogger(__name__)
 __all__ = [
@@ -33,27 +34,159 @@ class StatikDatabase:
             models: The models, loaded from a project.
             data: The data for the models, loaded from a project.
         """
+        self._models = models
+        # open up the connection to our in-memory SQLite database
+        logger.debug("Creating in-memory SQLite database...")
+        self._conn = sqlite3.connect(":memory:")
+        logger.debug("Attempting to create SQLite database tables")
+        try:
+            self._create_tables()
+        except Exception as e:
+            logger.exception("Exception caught while attempting to create database tables")
+            self.close()
+            # re-throw the exception
+            raise e
+
+        logger.debug("Attempting to populate database with data")
+        try:
+            self._load_data(data)
+        except Exception as e:
+            logger.exception("Exception caught while attempting to populate database")
+            self.close()
+            # re-throw the exception
+            raise e
+
+
+    def _create_tables(self):
+        """Internal function to create all of the necessary database tables for
+        the current model configuration."""
         # model dependencies (foreign key references)
         model_deps = {}
         # model table creation SQL statements
         create_sql = {}
-
-        # work out the dependency graph for the models
-        for model_name, model in models.iteritems():
-            create_sql[model_name] = model.generate_sql()
-            model_deps[model_name] = model.get_foreign_classes()
-
         # the set of CREATE TABLE statements, in sequence so as to satisfy all
         # foreign key dependencies...
         create_sql_seq = []
         created = set()
-        while len(create_sql_seq) < len(create_sql):
-            # if we have no dependencies
-            pass
 
-        # open up the connection to our in-memory SQLite database
-        logger.debug("Creating in-memory SQLite database...")
-        self._conn = sqlite3.connect(":memory:")
+        # work out the dependency graph for the models
+        for model_name, model in self._models.iteritems():
+            create_sql[model_name] = model.generate_sql()
+            model_deps[model_name] = model.get_foreign_classes()
+            # if this model has no dependencies (yay!)
+            if not model_deps[model_name]:
+                create_sql_seq.append(create_sql[model_name])
+                created.add(model_name)
+
+        remaining_models = set(self._models.keys()) - created
+        # now try to resolve the remaining models' dependencies
+        while len(remaining_models) > 0:
+            prev_remaining = len(remaining_models)
+
+            _remaining_models = copy(remaining_models)
+            # run through the models to see which of them we can create now
+            for model_name in remaining_models:
+                satisfied = True
+                for dep in model_deps[model_name]:
+                    if dep not in created:
+                        satisfied = False
+
+                if satisfied:
+                    create_sql_seq.append(create_sql[model_name])
+                    created.add(model_name)
+                    _remaining_models.remove(model_name)
+
+            remaining_models = _remaining_models
+
+            # if we didn't make a dent in the remaining models list
+            if len(remaining_models) == prev_remaining:
+                raise CircularDependencyException("One of the following models has a circular dependency: %s" % utils.pretty(remaining_models))
+
+        # create the database tables
+        for query in create_sql_seq:
+            self.execute(query)
+
+
+    def _load_data(self, data):
+        """Internal helper function to load the specified data into the
+        in-memory SQLite database."""
+        for model_name, instances in data.iteritems():
+            for obj_id, obj in instances.iteritems():
+                query, args = self.make_insert_query(
+                    self._models[model_name],
+                    obj,
+                )
+                self.execute(query, *args)
+
+
+    def make_insert_query(self, model, obj):
+        """Works out the query to insert the specified object, of the given
+        model class, into the relevant database table.
+
+        Args:
+            model: The model to which the given object instance belongs.
+            obj: A dictionary containing the relevant fields for the object
+                instance.
+
+        Returns:
+            A 2-tuple containing the SQL query string and a list of field values
+            to be inserted along with the query (can be an empty list).
+        """
+
+        field_names = ['id']
+        field_names.extend([field_name for field_name, _ in model.fields.iteritems()])
+        field_values = [obj.get(field_name) for field_name in field_names]
+
+        query = "INSERT INTO %s (%s) VALUES (%s)" % (
+            model.name,
+            ",".join([field_name for field_name in field_names]),
+            ",".join(["?" for f in field_names]),
+        )
+
+        return query, field_values
+
+
+    def execute(self, query, *args):
+        """Executes a simple, single SQL query.
+
+        See https://docs.python.org/2/library/sqlite3.html for more details.
+
+        Args:
+            query: A string containing the SQL query.
+            args: A variable-length array of arguments to pass to the query
+                execution routine.
+
+        Returns:
+            An iterable object for retrieving the results.
+        """
+        logger.debug("Attempting to execute SQL query:")
+        logger.debug("  %s" % query)
+        logger.debug("With args: %s" % utils.pretty(args))
+        return self._conn.execute(query, args)
+
+
+    def query_obj(self, query, field_names):
+        """Performs a SQL query, iterating through the result and trying to
+        convert each row to a dictionary object with the specified field names.
+        Yields results instead of returning them as a list, so one would need to
+        iterate through the result to obtain all of the resulting objects.
+
+        Args:
+            query: The SQL query string to execute. Usually a SELECT query.
+            field_names: A list of field names, in order, to be expected from
+                each result.
+        """
+        for row in self.execute(query):
+            _row = list(row)
+            _obj = {}
+            for i in range(len(_row)):
+                _obj[field_names[i]] = _row[i]
+            yield _obj
+
+
+    def close(self):
+        """Closes the current database connection."""
+        self._conn.close()
 
 
 class StatikInstance:
@@ -121,7 +254,8 @@ class StatikInstance:
             content = ''
 
             # read the file line by line
-            while (line = f.readline()):
+            line = f.readline()
+            while line:
                 # if we're expecting the start or end of a JSON string
                 if line.strip() == '===':
                     # if we haven't reached the end of the preamble yet
@@ -134,11 +268,15 @@ class StatikInstance:
                             # otherwise this is just the beginning of the preamble
                             preamble_started = True
                 else:
-                    if preamble_started:
+                    if preamble_started and not preamble_ended:
                         preamble += line
                     else:
                         content += line
 
+                # get the next line
+                line = f.readline()
+
+            logger.debug("Attempting to load data from preamble: %s" % preamble)
             # load the data from the preamble
             result = json.loads(preamble) if preamble else {}
             # process the Markdown content into HTML

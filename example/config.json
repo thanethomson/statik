@@ -1,6 +1,7 @@
 {
   "projectName": "My personal blog",
   "profiles": ["dev", "prod"],
+  "outputMode": "pretty",
   "profileConfig": {
     "prod": {
       "baseUrl": "/myblog"

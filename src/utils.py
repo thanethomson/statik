@@ -3,6 +3,7 @@
 Utility functions for Statik.
 """
 
+import os
 import os.path
 import pprint
 import json
@@ -91,9 +92,9 @@ def list_dir(path, exts):
         exts: A list of file extensions against which to match.
     """
     result = []
-    for filename in os.path.listdir(path):
-        _, ext = os.path.split(filename)
+    for filename in os.listdir(path):
+        _, ext = os.path.splitext(filename)
         ext = ext.lstrip(".")
         if ext in exts:
-            result.append(ext)
+            result.append(filename)
     return result

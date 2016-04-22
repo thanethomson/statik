@@ -1,3 +1,4 @@
 python-slugify==1.2.0
 markdown==2.6.6
 python-dateutil==2.5.3
+jinja2==2.8

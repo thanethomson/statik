@@ -4,7 +4,8 @@
   "data": {
     "title": "Welcome to my blog",
     "posts": {
-      "$": "SELECT * FROM Post WHERE draft=0 ORDER BY published DESC LIMIT 10"
+      "$": "SELECT id, slug, created, published, title, author, content FROM Post WHERE draft=0 ORDER BY published DESC LIMIT 10",
+      "fields": ["id", "slug", "created", "published", "title", "author", "content"]
     }
   }
 }

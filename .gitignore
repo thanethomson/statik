@@ -91,4 +91,4 @@ ENV/
 bin/
 include/
 pip-selfcheck.json
-
+example/public/

@@ -6,12 +6,15 @@ High-level objects for representing Statik projects.
 import logging
 import os.path
 import json
+from jinja2 import Environment, FileSystemLoader
 
 import utils
-from exceptions import *
+from errors import *
 from config import *
 from models import *
 from views import *
+from data import *
+import filters.basic
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +39,7 @@ class StatikProject:
             profile: For which profile should we be building/configuring this
                 project?
         """
+        self._db = None
         # first make sure that the path exists
         try:
             path = utils.get_abs_path(path)
@@ -64,7 +68,7 @@ class StatikProject:
         logger.debug("Attempting to read project configuration from: %s" % config_path)
         config = utils.load_json_file(config_path)
         logger.debug("Instantiating StatikProject object with configuration: %s" % utils.pretty(config))
-        self._config = StatikConfig(self._path, config)
+        self._config = StatikConfig(self._path, config, self._profile)
 
         # figure out the main configuration options from the config
         self._name = self._config.get_project_name()
@@ -85,6 +89,11 @@ class StatikProject:
             logger.debug("Output path does not exist - attempting to create it")
             os.makedirs(self._output_path)
             logger.debug("Created output path: %s" % self._output_path)
+
+        # check what sort of output mode to use
+        self._output_mode = self._config.get_output_mode()
+        if self._output_mode not in ["standard", "pretty"]:
+            raise InvalidConfigException("Output mode can only be one of \"standard\" or \"pretty\", but found: %s" % self._output_mode)
 
 
     def build(self):
@@ -113,6 +122,7 @@ class StatikProject:
         # data entries for each model name organised by the entry's unique id
         data = {}
 
+        self._db = None
         # if we have models, load them
         if os.path.isdir(models_path):
             logger.info("Loading models...")
@@ -121,15 +131,18 @@ class StatikProject:
             # if we have data, load it, but only if we have models
             if os.path.isdir(data_path):
                 logger.info("Loading data...")
-                data = self.load_data(data_path, models)
+                self._db = self.load_data(data_path, models)
 
         # load the views
         logger.info("Loading views...")
-        view_config = self.load_views(views_path, template_path, models, data)
+        for rendered_view in self.load_views(
+                views_path,
+                templates_path,
+                models,
+                self._db,
+            ):
+            self.write_view(rendered_view)
 
-        # finally, write the output data from the view config
-        logger.info("Writing output files...")
-        self.write_output(view_config)
         logger.info("Done!")
 
 
@@ -152,6 +165,12 @@ class StatikProject:
             model = StatikModel(os.path.join(path, model_file))
             result[model.name] = model
 
+        # check if foreign keys point to existent models
+        for model_name, model in result.iteritems():
+            for foreign_class in model.get_foreign_classes():
+                if foreign_class not in result:
+                    raise ModelDoesNotExistException("Foreign class \"%s\" referenced from \"%s\" does not exist" % (foreign_class, model_name))
+
         logger.info("Loaded %d model(s)" % len(result))
         return result
 
@@ -164,10 +183,8 @@ class StatikProject:
             models: The model data, preloaded.
 
         Returns:
-            A dictionary whose keys correspond to model names, and values
-            are also dictionaries, whose keys correspond to the unique IDs of
-            the items and values correspond to dictionaries containing the
-            key/value pairs (field/field content pairs) for each entry.
+            A StatikDatabase instance through which the loaded data can be
+            accessed.
         """
         result = {}
         per_model_count = {}
@@ -191,7 +208,7 @@ class StatikProject:
                     # load the instance
                     inst = StatikInstance(model, data_file_fullpath)
                     # keep track of its data
-                    result[model_name][inst.id] = inst.data
+                    result[model_name][inst.data['id']] = inst.data
 
                     per_model_count[model_name] += 1
                     total_count += 1
@@ -201,28 +218,89 @@ class StatikProject:
         logger.info("Loaded %d instance(s) in total" % (total_count))
 
         logger.debug("Populating in-memory SQLite database...")
+        return StatikDatabase(models, result)
 
-        return result
 
-
-    def load_views(self, views_path, templates_path, models, data):
+    def load_views(self, views_path, templates_path, models, db):
         """Loads the view configuration from the specified path.
 
         Args:
-            path: The absolute filesystem path of a folder in which to find
-                all of the view configurations for the project.
+            views_path: The absolute filesystem path of a folder in which to
+                find all of the view configurations for the project.
+            templates_path: The absolute filesystem path of a folder in which to
+                find all of the templates for the project.
+            models: The models, loaded from the project.
+            db: An instance of a StatikDatabase object through which one can
+                facilitate the views querying for data.
 
         Returns:
-            A StatikViewConfig object containing the view and routing
-            configuration for the project.
+            A dictionary containing keys that represent relative URL roots
+            for each route, where the values are RenderedStatikView objects.
         """
-        pass
+        view_configs = []
+        # configure our templating environment
+        env = Environment(loader=FileSystemLoader(templates_path))
+        # load any filters we may need
+        self._load_filters(env)
+
+        view_files = utils.list_dir(views_path, ["json"])
+        for view_file in view_files:
+            view_file_fullpath = os.path.join(views_path, view_file)
+            view_config = StatikViewConfig(view_file_fullpath, env,
+                models=models, db=db)
+            view_configs.append(view_config)
+
+        logger.info("Loaded %d view(s). Rendering..." % len(view_configs))
+        for cfg in view_configs:
+            for rendered_view in cfg.render():
+                yield rendered_view
 
 
-    def write_output(self, view_config):
-        """Writes all of the output files using the specified view
-        configuration, using all of our other configured parameters.
+    def _load_filters(self, env):
+        """Loads any additional filters we may require into the templating
+        environment.
 
         Args:
-            view_config: The output from load_views()
+            env: A Jinja2 Environment object into which to load our filters.
         """
+        env.filters['date'] = filters.basic.date
+        env.filters['slug'] = filters.basic.slug
+
+
+    def write_view(self, view):
+        """Writes the specified view to its relevant output file, based on how
+        our project is configured.
+
+        The output mode can either be "standard" (the default), which renders
+        URLs as "/path/to/url.html", or "pretty", which renders URLs as
+        "/path/to/url/index.html".
+
+        Args:
+            view: An instance of RenderedStatikView to write to an output file.
+        """
+        logger.debug("Attempting to write view for URL: %s" % view.path)
+        # work out the full path to the view
+        if len(view.path) > 0:
+            fullpath = os.path.join(
+                self._output_path,
+                view.path
+            )
+            if self._output_mode == "pretty":
+                fullpath = os.path.join(fullpath, "index.html")
+            else:
+                fullpath += ".html"
+        else:
+            # if this is the root page
+            fullpath = os.path.join(self._output_path, "index.html")
+
+        # separate the parent folder path from the filename
+        parent_path = os.path.dirname(fullpath)
+        if not os.path.isdir(parent_path):
+            logger.debug("Creating parent path: %s" % parent_path)
+            os.makedirs(parent_path)
+
+        # dump the HTML to the output file
+        with open(fullpath, "wt") as f:
+            f.write(view.html)
+
+        logger.info("Wrote output file: %s" % fullpath)

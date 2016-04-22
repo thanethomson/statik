@@ -3,6 +3,7 @@
 Basic Jinja2 filters for Statik.
 """
 
+import dateutil.parser
 import utils
 
 __all__ = [
@@ -23,7 +24,10 @@ def date(dateval, fmt="%Y-%m-%d"):
     Returns:
         A string containing the formatting date/datetime value.
     """
-    return dateval.strftime(fmt)
+    if isinstance(dateval, basestring):
+        # first convert it to a datetime object
+        dateval = dateutil.parser.parse(dateval)
+    return dateval.strftime(fmt) if dateval else ""
 
 
 def slug(s):
@@ -38,4 +42,4 @@ def slug(s):
     Returns:
         A string containing the slugified version of the input string.
     """
-    return utils.slugify(s)
+    return utils.slugify(s) if s else ""

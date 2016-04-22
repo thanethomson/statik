@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block body %}
+  <h1>Welcome!</h1>
+  <p>
+    This is the obligatory <i>Hello World</i> example for the project! It's a
+    little sparse right now, but I promise it'll be beefed up in the days and
+    weeks to come :-)
+  </p>
+
+  {% if posts %}
+    <h2>Posts</h2>
+    {% for post in posts %}
+      <h4>{{ post.title }}</h4>
+      Published on {{ post.published }} by {{ post.author }}.
+    {% endfor %}
+  {% endif %}
+{% endblock %}

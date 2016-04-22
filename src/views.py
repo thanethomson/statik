@@ -6,13 +6,15 @@ Code for handling Statik views.
 import logging
 import json
 import os.path
+from copy import copy
 
 import utils
-from exceptions import *
+from errors import *
 
 logger = logging.getLogger(__name__)
 __all__ = [
-    'StatikViewConfig'
+    'StatikViewConfig',
+    'RenderedStatikView',
 ]
 
 
@@ -28,20 +30,25 @@ class StatikViewConfig:
             to a StatikModel object, otherwise it will be None.
         template: The name/path of the template to be applied to this view.
         data: Data-related configuration and prepopulation for this view.
-        html: An optional complete HTML rendering of this particular view.
     """
 
-    def __init__(self, filename, models={}):
+    def __init__(self, filename, template_env, models={}, db=None):
         """Constructor.
 
         Builds the view configuration from the specified file.
 
         Args:
             filename: The full path to the file to be parsed.
+            template_env: The templating system environment object.
             models: The pre-loaded StatikModel objects for the project.
+            db: A reference to the StatikDatabase object for extracting data
+                out of the database for this view.
         """
         logger.debug("Attempting to parse view configuration: %s" % filename)
         self._filename = filename
+        self._env = template_env
+        self._models = models
+        self._db = db
         self._config = utils.load_json_file(filename)
         logger.debug("Loaded view configuration as: %s" % utils.pretty(self._config))
 
@@ -64,6 +71,9 @@ class StatikViewConfig:
         self.model = None
         # if this is a model-oriented view
         if 'model' in self._config:
+            if not self._db:
+                raise MissingDatabaseException("View specifies that it relates to a model, but no database is supplied: %s" % filename)
+
             if not isinstance(self._config['model'], basestring):
                 raise InvalidViewConfigException("Invalid model parameter value in view configuration: %s" % filename)
 
@@ -77,7 +87,7 @@ class StatikViewConfig:
 
         if 'template' not in self._config or not isinstance(self._config['template'], basestring):
             raise InvalidViewConfiguration("Missing or invalid \"template\" parameter in view configuration: %s" % filename)
-        self.template = self._config['template']
+        self.template = self._env.get_template(self._config['template'])
         logger.debug("Using view template: %s" % self.template)
 
         self.data = {}
@@ -88,56 +98,102 @@ class StatikViewConfig:
             self.data = self._config['data']
         logger.debug("Using view data: %s" % self.data)
 
-        # no html yet - usually set in a parent view's render() method
-        self.html = None
+
+    def render(self):
+        """Computes rendered views from this configuration.
+
+        Returns:
+            An iterator of RenderedStatikView objects that can be used to
+            write the final output HTML.
+        """
+        # if this is a model-oriented view
+        if self.model:
+            field_names = [field_name for field_name, _ in self.model.fields.iteritems()]
+            field_names.append('id')
+            # first fetch all of the instances of this model
+            for obj in self._db.query_obj(
+                "SELECT %s FROM %s" % (", ".join(field_names),
+                    self.model.name), field_names):
+                # yield a rendered view of this object
+                yield self._render_for_obj(obj)
+
+        else:
+            # work out our relative path
+            path = self._compute_path(self.path)
+            ctx = copy(self.data)
+            # run through our data to try to expand any potential database
+            # queries
+            for k, v in self.data.iteritems():
+                if isinstance(v, dict):
+                    # if we have a SQL query/expression here
+                    if '$' in v:
+                        # first make sure that it also supplies field names
+                        if 'fields' not in v or not isinstance(v['fields'], list):
+                            raise InvalidViewConfigException("Missing or invalid \"fields\" field in data for \"%s\" in view: %s" % (
+                                k, self._filename
+                            ))
+
+                        # try to expand the query into a list of objects
+                        objs = [o for o in self._db.query_obj(v['$'], v['fields'])]
+                        # replace it in the context
+                        ctx[k] = objs
+            # render the template for this view, with our data
+            yield RenderedStatikView(path, self.template.render(**ctx))
 
 
-    def render(self, obj=None):
-        """Computes a "rendered" version of this view object - a new
-        RenderedStatikView object containing all of the necessary content to
-        be able to actually turn it into an HTML output file.
+    def _compute_path(self, pathspec, data=None):
+        """Computes a relative path for the specified path spec based on the
+        current data in the view config.
 
         Args:
-            obj: An optional instance of the model relating to this view.
+            pathspec: A string containing a plain relative URL path or a
+                Jinja2 template string.
+            data: The data with which to render the template. This defaults to
+                this view configuration's "data" attribute.
 
         Returns:
-            A RenderedStatikView object containing the "rendered" version of
-            this view object.
+            A string containing the computed path.
         """
-        if self.model is not None:
-            if not obj:
-                raise MissingInstanceException("View \"%s\" is a model-oriented view, but no instance was supplied for rendering" % self.name)
-
-            # make sure that the object is an instance of our desired object
-            if not isinstance(obj, dict) or 'model' not in obj or obj['model'] != self.model.name:
-                raise InvalidInstanceException("View \"%s\" requires a model of type \"%s\"" % (self.name, self.model.name))
-
-            # do the model-oriented rendering
-            return self._render_for_instance(obj)
-
-        # renders this view by way of the supplied data only
-        return self._render()
+        if data is None:
+            data = self.data
+        return self._env.from_string(pathspec).render(**data)
 
 
-    def _render_for_instance(self, obj):
-        """Renders this view specifically for the given model instance.
+    def _render_for_obj(self, obj):
+        """Internal helper function to render this view for the specified
+        object.
 
         Args:
-            obj: An instance of the model relevant to this view.
+            obj: The object, an instance of this view's associated model, in
+                dictionary form.
 
         Returns:
-            A RenderedStatikView object containing the "rendered" version of
-            this view object.
+            A RenderedStatikView instance.
         """
-        return None
+        # populate the context with our data
+        ctx = copy(self.data)
+        # and the object, which will be addressed as the name of the model
+        # with its first letter turned to lowercase
+        ctx["%s%s" % (self.model.name[0].lower(), self.model.name[1:])] = obj
+        # compute the path
+        path = self._compute_path(self.path, data=ctx)
+        return RenderedStatikView(path, self.template.render(**ctx))
 
 
-    def _render(self):
-        """Renders this view using only the data supplied in the configuration
-        for the view.
+class RenderedStatikView:
+    """A Statik view that has been fully rendered.
 
-        Returns:
-            A RenderedStatikView object containing the "rendered" version of
-            this view object.
+    Attributes:
+        path: The relative path of this rendered view.
+        html: The actual HTML content for this view.
+    """
+
+    def __init__(self, path, html):
+        """Constructor.
+
+        Args:
+            path: The relative path of this rendered view.
+            html: The actual HTML content for this view.
         """
-        return None
+        self.path = path.strip('/')
+        self.html = html
