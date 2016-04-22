@@ -57,8 +57,36 @@ Statik from [PyPI](https://pypi.python.org/pypi):
 > pip install statik
 ```
 
+If you want to install Statik globally (i.e. if you're fine with using Python
+2.7.x globally and you're also fine with its dependencies being installed
+globally), then, *without a virtual environment active*, simply run:
+
+```bash
+> sudo pip install statik
+```
+
 ## Usage
-TBC
+Running the Statik script from the command line is easy:
+
+```bash
+> cd /path/to/your/project/folder
+> statik
+```
+
+That assumes that you want to build the project in the current folder. If you
+want to build a project in a different folder, simply run:
+
+```bash
+> statik -p /path/to/your/project/folder
+# or
+> statik --project /path/to/your/project/folder
+```
+
+For help (doesn't give you any more than this right now), run:
+
+```bash
+> statik --help
+```
 
 ## Project Structure
 By default we refer to a single site's data and generated HTML content into a
