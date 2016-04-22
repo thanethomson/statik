@@ -14,7 +14,7 @@ from config import *
 from models import *
 from views import *
 from data import *
-import filters
+import filters.basic
 
 logger = logging.getLogger(__name__)
 

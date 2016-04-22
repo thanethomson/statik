@@ -1,6 +1,6 @@
 # Statik
 
-Copyright (c) 2016, Thane Thomson
+![PyPI version 0.1.0](https://img.shields.io/badge/pypi-v0.1.0-blue.svg)
 
 ## Overview
 **Statik** aims to be a simple, yet powerful, static web site generator. It
@@ -49,11 +49,13 @@ If you want to deactivate the virtual environment, simply just:
 > deactivate
 ```
 
-## Dependencies
-
-
 ## Installation
-TBC
+Once you've got your virtual environment working, run the following to install
+Statik from [PyPI](https://pypi.python.org/pypi):
+
+```bash
+> pip install statik
+```
 
 ## Usage
 TBC
