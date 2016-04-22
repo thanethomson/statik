@@ -122,6 +122,18 @@ views/posts.json         - Configuration for posts
 views/authors.json       - Configuration for authors
 ```
 
+### Models
+TBD
+
+### Data
+TBD
+
+### Templates
+TBD
+
+### Views
+TBD
+
 ## License
 **The MIT License (MIT)**
 
