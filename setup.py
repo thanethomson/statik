@@ -13,6 +13,7 @@ setup(
     author="Thane Thomson",
     author_email="connect@thanethomson.com",
     url="https://github.com/thanethomson/statik",
+    scripts=["statik/statik"],
     packages=["statik", "statik.filters"],
     classifiers=[
         "Development Status :: 3 - Alpha",

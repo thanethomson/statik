@@ -4,7 +4,7 @@ Basic Jinja2 filters for Statik.
 """
 
 import dateutil.parser
-import utils
+from statik import utils
 
 __all__ = [
     'date',

@@ -9,6 +9,9 @@ from project import StatikProject
 from errors import *
 
 logger = logging.getLogger(__name__)
+__all__ = [
+    "statik"
+]
 
 
 def statik(path):
@@ -51,7 +54,9 @@ def configure_logging():
     )
 
 
-if __name__ == "__main__":
+def main():
+    """Main program routine, if this script is to be called as an
+    executable from the command line."""
     import argparse
     import sys
 
@@ -64,3 +69,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     sys.exit(statik(args.project))
+
+
+if __name__ == "__main__":
+    main()

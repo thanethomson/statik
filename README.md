@@ -16,7 +16,41 @@ with your site, you can learn some
 [SQLite](https://en.wikipedia.org/wiki/SQLite) dialect.
 
 ## Dependencies
-TBC
+You will need the following to be able to install Statik:
+
+* Some kinds of POSIX-based OS, or Mac OS (Windows support will eventually be
+  included, but right now it will break due to the way that Statik handles
+  file system paths)
+* Python 2.7.x (Python 3 support will come once Jinja2's Python 3 support
+  graduates from being experimental)
+* `virtualenv` if you want to run the code in a virtual environment or want
+  to contribute to the development.
+
+## Virtual Environment
+If you don't want to install this package globally (perhaps you're using
+Python 3 globally, but have to use Python 2 to run Statik), do the following:
+
+```bash
+> cd /path/to/your/desired/virtualenv
+> virtualenv -p python27 .
+> source bin/activate
+```
+
+The above makes the assumption that your Python 2.7.x interpreter's
+executable file is called `python27` and is available on the path. The last
+line (`source bin/activate`) activates the virtual environment. Now you're
+free to run your Python 2.7 in a sandboxed environment, installing whatever
+dependencies you want, and they won't interfere with your global
+dependencies.
+
+If you want to deactivate the virtual environment, simply just:
+
+```bash
+> deactivate
+```
+
+## Dependencies
+
 
 ## Installation
 TBC
