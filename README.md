@@ -1,7 +1,5 @@
 # Statik
 
-![PyPI version 0.1.0](https://img.shields.io/badge/pypi-v0.1.0-blue.svg)
-
 ## Overview
 **Statik** aims to be a simple, yet powerful, static web site generator. It
 is currently designed with developers in mind, and, unlike most other static
@@ -50,26 +48,25 @@ If you want to deactivate the virtual environment, simply just:
 ```
 
 ## Installation
-Once you've got your virtual environment working, run the following to install
-Statik from [PyPI](https://pypi.python.org/pypi):
+Once you've got your virtual environment working, check out this
+repository and run the `setup.py` script:
 
 ```bash
-> pip install statik
+> cd /path/to/where/you/want/it
+> git clone https://github.com/thanethomson/statik.git
+> cd statik/
+> python setup.py install
 ```
 
-If you want to install Statik globally (i.e. if you're fine with using Python
-2.7.x globally and you're also fine with its dependencies being installed
-globally), then, *without a virtual environment active*, simply run:
-
-```bash
-> sudo pip install statik
-```
+This should install Statik into your virtual environment, and will automatically
+install all of its Python dependencies too. It will also install a script,
+`statik`, whose usage is as follows.
 
 ## Usage
+### Command Line
 Running the Statik script from the command line is easy:
 
 ```bash
-> cd /path/to/your/project/folder
 > statik
 ```
 
@@ -88,13 +85,29 @@ For help (doesn't give you any more than this right now), run:
 > statik --help
 ```
 
+### From Code
+If you want to embed Statik in your own Python application, simply import the
+`StatikProject` class and use as follows:
+
+```python
+from statik import StatikProject
+
+# tell Statik where to find the project
+project = StatikProject("/path/to/project/to/build")
+# execute the build
+project.build()
+```
+
+For more fine-grained control, see the source, which is relatively
+well-documented.
+
 ## Project Structure
 By default we refer to a single site's data and generated HTML content into a
 *project*, and projects have a very specific structure. Your base project
 structure should look similar to the following example.
 
 ```
-config.json              - Overall configuration for the project
+config.json              - Global configuration for the project
 
 models/                  - Data models (i.e. classes) are stored here
 models/Post.json         - Structure definition for the "Post" class
@@ -120,13 +133,115 @@ views/home.json          - Home page configuration
 views/pages.json         - Configuration for our pages
 views/posts.json         - Configuration for posts
 views/authors.json       - Configuration for authors
+
+assets/                  - Any files that are to be copied as-is into your destination project's "assets" folder
+```
+
+### Global Configuration
+The global `config.json` file contains settings relevant to the overall
+functioning of your generated site. The following fields are standard:
+
+```js
+{
+  // String containing the global, human-readable name of your project.
+  "projectName": "My project",
+
+  // A list of strings containing the names of different kinds of execution
+  // profiles for your project. This allows you to override certain settings
+  // depending on which profile it is you're building for.
+  // Default: ["production"]
+  "profiles": ["dev", "prod"],
+
+  // The output mode for generating URL paths. Can be one of:
+  // "standard" - Generates URLs like /posts/2016/04/02/my-first-post.html
+  // "pretty"   - Generates URLs like /posts/2016/04/02/my-first-post/index.html
+  // Default: "standard"
+  "outputMode": "pretty",
+
+  // The base URL from which your site will eventually be served. This is
+  // important, because sometimes web sites can be served from different
+  // base paths to the root of the web server (e.g. http://site.com/basepath/
+  // instead of http://site.com/). Statik generates URL references in your
+  // templates in a relative manner, and this base URL will always be prefixed
+  // to all generated URLs in the output.
+  "baseUrl": "/",
+
+  // Either a relative or absolute path in which to generate the output
+  // HTML content. Default: [project path]/public/
+  "outputPath": "./public/",
+
+  // This object allows us to override certain facets of our configuration
+  // depending on the selected profile for which we're building the site.
+  // The global configuration values that can be overridden are:
+  // baseUrl, outputPath
+  "profileConfig": {
+    // Configuration
+    "dev": {
+      // Overrides the previous "baseUrl" and "outputPath" settings
+      "baseUrl": "/dev/",
+      "outputPath": "./dev/public/"
+    }
+  }
+}
 ```
 
 ### Models
-TBD
+Data models are defined in JSON files (with a `.json` extension). Each separate
+JSON file in the `models/` folder of your project represents a single model,
+analagous to a "class". Models simply contain key/value pairs indicating
+their field names and field types.
+
+#### Example Model: `Person.json`
+```js
+{
+  "firstName": "string",
+  "lastName": "string",
+  "email": "string",
+  "created": "datetime"
+}
+```
+
+#### Field Types
+The following field types are available at present, and have their
+equivalent SQLite and Python data types:
+
+| Field Type | Description | SQLite | Python |
+| ---------- | ----------- | ------ | ------ |
+| `string` | Text | `TEXT` | `unicode` |
+| `int` | Signed integer | `INT` | `int` |
+| `date` | A date object, with year, month and day info | `DATE` | `datetime.date` |
+| `datetime` | Similar to the date object, but with more detailed timestamp information | `DATETIME` | `datetime.datetime` |
+| `float` | A floating-point number | `DOUBLE` | `float` |
+| `content` | A special instance of `string` that receives Markdown content if data is specified in Markdown | `TEXT` | `unicode` |
+
+#### Primary Keys
+Each model is automatically given an `id` field of type `TEXT` which is used
+as its primary key. This is automatically assigned for instances of models
+(see the section on **Data** next).
 
 ### Data
-TBD
+Data instances are either defined in JSON or Markdown files (with `.json`,
+`.md` or `.markdown` file extensions). The `data/` folder is primarily comprised
+of subfolders - each one representing a specific model, as defined in the
+`models/` folder.
+
+The name of the file, without its extension, is used as the **primary key** or
+`id` field value for the model instance.
+
+#### Example Data: `michael.json`
+Following on from our `Person` model example earlier, we could have an instance
+named `michael.json`, whose primary key (`id` field) will be `michael`:
+
+```js
+{
+  "firstName": "Michael",
+  "lastName": "Anderson",
+  "email": "manderson@gmail.com",
+  // Under the hood, Statik uses Python's dateutil library for parsing date/time
+  // values. See https://dateutil.readthedocs.org/en/stable/
+  "created": "2016-04-22 14:04"
+}
+```
 
 ### Templates
 TBD
