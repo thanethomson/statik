@@ -276,11 +276,18 @@ class StatikInstance:
                 # get the next line
                 line = f.readline()
 
-            logger.debug("Attempting to load data from preamble: %s" % preamble)
-            # load the data from the preamble
-            result = json.loads(preamble) if preamble else {}
-            # process the Markdown content into HTML
-            result['_content'] = markdown.markdown(content)
+            if not len(preamble) and not len(content):
+                # TODO: Investigate a better way of handling this situation.
+                logger.warn("Missing preamble and/or content in file: %s" % filename)
+            else:
+                logger.debug("Attempting to load data from preamble: %s" % preamble)
+                # load the data from the preamble
+                result = json.loads(preamble) if preamble else {}
+                # process the Markdown content into HTML
+                result['_content'] = markdown.markdown(
+                    content,
+                    output_format="html5",
+                )
 
         return result
 
@@ -324,7 +331,9 @@ class StatikInstance:
                 raise InvalidDataException("Invalid content format supplied in file: %s (must be \"html\" or \"markdown\")" % filename)
 
             # figure out the content
-            result['_content'] = markdown.markdown(result['_content']['markdown']) \
-                if 'markdown' in result['_content'] else result['_content']['html']
+            result['_content'] = markdown.markdown(
+                result['_content']['markdown'],
+                output_format="html5",
+            ) if 'markdown' in result['_content'] else result['_content']['html']
 
         return result
