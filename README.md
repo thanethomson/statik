@@ -1,5 +1,7 @@
 # Statik
 
+[![PyPI version 0.1.0](https://img.shields.io/badge/pypi-v0.1.0-blue.svg)](https://pypi.python.org/pypi/statik/0.1.0)
+
 ## Overview
 **Statik** aims to be a simple, yet powerful, static web site generator. It
 is currently designed with developers in mind, and, unlike most other static
@@ -48,6 +50,16 @@ If you want to deactivate the virtual environment, simply just:
 ```
 
 ## Installation
+### From PyPI
+The quickest way to get up and running with Statik is by installing it from
+PyPI. It's still recommended though to install it from within a virtual
+environment, especially since it is currently only in `alpha`.
+
+```bash
+> pip install statik
+```
+
+### From Source
 Once you've got your virtual environment working, check out this
 repository and run the `setup.py` script:
 
@@ -201,6 +213,20 @@ their field names and field types.
 }
 ```
 
+#### Example Model: `Post.json`
+```js
+{
+  "title": "string",
+  "slug": "string",
+  // This author field is a foreign key reference to an instance of the
+  // Person class, pointing, by default, to the "id" field of that class.
+  "author": "fk|Person",
+  "draft": "int",
+  "content": "content",
+  "published": "datetime"
+}
+```
+
 #### Field Types
 The following field types are available at present, and have their
 equivalent SQLite and Python data types:
@@ -213,11 +239,24 @@ equivalent SQLite and Python data types:
 | `datetime` | Similar to the date object, but with more detailed timestamp information | `DATETIME` | `datetime.datetime` |
 | `float` | A floating-point number | `DOUBLE` | `float` |
 | `content` | A special instance of `string` that receives Markdown content if data is specified in Markdown | `TEXT` | `unicode` |
+| `fk` | A foreign key to another model instance | `TEXT` | N/A |
 
 #### Primary Keys
 Each model is automatically given an `id` field of type `TEXT` which is used
 as its primary key. This is automatically assigned for instances of models
 (see the section on **Data** next).
+
+#### Foreign Keys
+When specifying a field as a foreign key to another model, the source class'
+field, by default, is created as a `TEXT` field, because the default
+auto-generated `id` field for a class is of type `TEXT`. This allows us to
+create instances that refer to other instances, simply by way of their
+filename.
+
+#### Content Fields
+Each model may contain at most one field of the `content` type. Ultimately,
+HTML content is stored in this field. If a class instance is written in
+Markdown format, the Markdown content outside of the
 
 ### Data
 Data instances are either defined in JSON or Markdown files (with `.json`,
@@ -243,11 +282,115 @@ named `michael.json`, whose primary key (`id` field) will be `michael`:
 }
 ```
 
+#### Example Data: `my-first-post.md`
+The following instance of a `Post` object shows how one can construct a
+post using Markdown, with a JSON *preamble* containing the relevant
+metadata to populate the remaining fields of the post.
+
+```markdown
+===
+{
+  "title": "My first post!",
+  "slug": "my-first-post",
+  "author": "michael",
+  "draft": 0,
+  "published": "2016-04-22 14:30"
+}
+===
+
+# Welcome
+Welcome to Michael's first post!
+
+## Here's a sub-heading
+This content is written in Markdown format. It will automatically be parsed,
+converted into HTML, and inserted as the value of the first field in
+the `Post` model of type `content` (which, happens to be the field named
+`content`).
+```
+
 ### Templates
-TBD
+Templates are specified using [Jinja2](http://jinja.pocoo.org/docs/dev/)
+syntax, which is very similar to [Django's](https://www.djangoproject.com/)
+templating syntax. Templates are defined as HTML files (file extension
+`.html`) within the `templates/` directory of your project.
+
+#### Context
+When rendering your templates, a context is present, depending on the
+configuration of the **view** that refers to your template. This allows you
+to pass variables and class instance data into your template for rendering.
+See the documentation on **views** for more details.
+
+#### Filters
+Only the following basic filters are supplied at present. Custom filter
+support is planned for a future release of Statik. These are invoked using
+[standard Jinja 2 filter syntax](http://jinja.pocoo.org/docs/dev/templates/#filters).
+
+* `date`: Converts a variable of type `date` or `datetime` into a string using
+  the supplied format. Argument: an `strptime`/`strftime` format specifier. See
+  the [`strftime()` and `strptime()` Behavior](https://docs.python.org/2/library/datetime.html#strftime-strptime-behavior)
+  documentation.
+* `slug`: Converts the supplied parameter into a slug (all lowercase, with
+  special characters and spaces replaced by dashes). For example, the string
+  `Hello world!` will be converted into the slug `hello-world`.
 
 ### Views
-TBD
+Views are the glue that hold your templates and data together. They define
+which templates to render for which of your web site's paths, and what
+data to supply to those templates. Views are stored in JSON format
+(with extension `.json`) in your project's `views/` directory.
+
+#### Example: `home.json`
+An example home page, which simply renders a basic template and supplies that
+template with the data of the latest 10 posts (ordered from most recent to
+least), is shown as follows.
+
+```js
+{
+  // Render /index.html
+  "path": "/",
+  // Find the template called "home.html" in the "templates/" directory.
+  "template": "home.html",
+  // Context data, whose contents will be supplied into the "home.html"
+  // template during rendering.
+  "data": {
+    // The "title" variable will be supplied as-is to the template.
+    "title": "Welcome to my blog",
+    // The "posts" variable will first be recognised as an object, and if the
+    // special "$" field is present, Statik will know to first execute that
+    // as a SQL query to fetch the data to populate this field. Returned rows
+    // from the SQL query will be converted into Python dictionaries,
+    // where the "fields" parameter below indicates the order in which Statik
+    // can expect the relevant field names.
+    "posts": {
+      "$": "SELECT id, slug, published, title, author, content FROM Post WHERE draft=0 ORDER BY published DESC LIMIT 10",
+      "fields": ["id", "slug", "published", "title", "author", "content"]
+    }
+  }
+}
+```
+
+#### Example: `posts.json`
+When, for example, we want to automatically render all of the instances of the
+`Post` class at different URLs, we can supply a view as follows.
+
+```js
+{
+  // This is a model-based view, referring specifically to the "Post" model.
+  "model": "Post",
+  // Path specs are supplied as Jinja2 templates. When rendering, all of the
+  // fields will be select from the specified model, and by default, all
+  // instances of the model will be selected. This path spec is recomputed
+  // for each instance of the model rendered. By default, the instance is
+  // passed into the path spec template, where its variable is named according
+  // to its model name. For example, an instance of the "Post" class will
+  // be called "post"; an instance of the "Person" class will be called
+  // "person"; an instance of another class called "MusicGenre" will be
+  // called "musicGenre" (using camelCase).
+  "path": "/{{ post.published|date('%Y/%m/%d') }}/{{ post.slug }}",
+  // Uses the "fullpost.html" template file in the templates/ directory.
+  "template": "fullpost.html"
+}
+```
 
 ## License
 **The MIT License (MIT)**
