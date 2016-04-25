@@ -21,7 +21,6 @@ __all__ = [
 class StatikException(Exception):
     """Base exception class for all Statik exceptions."""
 
-    msg = "An exception has occurred"
     code = 1
 
     def __init__(self, msg, code=None):
@@ -31,7 +30,7 @@ class StatikException(Exception):
             msg: The exception message.
             code: The system exit code to use if this is a terminal error.
         """
-        super(msg)
+        super(StatikException, self).__init__(msg)
         if code is not None:
             self.code = code
 

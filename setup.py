@@ -12,7 +12,7 @@ install_reqs = parse_requirements("requirements.txt", session=False)
 
 setup(
     name="statik",
-    version="0.1.0",
+    version="0.1.1",
     description="General-purpose static web site generator",
     author="Thane Thomson",
     author_email="connect@thanethomson.com",

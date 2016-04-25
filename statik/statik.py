@@ -14,12 +14,13 @@ __all__ = [
 ]
 
 
-def statik(path):
+def statik(path, profile='production'):
     """Executes the Statik web site generator using the specified path as the
     working directory and source path.
 
     Args:
         path: The source path of the project to compile.
+        profile: The name of the profile for which to build this project.
 
     Returns:
         The system exit value. This will be 0 on success, or non-zero on
@@ -29,7 +30,7 @@ def statik(path):
 
     logger.info("Attempting to load Statik project from path: %s" % path)
     try:
-        project = StatikProject(path)
+        project = StatikProject(path, profile=profile)
     except Exception as e:
         logger.exception("Caught exception while attempting to create project for path: %s" % path)
         return e.code if isinstance(e, StatikException) else 100
@@ -46,11 +47,11 @@ def statik(path):
     return 0
 
 
-def configure_logging():
+def configure_logging(verbose=False):
     """Sets up the global configuration for our logging."""
     logging.basicConfig(
-        level=logging.DEBUG,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        level=logging.DEBUG if verbose else logging.INFO,
+        format='%(asctime)s\t%(name)s\t%(levelname)s\t%(message)s' if verbose else "%(message)s",
     )
 
 
@@ -60,15 +61,20 @@ def main():
     import argparse
     import sys
 
-    configure_logging()
-
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--project",
         help="The path to the project to be processed.",
         default="./")
+    parser.add_argument("-P", "--profile",
+        help="Which profile to use for building the project.",
+        default="production")
+    parser.add_argument("-v", "--verbose",
+        help="Enables debug (verbose) logging.",
+        action="store_true")
     args = parser.parse_args()
 
-    sys.exit(statik(args.project))
+    configure_logging(verbose=args.verbose)
+    sys.exit(statik(args.project, profile=args.profile))
 
 
 if __name__ == "__main__":

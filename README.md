@@ -1,6 +1,6 @@
 # Statik
 
-[![PyPI version 0.1.0](https://img.shields.io/badge/pypi-v0.1.0-blue.svg)](https://pypi.python.org/pypi/statik/0.1.0)
+[![PyPI version 0.1.1](https://img.shields.io/badge/pypi-v0.1.1-blue.svg)](https://pypi.python.org/pypi/statik/0.1.1)
 
 ## Overview
 **Statik** aims to be a simple, yet powerful, static web site generator. It
@@ -119,7 +119,7 @@ By default we refer to a single site's data and generated HTML content into a
 structure should look similar to the following example.
 
 ```
-config.json              - Global configuration for the project
+statik.json              - Global configuration for the Statik project
 
 models/                  - Data models (i.e. classes) are stored here
 models/Post.json         - Structure definition for the "Post" class
@@ -150,19 +150,13 @@ assets/                  - Any files that are to be copied as-is into your desti
 ```
 
 ### Global Configuration
-The global `config.json` file contains settings relevant to the overall
+The global `statik.json` file contains settings relevant to the overall
 functioning of your generated site. The following fields are standard:
 
 ```js
 {
   // String containing the global, human-readable name of your project.
   "projectName": "My project",
-
-  // A list of strings containing the names of different kinds of execution
-  // profiles for your project. This allows you to override certain settings
-  // depending on which profile it is you're building for.
-  // Default: ["production"]
-  "profiles": ["dev", "prod"],
 
   // The output mode for generating URL paths. Can be one of:
   // "standard" - Generates URLs like /posts/2016/04/02/my-first-post.html
@@ -179,20 +173,46 @@ functioning of your generated site. The following fields are standard:
   "baseUrl": "/",
 
   // Either a relative or absolute path in which to generate the output
-  // HTML content. Default: [project path]/public/
+  // HTML content. Default: "[project path]/public/"
   "outputPath": "./public/",
 
-  // This object allows us to override certain facets of our configuration
-  // depending on the selected profile for which we're building the site.
-  // The global configuration values that can be overridden are:
-  // baseUrl, outputPath
-  "profileConfig": {
-    // Configuration
-    "dev": {
+  // Configuration for static assets that will be copied as-is from the
+  // source path to the destination path. This can be overridden in a
+  // per-profile manner.
+  "assets": {
+    // Whether or not to perform the asset copy. Default: true
+    "enabled": true,
+    // The source path of the assets. When a relative path is specified, this
+    // will be considered relative to the project path. Default: "assets/"
+    "sourcePath": "assets/",
+    // The destination path into which assets will be copied. If relative,
+    // it will be considered to be relative to the "outputPath" parameter.
+    // Default: "assets/"
+    "destPath": "assets/",
+    // Should the copy be performed recursively? Default: true
+    "recursive": true,
+    // Should we delete the contents of the destination folder completely before
+    // copying? Default: true
+    "purgeDest": true
+  },
+
+  // An object containing the names of different kinds of execution
+  // profiles for your project. This allows you to override certain settings
+  // depending on which profile it is you're building for.
+  // Default: {}
+  "profiles": {
+    // Configuration for development profile.
+    "develop": {
       // Overrides the previous "baseUrl" and "outputPath" settings
       "baseUrl": "/dev/",
-      "outputPath": "./dev/public/"
-    }
+      "outputPath": "./dev/public/",
+      // Only override the one parameter in the develop profile.
+      "assets": {
+        "purgeDest": false
+      }
+    },
+    // Production mode uses the default global settings.
+    "production": {}
   }
 }
 ```

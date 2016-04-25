@@ -6,4 +6,5 @@ from project import *
 from statik import *
 from utils import *
 from views import *
+from assets import *
 import filters

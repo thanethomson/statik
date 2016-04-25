@@ -14,6 +14,7 @@ from config import *
 from models import *
 from views import *
 from data import *
+from assets import *
 import filters.basic
 
 logger = logging.getLogger(__name__)
@@ -61,9 +62,9 @@ class StatikProject:
     def load_config(self):
         """Attempts to (re)load the configuration file for this project."""
         # check for a configuration file
-        config_path = os.path.join(self._path, "config.json")
+        config_path = os.path.join(self._path, "statik.json")
         if not os.path.isfile(config_path):
-            raise MissingConfigException("Missing \"config.json\" file in project path: %s" % self._path)
+            raise MissingConfigException("Missing \"statik.json\" file in project path: %s" % self._path)
 
         logger.debug("Attempting to read project configuration from: %s" % config_path)
         config = utils.load_json_file(config_path)
@@ -95,6 +96,19 @@ class StatikProject:
         if self._output_mode not in ["standard", "pretty"]:
             raise InvalidConfigException("Output mode can only be one of \"standard\" or \"pretty\", but found: %s" % self._output_mode)
 
+        # configure the asset copying
+        self._assets_enabled = self._config.get_assets_enabled()
+        self._assets_source = self._config.get_assets_source()
+        self._assets_dest = self._config.get_assets_dest()
+        self._assets_recursive = self._config.get_assets_recursive()
+        self._assets_purge_dest = self._config.get_assets_purge_dest()
+        logger.debug("Assets configuration:")
+        logger.debug("  Enabled     : %s" % self._assets_enabled)
+        logger.debug("  Source path : %s" % self._assets_source)
+        logger.debug("  Dest path   : %s" % self._assets_dest)
+        logger.debug("  Recursive   : %s" % self._assets_recursive)
+        logger.debug("  Purge dest  : %s" % self._assets_purge_dest)
+
 
     def build(self):
         """Builds the project based on the supplied configuration."""
@@ -125,16 +139,16 @@ class StatikProject:
         self._db = None
         # if we have models, load them
         if os.path.isdir(models_path):
-            logger.info("Loading models...")
+            logger.debug("Loading models...")
             models = self.load_models(models_path)
 
             # if we have data, load it, but only if we have models
             if os.path.isdir(data_path):
-                logger.info("Loading data...")
+                logger.debug("Loading data...")
                 self._db = self.load_data(data_path, models)
 
         # load the views
-        logger.info("Loading views...")
+        logger.debug("Loading views...")
         for rendered_view in self.load_views(
                 views_path,
                 templates_path,
@@ -142,6 +156,18 @@ class StatikProject:
                 self._db,
             ):
             self.write_view(rendered_view)
+
+        if self._assets_enabled:
+            logger.debug("Copying assets...")
+            files_copied = StatikAssetManager(
+                self._assets_source,
+                self._assets_dest,
+                recursive=self._assets_recursive,
+                purge_dest=self._assets_purge_dest,
+            ).copy()
+            logger.info("%d asset(s) copied" % files_copied)
+        else:
+            logger.info("Skipping copying of assets")
 
         logger.info("Done!")
 

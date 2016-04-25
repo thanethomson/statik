@@ -1,0 +1,22 @@
+{
+  "name": "example",
+  "homepage": "https://github.com/thanethomson/statik",
+  "authors": [
+    "Thane Thomson <connect@thanethomson.com>"
+  ],
+  "description": "",
+  "main": "",
+  "moduleType": [],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "^2.2.3"
+  }
+}

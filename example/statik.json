@@ -1,0 +1,19 @@
+{
+  "projectName": "My personal blog",
+  "outputMode": "pretty",
+  "assets": {
+    "enabled": true,
+    "sourcePath": "assets",
+    "destPath": "static"
+  },
+  "profiles": {
+    "develop": {
+      "baseUrl": "/myblog"
+    },
+    "production": {
+      "assets": {
+        "purgeDest": false
+      }
+    }
+  }
+}
