@@ -53,7 +53,7 @@ class StatikProject:
         self._path = path
         logger.debug("Using absolute path for project: %s" % path)
         self._profile = profile
-        logger.debug("Loading project with profile: %s" % profile)
+        logger.info("Using project profile: %s" % profile)
 
         # load up our config
         self.load_config()
