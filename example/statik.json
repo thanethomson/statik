@@ -12,7 +12,8 @@
     },
     "production": {
       "assets": {
-        "purgeDest": false
+        "purgeDest": false,
+        "destPath": "assets"
       }
     }
   }
