@@ -16,6 +16,7 @@ __all__ = [
     "ModelDoesNotExistException",
     "CircularDependencyException",
     "MissingDatabaseException",
+    "QueryException",
 ]
 
 class StatikException(Exception):
@@ -73,3 +74,6 @@ class CircularDependencyException(StatikException):
 
 class MissingDatabaseException(StatikException):
     code = 13
+
+class QueryException(StatikException):
+    code = 14

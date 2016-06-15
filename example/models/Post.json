@@ -1,9 +1,12 @@
 {
-  "slug": "string",
-  "created": "datetime",
-  "published": "datetime",
-  "title": "string",
-  "author": "fk|Author",
-  "draft": "int",
-  "content": "content"
+  "slug": "String",
+  "created": "DateTime",
+  "published": "DateTime",
+  "title": "String",
+  "authors": {
+    "type": "ManyToMany",
+    "model": "Author"
+  },
+  "draft": "Integer",
+  "content": "Content"
 }

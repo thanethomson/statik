@@ -24,6 +24,24 @@ class StatikDatabase:
     """Provides an interface to an in-memory SQLite database through which we
     will manage our data model."""
 
+    OPERATOR_LOOKUP = {
+        'eq': '=',
+        'gt': '>',
+        'gte': '>=',
+        'lt': '<',
+        'lte': '<=',
+        'in': 'IN',
+        'like': 'LIKE',
+        'notIn': 'NOT IN',
+        '=': '=',
+        '==': '=',
+        '>': '>',
+        '>=': '>=',
+        '<': '<',
+        '<=': '<=',
+        'not in': 'NOT IN',
+    }
+
     def __init__(self, models, data):
         """Constructor.
 
@@ -60,6 +78,9 @@ class StatikDatabase:
     def _create_tables(self):
         """Internal function to create all of the necessary database tables for
         the current model configuration."""
+        # first resolve all references
+        self._resolve_references()
+
         # model dependencies (foreign key references)
         model_deps = {}
         # model table creation SQL statements
@@ -68,12 +89,15 @@ class StatikDatabase:
         # foreign key dependencies...
         create_sql_seq = []
         created = set()
+        intermediate_tables = {}
 
         # work out the dependency graph for the models
         for model_name, model in self._models.iteritems():
-            create_sql[model_name] = model.generate_sql()
+            create_sql[model_name], _it = model.generate_sql()
             model_deps[model_name] = model.get_foreign_classes()
-            # if this model has no dependencies (yay!)
+            # we want a unique set of intermediate tables
+            intermediate_tables.update(_it)
+            # if this model has no direct dependencies (yay! easy)
             if not model_deps[model_name]:
                 create_sql_seq.append(create_sql[model_name])
                 created.add(model_name)
@@ -102,9 +126,31 @@ class StatikDatabase:
             if len(remaining_models) == prev_remaining:
                 raise CircularDependencyException("One of the following models has a circular dependency: %s" % utils.pretty(remaining_models))
 
+        # create the intermediate tables (makes the assumption that
+        # intermediate tables don't depend on each other in any way, and their
+        # creation order doesn't matter)
+        for table_name, sql in intermediate_tables:
+            create_sql_seq.append(sql)
+
         # create the database tables
         for query in create_sql_seq:
             self.execute(query)
+
+
+    def _resolve_references(self):
+        """Internal function to run through all of the models to configure
+        all of the backward and forward references, ensuring consistency
+        throughout the model structure and foreign key relationships.
+
+        Raises:
+            InvalidModelConfigException if a back-reference cannot be
+            resolved or is invalid.
+        """
+        for model_name, model in self._models.iteritems():
+            for field_name, field in model.fields.iteritems():
+                if field.field_type in ['OneToMany', 'ManyToOne', 'ManyToMany']:
+                    # find the best back-reference we can
+                    field.find_back_ref(self._models[field.foreign_class])
 
 
     def _load_data(self, data):
@@ -182,6 +228,74 @@ class StatikDatabase:
             for i in range(len(_row)):
                 _obj[field_names[i]] = _row[i]
             yield _obj
+
+
+    def query(self, model, filters=None, order_by=None, skip=None, limit=None,
+        related_depth=None):
+        """Executes an ORM-style query, allowing for easier querying of
+        database objects than having to write low-level SQL.
+
+        Args:
+            model: The name of the model to query (a string).
+            filters: A list or dictionary containing filtering options. If
+                this is a list of filters, they will be applied sequentially
+                to the query using the relevant operator.
+            order_by: A list or dictionary containing ordering options.
+            skip: An integer indicating to skip the initial results of the
+                query.
+            limit: An integer indicating the maximum number of results to
+                return.
+            related_depth: The depth to which to fetch related objects.
+
+        Returns:
+            A list of instances of the specified model, depending on the
+            constructed query.
+        """
+        if model not in self._models:
+            raise ModelDoesNotExistException("Model \"%s\" does not exist" % model)
+
+        model = self._models[model]
+        # select all fields except those marked as one-to-many or many-to-many
+        # relationships - these will be fetched at a later stage
+        select_fields = ['id'].extend([
+            field_name for field_name, field in model.fields.iteritems() \
+                if field.field_type not in ['OneToMany', 'ManyToMany']
+        ])
+        q = "SELECT %s FROM %s" % (','.join(select_fields), model.name)
+        where_clauses = []
+        values = []
+
+        if filters:
+            # make sure it's a list
+            if isinstance(filters, dict):
+                filters = [filters]
+            if not isinstance(filters, list):
+                raise QueryException("Filters for queries must be lists or objects")
+
+            for f in filters:
+                for field_name, field_val in f.iteritems():
+                    # check that the field is definitely one of the model's fields
+                    if field_name not in model.fields:
+                        raise QueryException("Field \"%s\" cannot be found on model \"%s\"" % (field_name, model.name))
+
+                    operator = '='
+                    v = None
+                    if isinstance(field_val, dict):
+                        if len(field_val) > 1:
+                            raise QueryException("Filter query can only have a single operator per field (for field \"%s\")" % field_name)
+
+                        if field_val.keys()[0] in self.OPERATOR_LOOKUP:
+                            operator = self.OPERATOR_LOOKUP[field_val.keys()[0]
+                        else:
+                            raise QueryException("Unrecognised operator for field: %s" % field_name)
+
+                        # get the associated value
+                        v = field_val.values()[0]
+                    else:
+                        v = field_val
+
+                    where_clauses.append('%s %s ?' % (field_name, operator))
+                    values.append(v)
 
 
     def close(self):
