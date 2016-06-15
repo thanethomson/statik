@@ -1,0 +1,10 @@
+path:     /
+template: homepage
+context:
+  dynamic:
+    posts: >
+      session.query(Post)
+        .filter(Post.draft==False)
+        .order_by(Post.published.desc())
+  static:
+    page-title: Welcome to the test blog

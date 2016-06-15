@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }}{% endblock %}
+
+{% block content %}
+  <h1>{{ post.title }}</h1>
+  <div class="meta">
+    <div class="published">
+      {{ post.published|date("%Y-%m-%d") }}
+    </div>
+    <div class="author">
+      <a href="{% url "bios", post.author %}">By {{ post.author.first_name }}</a>
+    </div>
+  </div>
+  <div class="content">
+    {{ post.content|safe }}
+  </div>
+{% endblock %}

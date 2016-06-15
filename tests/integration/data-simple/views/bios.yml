@@ -1,0 +1,4 @@
+path: /bios/{{ author.pk }}
+template: author-bio
+for-each:
+  author: session.query(Author).all()

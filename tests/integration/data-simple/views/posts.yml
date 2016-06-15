@@ -1,0 +1,4 @@
+path: /{{ post.published|date("%Y/%m/%d") }}/{{ post.slug }}/
+template: post
+for-each:
+  post: session.query(Post).filter(Post.draft==False)

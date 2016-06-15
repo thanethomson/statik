@@ -1,0 +1,7 @@
+slug:      String
+title:     String
+summary:   String
+created:   DateTime
+published: DateTime
+author:    Author
+content:   Content
