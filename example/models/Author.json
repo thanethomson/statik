@@ -1,9 +1,0 @@
-{
-  "firstName": "String",
-  "lastName": "String",
-  "email": "String",
-  "posts": {
-    "type": "ManyToMany",
-    "model": "Post"
-  }
-}
