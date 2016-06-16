@@ -2,7 +2,18 @@
 
 __all__ = [
     'InvalidFieldTypeError',
+    'MissingProjectFolderError',
+    'MissingParameterError',
 ]
 
 class InvalidFieldTypeError(ValueError):
     pass
+
+class MissingProjectFolderError(ValueError):
+    def __init__(self, folder, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.folder = folder
+
+class MissingParameterError(ValueError):
+    pass
+    

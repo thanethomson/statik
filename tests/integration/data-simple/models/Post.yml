@@ -4,4 +4,5 @@ summary:   String
 created:   DateTime
 published: DateTime
 author:    Author
+draft:     Boolean
 content:   Content

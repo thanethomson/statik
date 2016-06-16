@@ -3,6 +3,7 @@
 import os.path
 import xml.etree.ElementTree as ET
 import unittest
+from pprint import pprint
 
 import statik
 
@@ -18,6 +19,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
             os.path.join(test_path, 'data-simple'),
             in_memory=True,
         )
+        pprint(output_data)
 
         # Check that the home page is there
         self.assertIn('index.html', output_data)

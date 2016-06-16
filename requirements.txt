@@ -1,2 +1,4 @@
 jinja2==2.8
 PyYAML==3.11
+SQLAlchemy==1.0.13
+markdown==2.6.6

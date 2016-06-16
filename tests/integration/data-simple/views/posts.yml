@@ -1,4 +1,5 @@
-path: /{{ post.published|date("%Y/%m/%d") }}/{{ post.slug }}/
+path:
+  template: /{{ post.published|date("%Y/%m/%d") }}/{{ post.slug }}/
+  for-each:
+    post: session.query(Post).filter(Post.draft==False).all()
 template: post
-for-each:
-  post: session.query(Post).filter(Post.draft==False)

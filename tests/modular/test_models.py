@@ -27,7 +27,7 @@ other-field: OtherModel
 class TestStatikModels(unittest.TestCase):
 
     def test_invalid_model(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(MissingParameterError):
             StatikModel()
 
     def test_model_from_string(self):

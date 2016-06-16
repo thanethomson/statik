@@ -1,4 +1,5 @@
-path: /bios/{{ author.pk }}
+path:
+  template: /bios/{{ author.pk }}
+  for-each:
+    author: session.query(Author).all()
 template: author-bio
-for-each:
-  author: session.query(Author).all()
