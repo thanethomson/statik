@@ -49,7 +49,7 @@ class StatikProject(object):
             return in_memory_result
         else:
             # dump the in-memory output to files
-            return self.dump_in_memory_result(in_memory_result)
+            return self.dump_in_memory_result(in_memory_result, output_path)
 
     def configure_templates(self):
         template_path = os.path.join(self.path, StatikProject.TEMPLATES_DIR)
@@ -115,3 +115,33 @@ class StatikProject(object):
         for view_name, view in self.views.items():
             output.update(view.process(self.db))
         return output
+
+    def dump_in_memory_result(self, result, output_path):
+        """Recursively dumps the result of our processing into files within the
+        given output path.
+
+        Args:
+            result: The in-memory result of our processing.
+            output_path: Full path to the folder into which to dump the files.
+
+        Returns:
+            The number of files generated (integer).
+        """
+        file_count = 0
+
+        for k, v in result.items():
+            cur_output_path = os.path.join(output_path, k)
+
+            if isinstance(v, dict):
+                file_count += self.dump_in_memory_result(v, cur_output_path)
+            else:
+                if not os.path.isdir(output_path):
+                    os.makedirs(output_path)
+
+                # dump the contents of the file
+                with open(os.path.join(output_path, k), 'wt') as f:
+                    f.write(v)
+
+                file_count += 1
+
+        return file_count

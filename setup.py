@@ -19,7 +19,7 @@ setup(
     url="https://github.com/thanethomson/statik",
     install_requires=[str(ir.req) for ir in install_reqs],
     scripts=["statik/statik"],
-    packages=["statik", "statik.filters"],
+    packages=["statik"],
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Environment :: Console",
