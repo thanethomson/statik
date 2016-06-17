@@ -6,6 +6,7 @@ from markdown import Markdown
 
 from statik.markdownyaml import MarkdownYamlMetaExtension
 from statik.utils import *
+from statik.errors import *
 
 __all__ = [
     'YamlLoadable',

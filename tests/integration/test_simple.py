@@ -3,7 +3,6 @@
 import os.path
 import xml.etree.ElementTree as ET
 import unittest
-from pprint import pprint
 
 import statik
 
@@ -19,7 +18,6 @@ class TestSimpleStatikIntegration(unittest.TestCase):
             os.path.join(test_path, 'data-simple'),
             in_memory=True,
         )
-        pprint(output_data)
 
         # Check that the home page is there
         self.assertIn('index.html', output_data)
@@ -50,7 +48,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         self.assertEqual('2016-06-15', post.findall(".//div[@class='published']")[0].text.strip())
         self.assertEqual('/bios/michael/', post.findall(".//div[@class='author']/a")[0].attrib['href'])
         self.assertEqual('By Michael', post.findall(".//div[@class='author']/a")[0].text.strip())
-        post_content = post.findall(".//div[@class='content']")[0]
+        post_content = post.findall(".//div[@class='content']/p")[0]
         post_content_els = [el for el in post_content]
         self.assertEqual('strong', post_content_els[0].tag)
         self.assertEqual('Markdown', post_content_els[0].text.strip())
@@ -65,7 +63,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         self.assertEqual('Michael Anderson', bio.findall('./head/title')[0].text.strip())
         self.assertEqual('mailto:manderson@somewhere.com', bio.findall(".//div[@class='meta']/a")[0].attrib['href'])
         self.assertEqual('Contact Michael', bio.findall(".//div[@class='meta']/a")[0].text.strip())
-        bio_content = bio.findall(".//div[@class='content']")[0]
+        bio_content = bio.findall(".//div[@class='content']/p")[0]
         bio_content_els = [el for el in bio_content]
         self.assertEqual('strong', bio_content_els[0].tag)
         self.assertEqual('Markdown', bio_content_els[0].text.strip())
