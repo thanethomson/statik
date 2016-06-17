@@ -7,6 +7,9 @@ from statik.common import YamlLoadable
 from statik.errors import MissingParameterError
 from statik.utils import *
 
+import logging
+logger = logging.getLogger(__name__)
+
 __all__ = [
     'StatikView',
 ]
@@ -33,6 +36,14 @@ class StatikView(YamlLoadable):
         self.template_env = kwargs['template_env']
 
         self.configure()
+        logger.debug('%s' % self)
+
+    def __repr__(self):
+        return ('<StatikView name=%s\n'+
+                '            path=%s\n'+
+                '            template=%s>\n') % (
+                    self.name, self.path, self.template,
+                )
 
     def configure(self):
         # process the parsed view variables
@@ -89,6 +100,7 @@ class StatikView(YamlLoadable):
     def process_complex(self, db):
         rendered_views = {}
         path_var_instances = db.query(self.path_query)
+        logger.debug("Complex view %s generated %d possible path(s)" % (self.name, len(path_var_instances)))
         for inst in path_var_instances:
             # render the path template to get this instance's view path
             inst_path = self.reverse_url(inst=inst)

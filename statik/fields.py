@@ -23,6 +23,13 @@ class StatikModelField(object):
         # additional field parameters
         self.params = kwargs
 
+    def __repr__(self):
+        return ("<StatikModelField name=%s\n" +
+                "                  field_type=%s\n" +
+                "                  params=%s>") % (
+                    self.name, self.field_type, self.params,
+                )
+
 
 class StatikDateTimeField(StatikModelField):
     def __init__(self, name, **kwargs):

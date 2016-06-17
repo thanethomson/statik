@@ -4,6 +4,7 @@ __all__ = [
     'InvalidFieldTypeError',
     'MissingProjectFolderError',
     'MissingParameterError',
+    'DuplicateModelInstanceError',
 ]
 
 class InvalidFieldTypeError(ValueError):
@@ -16,4 +17,6 @@ class MissingProjectFolderError(ValueError):
 
 class MissingParameterError(ValueError):
     pass
-    
+
+class DuplicateModelInstanceError(ValueError):
+    pass

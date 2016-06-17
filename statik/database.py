@@ -12,6 +12,9 @@ from statik.fields import *
 from statik.errors import *
 from statik.utils import *
 
+import logging
+logger = logging.getLogger(__name__)
+
 __all__ = [
     'StatikDatabase',
 ]
@@ -49,6 +52,7 @@ class StatikDatabase(object):
         # first create the table definitions
         self.tables = dict([(model_name, self.create_model_table(model)) for model_name, model in models.items()])
         # now create the tables in memory
+        logger.debug("Creating %d database table(s)..." % len(self.tables))
         self.Base.metadata.create_all(self.engine)
         self.load_all_model_data(models)
 
@@ -57,6 +61,7 @@ class StatikDatabase(object):
         # we can load our foreign key dependencies properly
         for table in self.Base.metadata.sorted_tables:
             model_name = table.name
+            logger.debug("Loading data for model: %s" % model_name)
             model = self.models[model_name]
             model_data_path = os.path.join(self.data_path, model_name)
             if os.path.isdir(model_data_path):
@@ -81,11 +86,20 @@ class StatikDatabase(object):
             db_model = globals()[model.name]
             entry_files = list_files(path, ['yml', 'yaml', 'md'])
             seen_entries = set()
+            logger.debug("Loading %d instances for model: %s" % (len(entry_files), model.name))
             for entry_file in entry_files:
                 entry = StatikDatabaseInstance(
                     os.path.join(path, entry_file),
                     model=model
                 )
+                # duplicate primary key!
+                if entry.field_values['pk'] in seen_entries:
+                    raise DuplicateModelInstanceError("More than one entry with the name \"%s\" exists for model %s" % (
+                        entry.field_values['pk'], model.name
+                    ))
+                else:
+                    seen_entries.add(entry.field_values['pk'])
+
                 db_entry = db_model(**entry.field_values)
                 self.session.add(db_entry)
 
@@ -93,6 +107,7 @@ class StatikDatabase(object):
 
     def query(self, query):
         """Executes the given SQLAlchemy query string."""
+        logger.debug("Attempting to execute database query: %s" % query)
         exec(
             compile(
                 'result = %s' % query.strip(),
@@ -129,8 +144,18 @@ class StatikDatabaseInstance(ContentLoadable):
         if self.model.content_field is not None:
             self.field_values[self.model.content_field] = self.content
 
+        logger.debug('%s' % self)
+
+    def __repr__(self):
+        result_lines = ["<StatikDatabaseInstance model=%s" % self.model.name]
+        for field_name, field_value in self.field_values.items():
+            result_lines.append("                        %s=%s" % (field_name, field_value))
+        result_lines[-1] += '>'
+        return '\n'.join(result_lines)
+
 
 def db_model_factory(Base, model, all_models):
+    logger.debug("Generating model: %s" % model.name)
     model_fields = {
         '__tablename__': model.name,
         'pk': Column(String, primary_key=True)

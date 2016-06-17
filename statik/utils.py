@@ -3,6 +3,7 @@
 import os
 import os.path
 from copy import deepcopy, copy
+import shutil
 
 
 __all__ = [
@@ -12,6 +13,7 @@ __all__ = [
     'deep_merge_dict',
     'underscore_var_names',
     'add_url_path_component',
+    'copy_tree',
 ]
 
 
@@ -88,3 +90,27 @@ def underscore_var_names(d):
 
 def add_url_path_component(path, component):
     return '%s/%s' % (path.rstrip('/'), component.lstrip('/'))
+
+def copy_tree(src_path, dest_path):
+    """Copies the entire folder tree, recursively, from the given source path
+    to the given destination path. If the destination path does not exist, it
+    will be created. If it does, any files/folders within it will be
+    overwritten, but none will be deleted."""
+    files_copied = 0
+    if os.path.isdir(src_path):
+        # if the destination folder doesn't exist, create it
+        if not os.path.isdir(dest_path):
+            os.makedirs(dest_path)
+
+        for entry in os.path.listdir(src_path):
+            src_entry_path = os.path.join(src_path, entry)
+            dest_entry_path = os.path.join(dest_path, entry)
+            # if it's a sub-folder
+            if os.path.isdir(src_entry_path):
+                # copy its contents recursively
+                files_copied += copy_tree(src_entry_path, dest_entry_path)
+            else:
+                shutil.copy2(src_entry_path, dest_entry_path)
+                files_copied += 1
+
+    return files_copied
