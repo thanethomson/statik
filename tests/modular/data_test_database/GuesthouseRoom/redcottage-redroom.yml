@@ -1,2 +1,6 @@
 guesthouse: redcottage
 room-name: Red Room
+tags:
+  - fireplace
+  - single-bed
+  - shower

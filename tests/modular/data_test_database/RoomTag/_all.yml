@@ -1,0 +1,10 @@
+- pk: fireplace
+  tag: Fireplace
+- pk: balcony
+  tag: Balcony
+- pk: shower
+  tag: Shower
+- pk: double-bed
+  tag: Double Bed
+- pk: single-bed
+  tag: Single Bed

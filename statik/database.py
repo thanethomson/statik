@@ -45,7 +45,15 @@ class StatikDatabase(object):
         self.Base = declarative_base()
         self.session = sessionmaker(bind=self.engine)()
         globals()['session'] = self.session
+        self.resolve_model_backrefs(models)
         self.create_db(models)
+
+    def resolve_model_backrefs(self, models):
+        logger.debug("Attempting to resolve all model back-references...")
+        # run through the models again and set up the back-population references
+        for model_name, model in models.items():
+            for foreign_model_name, backref in model.get_backrefs().items():
+                models[foreign_model_name].track_backref(model_name, backref)
 
     def create_db(self, models):
         """Creates the in-memory SQLite database from the model
@@ -62,11 +70,15 @@ class StatikDatabase(object):
         # we can load our foreign key dependencies properly
         for table in self.Base.metadata.sorted_tables:
             model_name = table.name
-            logger.debug("Loading data for model: %s" % model_name)
-            model = self.models[model_name]
-            model_data_path = os.path.join(self.data_path, model_name)
-            if os.path.isdir(model_data_path):
-                self.load_model_data(model_data_path, model)
+            # we won't be loading data for many-to-many relationships
+            if model_name in self.models:
+                logger.debug("Loading data for model: %s" % model_name)
+                model = self.models[model_name]
+                model_data_path = os.path.join(self.data_path, model_name)
+                if os.path.isdir(model_data_path):
+                    self.load_model_data(model_data_path, model)
+            else:
+                logger.debug("Skipping loading data models for table: %s" % model_name)
 
     def create_model_table(self, model):
         """Creates the table for the given model.
@@ -112,7 +124,8 @@ class StatikDatabase(object):
             entry = StatikDatabaseInstance(
                 name=item['pk'],
                 from_dict=item,
-                model=model
+                model=model,
+                session=self.session,
             )
             # duplicate primary key!
             if entry.field_values['pk'] in seen_entries:
@@ -133,7 +146,8 @@ class StatikDatabase(object):
         for entry_file in entry_files:
             entry = StatikDatabaseInstance(
                 os.path.join(path, entry_file),
-                model=model
+                model=model,
+                session=self.session,
             )
             # duplicate primary key!
             if entry.field_values['pk'] in seen_entries:
@@ -170,17 +184,38 @@ class StatikDatabaseInstance(ContentLoadable):
             raise MissingParameterError("Missing parameter \"model\" for database instance constructor")
         self.model = kwargs['model']
 
+        if 'session' not in kwargs:
+            raise MissingParameterError("Missing parameter \"session\" for database instance constructor")
+        self.session = kwargs['session']
+
         # convert the vars to their underscored representation
         self.field_values = underscore_var_names(self.vars)
         self.field_values['pk'] = self.name
 
         # run through the foreign key fields to check their assignment
         for field_name in self.model.field_names:
-            if isinstance(getattr(self.model, field_name), StatikForeignKeyField):
+            field = getattr(self.model, field_name)
+            # if it's a foreign key
+            if isinstance(field, StatikForeignKeyField):
                 # if we've got a pk value for a foreign key field
                 if field_name in self.field_values:
                     self.field_values['%s_id' % field_name] = self.field_values[field_name]
                     del self.field_values[field_name]
+
+            elif isinstance(field, StatikManyToManyField):
+                if not isinstance(self.field_values[field_name], list):
+                    raise InvalidFieldTypeError("ManyToMany field values are expected to be lists (see %s.%s)" % (
+                        self.model.name, self.field_name
+                    ))
+
+                # convert the list of field values to a query to look up the
+                # primary keys of the corresponding table
+                other_model = globals()[field.field_type]
+                self.field_values[field_name] = self.session.query(
+                    other_model
+                ).filter(
+                    other_model.pk.in_(self.field_values[field_name])
+                ).all()
 
         # populate any Content field for this model
         if self.model.content_field is not None:
@@ -203,6 +238,13 @@ def db_model_factory(Base, model, all_models):
         'pk': Column(String, primary_key=True)
     }
 
+    # first add any back-populates relationships to the model
+    for foreign_model, backref in model.backrefs.items():
+        logger.debug('Adding back-populates field \"%s\" to model \"%s\", referring to foreign model \"%s\"' % (
+            backref, model.name, foreign_model,
+        ))
+        model_fields[backref] = relationship(foreign_model)
+
     for field_name in model.field_names:
         field = getattr(model, field_name)
         if field.field_type in SQLALCHEMY_FIELD_MAPPER:
@@ -214,11 +256,47 @@ def db_model_factory(Base, model, all_models):
 
         elif field.field_type in all_models:
             # if it's a foreign key reference
-            model_fields['%s_id' % field.name] = Column(
-                '%s_id' % field.name,
-                ForeignKey('%s.pk' % field.field_type)
-            )
-            model_fields[field.name] = relationship(field.field_type)
+            if isinstance(field, StatikForeignKeyField):
+                model_fields['%s_id' % field.name] = Column(
+                    '%s_id' % field.name,
+                    ForeignKey('%s.pk' % field.field_type)
+                )
+                kwargs = {}
+                if field.back_populates is not None:
+                    kwargs['back_populates'] = field.back_populates
+                    logger.debug('Field %s.%s has back-populates field name: %s' % (
+                        model.name, field_name, field.back_populates
+                    ))
+                else:
+                    logger.debug('No back-populates field name for %s.%s' % (
+                        model.name, field_name
+                    ))
+
+                model_fields[field.name] = relationship(
+                    field.field_type,
+                    **kwargs
+                )
+
+            elif isinstance(field, StatikManyToManyField):
+                association_table_name = '%s%s' % (tuple(sorted([model.name, field.field_type])))
+                logger.debug("Creating/getting ManyToMany relationship table: %s" % association_table_name)
+                # create an association table
+                association_table = Table(
+                    association_table_name,
+                    Base.metadata,
+                    Column('%s_pk' % model.name.lower(), String, ForeignKey('%s.pk' % model.name)),
+                    Column('%s_pk' % field.field_type.lower(), String, ForeignKey('%s.pk' % field.field_type))
+                ) if association_table_name not in globals() else \
+                    globals()[association_table_name]
+
+                kwargs = {'secondary': association_table}
+                if field.back_populates is not None:
+                    kwargs['back_populates'] = field.back_populates
+
+                model_fields[field.name] = relationship(
+                    field.field_type,
+                    **kwargs,
+                )
 
         else:
             raise InvalidFieldTypeError("Unsupported database field type: %s" % field.field_type)

@@ -16,35 +16,38 @@ GUESTHOUSE_MODEL = """guesthouse-name: String
 address: Text
 """
 
-GUESTHOUSE_ROOM_MODEL = """guesthouse: Guesthouse
+GUESTHOUSE_ROOM_MODEL = """guesthouse: Guesthouse -> rooms
 room_name: String
+tags: RoomTag[] -> rooms
+"""
+
+ROOM_TAG_MODEL = """tag: String
 """
 
 BOOKING_MODEL = """guest: Guest
-room: GuesthouseRoom
+room: GuesthouseRoom -> bookings
 from-date: DateTime
 to-date: DateTime
 """
 
-MOCK_MODEL_NAMES = ['Guest', 'Guesthouse', 'GuesthouseRoom', 'Booking']
+MOCK_MODEL_NAMES = ['Guest', 'Guesthouse', 'GuesthouseRoom', 'Booking', 'RoomTag']
 
 MOCK_MODELS = {
     'Guest': StatikModel(name='Guest', from_string=GUEST_MODEL, model_names=MOCK_MODEL_NAMES),
     'Guesthouse': StatikModel(name='Guesthouse', from_string=GUESTHOUSE_MODEL, model_names=MOCK_MODEL_NAMES),
     'GuesthouseRoom': StatikModel(name='GuesthouseRoom', from_string=GUESTHOUSE_ROOM_MODEL, model_names=MOCK_MODEL_NAMES),
+    'RoomTag': StatikModel(name='RoomTag', from_string=ROOM_TAG_MODEL, model_names=MOCK_MODEL_NAMES),
     'Booking': StatikModel(name='Booking', from_string=BOOKING_MODEL, model_names=MOCK_MODEL_NAMES),
 }
 
 
 class TestStatikDatabase(unittest.TestCase):
 
-    """
     def setUp(self):
         logging.basicConfig(
             level=logging.DEBUG,
             format='%(asctime)s\t%(name)s\t%(levelname)s\t%(message)s',
         )
-    """
 
     def test_database(self):
         data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data_test_database')
@@ -53,6 +56,7 @@ class TestStatikDatabase(unittest.TestCase):
         Guesthouse = db.tables['Guesthouse']
         GuesthouseRoom = db.tables['GuesthouseRoom']
         Booking = db.tables['Booking']
+        RoomTag = db.tables['RoomTag']
 
         guests = db.session.query(Guest).order_by(Guest.last_name).all()
         self.assertEqual(2, len(guests))
@@ -91,6 +95,11 @@ class TestStatikDatabase(unittest.TestCase):
             'guesthouse_id': guesthouses[1].pk,
         }, guesthouse_rooms[1])
 
+        # 1 booking for the Blue Room
+        self.assertEqual(1, len(guesthouse_rooms[0].bookings))
+        # 1 booking for the Red Room
+        self.assertEqual(1, len(guesthouse_rooms[1].bookings))
+
         bookings = db.session.query(Booking).order_by(Booking.pk).all()
         self.assertEqual(2, len(bookings))
         self.assertInstanceEqual({
@@ -103,6 +112,23 @@ class TestStatikDatabase(unittest.TestCase):
             'guest': guests[0],
             'room': guesthouse_rooms[0],
         }, bookings[1])
+
+        room_tags = db.session.query(RoomTag).order_by(RoomTag.pk).all()
+        self.assertEqual(5, len(room_tags))
+
+        blueroom_tags = set([tag.pk for tag in guesthouse_rooms[0].tags])
+        self.assertEqual(4, len(blueroom_tags))
+        self.assertIn('fireplace', blueroom_tags)
+        self.assertIn('double-bed', blueroom_tags)
+        self.assertIn('balcony', blueroom_tags)
+        self.assertIn('shower', blueroom_tags)
+
+        redroom_tags = set([tag.pk for tag in guesthouse_rooms[1].tags])
+        self.assertEqual(3, len(redroom_tags))
+        self.assertIn('fireplace', redroom_tags)
+        self.assertIn('single-bed', redroom_tags)
+        self.assertIn('shower', redroom_tags)
+
 
     def assertInstanceEqual(self, expected, inst):
         for field_name, field_value in expected.items():

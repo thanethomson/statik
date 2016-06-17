@@ -1,2 +1,7 @@
 guesthouse: redcottage
 room-name: Blue Room
+tags:
+  - fireplace
+  - double-bed
+  - balcony
+  - shower
