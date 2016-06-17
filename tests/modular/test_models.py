@@ -11,7 +11,7 @@ TEST_MODEL_VALID = """string-field: String
 datetime-field: DateTime
 int-field: Integer
 bool-field: Boolean
-content-field: Content
+some-content-field: Content
 text-field: Text
 """
 
@@ -41,7 +41,7 @@ class TestStatikModels(unittest.TestCase):
         self.assertIsInstance(getattr(model, 'datetime_field'), StatikDateTimeField)
         self.assertIsInstance(getattr(model, 'int_field'), StatikIntegerField)
         self.assertIsInstance(getattr(model, 'bool_field'), StatikBooleanField)
-        self.assertIsInstance(getattr(model, 'content_field'), StatikContentField)
+        self.assertIsInstance(getattr(model, 'some_content_field'), StatikContentField)
         self.assertIsInstance(getattr(model, 'text_field'), StatikTextField)
 
     def test_model_invalid_fk(self):

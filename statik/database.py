@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 
 import os.path
+import yaml
 
 from sqlalchemy import MetaData, String, Integer, Column, Table, ForeignKey, \
     Boolean, DateTime, Text, create_engine
@@ -83,27 +84,68 @@ class StatikDatabase(object):
         """Loads the data for the specified model from the given path.
         """
         if os.path.isdir(path):
-            db_model = globals()[model.name]
-            entry_files = list_files(path, ['yml', 'yaml', 'md'])
-            seen_entries = set()
-            logger.debug("Loading %d instances for model: %s" % (len(entry_files), model.name))
-            for entry_file in entry_files:
-                entry = StatikDatabaseInstance(
-                    os.path.join(path, entry_file),
-                    model=model
-                )
-                # duplicate primary key!
-                if entry.field_values['pk'] in seen_entries:
-                    raise DuplicateModelInstanceError("More than one entry with the name \"%s\" exists for model %s" % (
-                        entry.field_values['pk'], model.name
-                    ))
-                else:
-                    seen_entries.add(entry.field_values['pk'])
-
-                db_entry = db_model(**entry.field_values)
-                self.session.add(db_entry)
-
+            # try find a model data collection
+            if os.path.isfile(os.path.join(path, '_all.yml')):
+                self.load_model_data_collection(path, model)
+            else:
+                self.load_model_data_from_files(path, model)
             self.session.commit()
+
+    def load_model_data_collection(self, path, model):
+        db_model = globals()[model.name]
+        # load the collection data from the collection file
+        with open(os.path.join(path, '_all.yml'), 'rt') as f:
+            collection = yaml.load(f.read())
+
+        if not isinstance(collection, list):
+            raise InvalidModelCollectionDataError("Model %s collection _all.yml file must be a list of instances" % (
+                model.name
+            ))
+        seen_entries = set()
+        logger.debug("Loading %d instance(s) for model: %s" % (len(collection), model.name))
+        for item in collection:
+            if not isinstance(item, dict) or 'pk' not in item:
+                raise InvalidModelCollectionDataError("Model %s collection _all.yml contains invalid item(s)" % (
+                    model.name
+                ))
+
+            entry = StatikDatabaseInstance(
+                name=item['pk'],
+                from_dict=item,
+                model=model
+            )
+            # duplicate primary key!
+            if entry.field_values['pk'] in seen_entries:
+                raise DuplicateModelInstanceError("More than one entry with the name \"%s\" exists for model %s" % (
+                    entry.field_values['pk'], model.name
+                ))
+            else:
+                seen_entries.add(entry.field_values['pk'])
+
+            db_entry = db_model(**entry.field_values)
+            self.session.add(db_entry)
+
+    def load_model_data_from_files(self, path, model):
+        db_model = globals()[model.name]
+        entry_files = list_files(path, ['yml', 'yaml', 'md'])
+        seen_entries = set()
+        logger.debug("Loading %d instance(s) for model: %s" % (len(entry_files), model.name))
+        for entry_file in entry_files:
+            entry = StatikDatabaseInstance(
+                os.path.join(path, entry_file),
+                model=model
+            )
+            # duplicate primary key!
+            if entry.field_values['pk'] in seen_entries:
+                raise DuplicateModelInstanceError("More than one entry with the name \"%s\" exists for model %s" % (
+                    entry.field_values['pk'], model.name
+                ))
+            else:
+                seen_entries.add(entry.field_values['pk'])
+
+            db_entry = db_model(**entry.field_values)
+            self.session.add(db_entry)
+
 
     def query(self, query):
         """Executes the given SQLAlchemy query string."""

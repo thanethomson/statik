@@ -40,6 +40,9 @@ class ContentLoadable(object):
     loading content and metadata from a Markdown file.
     """
     def __init__(self, *args, **kwargs):
+        self.vars = None
+        self.content = None
+        self.file_content = None
         self.file_type = kwargs.get('file_type', None)
         if self.file_type is not None:
             if self.file_type not in ['yaml', 'markdown']:
@@ -60,6 +63,10 @@ class ContentLoadable(object):
             self.filename = None
             self.file_content = kwargs['from_string']
 
+        elif 'from_dict' in kwargs:
+            self.filename = None
+            self.vars = kwargs['from_dict']
+
         else:
             raise MissingParameterError("One or more missing arguments for constructor")
 
@@ -70,16 +77,17 @@ class ContentLoadable(object):
         else:
             raise MissingParameterError("Missing \"name\" argument for content loadable instance")
 
-        if self.file_type is None:
-            raise MissingParameterError("Missing file type parameter for content loadable")
+        # if it wasn't loaded from a dictionary
+        if self.vars is None:
+            if self.file_type is None:
+                raise MissingParameterError("Missing file type parameter for content loadable")
 
-        # if it's a YAML file
-        if self.file_type == 'yaml':
-            self.content = None
-            self.vars = yaml.load(self.file_content) if len(self.file_content) else {}
-        else:
-            md = Markdown(
-                extensions=[MarkdownYamlMetaExtension()],
-            )
-            self.content = md.convert(self.file_content)
-            self.vars = md.meta
+            # if it's a YAML file
+            if self.file_type == 'yaml':
+                self.vars = yaml.load(self.file_content) if len(self.file_content) else {}
+            else:
+                md = Markdown(
+                    extensions=[MarkdownYamlMetaExtension()],
+                )
+                self.content = md.convert(self.file_content)
+                self.vars = md.meta

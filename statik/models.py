@@ -16,6 +16,11 @@ __all__ = [
 class StatikModel(YamlLoadable):
     """Represents a single model in our Statik project."""
 
+    RESERVED_FIELD_NAMES = set([
+        'name', 'model_names', 'field_names', 'content_field',
+        'filename'
+    ])
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # if we're explicitly overriding a model name
@@ -42,6 +47,11 @@ class StatikModel(YamlLoadable):
                 self.content_field = field_name
 
             new_field_name = field_name.replace('-', '_')
+
+            # some reserved field names
+            if new_field_name in StatikModel.RESERVED_FIELD_NAMES:
+                raise ReservedFieldNameError("Field name \"%s\" is reserved for internal use and cannot be used on a model" % new_field_name)
+
             self.field_names.append(new_field_name)
             setattr(
                 self,

@@ -1,0 +1,10 @@
+- pk: 1
+  guest: gmerriweather
+  room: redcottage-redroom
+  from-date: 2016-08-01
+  to-date: 2016-08-04
+- pk: 2
+  guest: manderson
+  room: redcottage-blueroom
+  from-date: 2016-08-02
+  to-date: 2016-08-03

@@ -1,11 +1,16 @@
 # -*- coding:utf-8 -*-
 
 __all__ = [
+    'ReservedFieldNameError',
     'InvalidFieldTypeError',
     'MissingProjectFolderError',
     'MissingParameterError',
     'DuplicateModelInstanceError',
+    'InvalidModelCollectionDataError',
 ]
+
+class ReservedFieldNameError(ValueError):
+    pass
 
 class InvalidFieldTypeError(ValueError):
     pass
@@ -19,4 +24,7 @@ class MissingParameterError(ValueError):
     pass
 
 class DuplicateModelInstanceError(ValueError):
+    pass
+
+class InvalidModelCollectionDataError(ValueError):
     pass
