@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>{% block title %}{% if page_title %}{{ page_title }}{% else %}My Blog{% endif %}{% endblock %}</title>
+</head>
+<body>
+    <div class="container">
+        {% block body %}{% endblock %}
+    </div>
+</body>
+</html>

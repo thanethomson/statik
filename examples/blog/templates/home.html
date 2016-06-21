@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block body %}
+    <h1>Welcome to my blog!</h1>
+    <p>
+        Please see the following list of my latest posts, from most recent to least.
+    </p>
+    <ul>
+        {% for post in posts %}
+            <li><a href="{% url "posts", post %}">{{ post.title }}</a></li>
+        {% endfor %}
+    </ul>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block body %}
+    <h1>{{ post.title }}</h1>
+    <div class="meta">
+        Written by {{ post.author.first_name }} on {{ post.published|date("%Y-%m-%d") }}<br />
+        Tagged:
+        {% for tag in post.tags %}
+            <a href="#">{{ tag.pk }}</a>
+        {% endfor %}
+    </div>
+    <div class="content">
+        {{ post.content|safe }}
+    </div>
+{% endblock %}
