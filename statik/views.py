@@ -18,6 +18,18 @@ class StatikView(YamlLoadable):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # defaults
+        self.complex = False
+        self.path = None
+        self.template = None
+        self.path_template = None
+        self.path_variable = None
+        self.path_query = None
+        self.context = {}
+        self.context_static = {}
+        self.context_dynamic = {}
+
         if 'name' in kwargs:
             self.name = kwargs['name']
         elif self.filename is not None:
@@ -81,9 +93,6 @@ class StatikView(YamlLoadable):
         self.complex = False
 
     def configure_context(self):
-        self.context_static = {}
-        self.context_dynamic = {}
-
         if 'context' in self.vars:
             if 'static' in self.vars['context'] and isinstance(self.vars['context']['static'], dict):
                 self.context_static = underscore_var_names(deepcopy(self.vars['context']['static']))

@@ -34,6 +34,11 @@ class StatikProject(object):
         """
         self.path = path
         logger.info("Using project source directory: %s" % path)
+        self.config = None
+        self.models = {}
+        self.template_env = None
+        self.views = {}
+        self.db = None
 
     def generate(self, output_path=None, in_memory=False):
         """Executes the Statik project generator."""
@@ -45,6 +50,7 @@ class StatikProject(object):
         self.template_env = self.configure_templates()
         self.views = self.load_views()
         self.template_env.statik_views = self.views
+        self.template_env.statik_base_url = self.config.base_path
         self.db = self.load_db_data(self.models)
 
         in_memory_result = self.process_views()
