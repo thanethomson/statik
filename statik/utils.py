@@ -14,6 +14,7 @@ __all__ = [
     'underscore_var_names',
     'add_url_path_component',
     'copy_tree',
+    'calculate_association_table_name',
 ]
 
 
@@ -46,8 +47,10 @@ def list_files(base_path, ext=None):
 
     return files
 
+
 def extract_filename(path):
     return list(os.path.splitext(os.path.basename(path)))[0]
+
 
 def dict_from_path(path, final_value={}):
     components = path.split('/')
@@ -59,6 +62,7 @@ def dict_from_path(path, final_value={}):
             last_dict = deepcopy(cur_dict)
 
     return cur_dict
+
 
 def deep_merge_dict(a, b):
     """Deep merges dictionary b into dictionary a."""
@@ -79,6 +83,7 @@ def deep_merge_dict(a, b):
     # b should now be deep-merged into a
     return _a
 
+
 def underscore_var_names(d):
     _d = {}
     for k, v in d.items():
@@ -88,8 +93,10 @@ def underscore_var_names(d):
 
     return _d
 
+
 def add_url_path_component(path, component):
     return '%s/%s' % (path.rstrip('/'), component.lstrip('/'))
+
 
 def copy_tree(src_path, dest_path):
     """Copies the entire folder tree, recursively, from the given source path
@@ -114,3 +121,7 @@ def copy_tree(src_path, dest_path):
                 files_copied += 1
 
     return files_copied
+
+
+def calculate_association_table_name(model1_name, model2_name):
+    return '%s%s' % (tuple(sorted([model1_name, model2_name])))

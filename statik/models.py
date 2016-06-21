@@ -4,7 +4,7 @@ import yaml
 
 from statik.common import YamlLoadable
 from statik.fields import *
-from statik.utils import extract_filename
+from statik.utils import extract_filename, calculate_association_table_name
 from statik.errors import *
 
 import logging
@@ -18,10 +18,7 @@ __all__ = [
 class StatikModel(YamlLoadable):
     """Represents a single model in our Statik project."""
 
-    RESERVED_FIELD_NAMES = set([
-        'name', 'model_names', 'field_names', 'content_field',
-        'filename', 'backrefs',
-    ])
+    RESERVED_FIELD_NAMES = {'name', 'model_names', 'field_names', 'content_field', 'filename', 'additional_rels'}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -40,7 +37,8 @@ class StatikModel(YamlLoadable):
         self.field_names = []
         # if this model has a Content field
         self.content_field = None
-        self.backrefs = {}
+        # additional back-reference relationships, indexed by field name
+        self.additional_rels = {}
 
         # build up all of our fields from the model configuration
         for field_name, field_type in self.vars.items():
@@ -53,7 +51,9 @@ class StatikModel(YamlLoadable):
 
             # some reserved field names
             if new_field_name in StatikModel.RESERVED_FIELD_NAMES:
-                raise ReservedFieldNameError("Field name \"%s\" is reserved for internal use and cannot be used on a model" % new_field_name)
+                raise ReservedFieldNameError(
+                        "Field name \"%s\" is reserved for internal use and cannot be used on a model" % new_field_name
+                )
 
             self.field_names.append(new_field_name)
             setattr(
@@ -62,22 +62,26 @@ class StatikModel(YamlLoadable):
                 construct_field(new_field_name, field_type, self.model_names)
             )
 
-    def get_backrefs(self):
-        """Finds all of the fields in this model with back-populates
-        references.
-
-        Returns:
-            A dictionary, indexed by foreign model name, where each value is
-            the name of the back-populates reference field.
+    def find_additional_rels(self, all_models):
+        """Attempts to scan for additional relationship fields for this model based on all of the other models'
+        structures and relationships.
         """
-        backrefs = {}
-        for field_name in self.field_names:
-            field = getattr(self, field_name)
-            if isinstance(field, StatikForeignKeyField) or isinstance(field, StatikManyToManyField):
-                if field.back_populates is not None:
-                    backrefs[field.field_type] = field.back_populates
-        logger.debug("Backrefs for model %s: %s" % (self.name, backrefs))
-        return backrefs
-
-    def track_backref(self, from_model_name, backref):
-        self.backrefs[from_model_name] = backref
+        for model_name, model in all_models.items():
+            if model_name != self.name:
+                for field_name in model.field_names:
+                    field = getattr(model, field_name)
+                    # if this field type references the current model
+                    if field.field_type == self.name and field.back_populates is not None and \
+                            (isinstance(field, StatikForeignKeyField) or isinstance(field, StatikManyToManyField)):
+                        self.additional_rels[field.back_populates] = {
+                            'to_model': model_name,
+                            'back_populates': field_name,
+                            'secondary':
+                                (model_name, field.field_type) if isinstance(field, StatikManyToManyField) else None
+                        }
+                        logger.debug('Additional relationship %s.%s -> %s (%s)' % (
+                            self.name,
+                            field.back_populates,
+                            model_name,
+                            self.additional_rels[field.back_populates]
+                        ))

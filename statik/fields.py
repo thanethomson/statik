@@ -17,6 +17,7 @@ __all__ = [
     'construct_field',
 ]
 
+
 class StatikModelField(object):
     """Base class for all Statik model fields."""
 

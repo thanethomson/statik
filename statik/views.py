@@ -1,7 +1,6 @@
 # -*- coding:utf-8 -*-
 
 from copy import deepcopy
-from jinja2 import Template
 
 from statik.common import YamlLoadable
 from statik.errors import MissingParameterError

@@ -92,3 +92,7 @@ bin/
 include/
 pip-selfcheck.json
 example/public/
+
+# IntelliJ files
+*.iml
+/.idea/

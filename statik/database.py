@@ -39,21 +39,20 @@ class StatikDatabase(object):
             data_path: The full path to where the database files can be found.
             models: Loaded model/field data.
         """
+        self.tables = {}
         self.data_path = data_path
         self.models = models
         self.engine = create_engine('sqlite:///:memory:')
         self.Base = declarative_base()
         self.session = sessionmaker(bind=self.engine)()
         globals()['session'] = self.session
-        self.resolve_model_backrefs(models)
+        self.find_backrefs()
         self.create_db(models)
 
-    def resolve_model_backrefs(self, models):
-        logger.debug("Attempting to resolve all model back-references...")
-        # run through the models again and set up the back-population references
-        for model_name, model in models.items():
-            for foreign_model_name, backref in model.get_backrefs().items():
-                models[foreign_model_name].track_backref(model_name, backref)
+    def find_backrefs(self):
+        for model_name, model in self.models.items():
+            logger.debug('Attempting to find backrefs for model: %s' % model_name)
+            model.find_additional_rels(self.models)
 
     def create_db(self, models):
         """Creates the in-memory SQLite database from the model
@@ -71,9 +70,9 @@ class StatikDatabase(object):
         for table in self.Base.metadata.sorted_tables:
             model_name = table.name
             # we won't be loading data for many-to-many relationships
-            if model_name in self.models:
+            if model_name in models:
                 logger.debug("Loading data for model: %s" % model_name)
-                model = self.models[model_name]
+                model = models[model_name]
                 model_data_path = os.path.join(self.data_path, model_name)
                 if os.path.isdir(model_data_path):
                     self.load_model_data(model_data_path, model)
@@ -160,7 +159,6 @@ class StatikDatabase(object):
             db_entry = db_model(**entry.field_values)
             self.session.add(db_entry)
 
-
     def query(self, query):
         """Executes the given SQLAlchemy query string."""
         logger.debug("Attempting to execute database query: %s" % query)
@@ -232,19 +230,44 @@ class StatikDatabaseInstance(ContentLoadable):
 
 
 def db_model_factory(Base, model, all_models):
+
+    def get_or_create_association_table(model1_name, model2_name):
+        _association_table_name = calculate_association_table_name(model1_name, model2_name)
+        logger.debug("Creating/getting ManyToMany relationship table: %s" % _association_table_name)
+        if _association_table_name in globals():
+            return globals()[_association_table_name]
+
+        # create an association table
+        _association_table = Table(
+                _association_table_name,
+                Base.metadata,
+                Column('%s_pk' % model1_name.lower(), String, ForeignKey('%s.pk' % model1_name)),
+                Column('%s_pk' % model2_name.lower(), String, ForeignKey('%s.pk' % model2_name))
+        )
+        # track it in our globals
+        globals()[_association_table_name] = _association_table
+        return _association_table
+
+    logger.debug('-----')
     logger.debug("Generating model: %s" % model.name)
     model_fields = {
         '__tablename__': model.name,
         'pk': Column(String, primary_key=True)
     }
 
-    # first add any back-populates relationships to the model
-    for foreign_model, backref in model.backrefs.items():
-        logger.debug('Adding back-populates field \"%s\" to model \"%s\", referring to foreign model \"%s\"' % (
-            backref, model.name, foreign_model,
+    # populate all of the relevant additional relationships for this model
+    for field_name, rel in model.additional_rels.items():
+        kwargs = {}
+        if rel.get('back_populates', None) is not None:
+            kwargs['back_populates'] = rel['back_populates']
+        if rel.get('secondary', None) is not None:
+            kwargs['secondary'] = get_or_create_association_table(*rel['secondary'])
+        logger.debug('Creating additional relationship %s.%s -> %s (%s)' % (
+            model.name, field_name, rel['to_model'], kwargs
         ))
-        model_fields[backref] = relationship(foreign_model)
+        model_fields[field_name] = relationship(rel['to_model'], **kwargs)
 
+    # now populate all of the standard fields
     for field_name in model.field_names:
         field = getattr(model, field_name)
         if field.field_type in SQLALCHEMY_FIELD_MAPPER:
@@ -278,21 +301,15 @@ def db_model_factory(Base, model, all_models):
                 )
 
             elif isinstance(field, StatikManyToManyField):
-                association_table_name = '%s%s' % (tuple(sorted([model.name, field.field_type])))
-                logger.debug("Creating/getting ManyToMany relationship table: %s" % association_table_name)
-                # create an association table
-                association_table = Table(
-                    association_table_name,
-                    Base.metadata,
-                    Column('%s_pk' % model.name.lower(), String, ForeignKey('%s.pk' % model.name)),
-                    Column('%s_pk' % field.field_type.lower(), String, ForeignKey('%s.pk' % field.field_type))
-                ) if association_table_name not in globals() else \
-                    globals()[association_table_name]
+                association_table = get_or_create_association_table(model.name, field.field_type)
 
                 kwargs = {'secondary': association_table}
                 if field.back_populates is not None:
                     kwargs['back_populates'] = field.back_populates
 
+                logger.debug("Creating model ManyToMany field %s.%s -> %s (%s)" % (
+                    model.name, field.name, field.field_type, kwargs
+                ))
                 model_fields[field.name] = relationship(
                     field.field_type,
                     **kwargs,
@@ -306,6 +323,8 @@ def db_model_factory(Base, model, all_models):
         (Base,),
         model_fields
     )
+
+    logger.debug("Model %s fields = %s" % (model.name, model_fields))
 
     # add the model class reference to the global scope
     globals()[model.name] = Model
