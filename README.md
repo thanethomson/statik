@@ -3,9 +3,24 @@
 [![PyPI version 0.2.1](https://img.shields.io/badge/pypi-v0.2.1-blue.svg)](https://pypi.python.org/pypi/statik/0.2.1)
 
 ## Overview
-**Statik** aims to be a simple, yet powerful, static web site generator. It
-is currently designed with developers in mind, and, unlike most other static
-web site generators, is *not* geared towards building blogs by default.
+**Statik** aims to be a simple, yet powerful, static web site generator.
+Instead of forcing you to adhere to a particular data structure/model (like the
+standard blog data model, with posts, pages and tags),
+**Statik** allows you to define your own data models in YAML format, and
+instances of those data models either in YAML or Markdown. This is all loaded
+into an in-memory [SQLAlchemy](http://www.sqlalchemy.org/) SQLite database
+when rendering your *views*.
+
+Then, code up your templates using the [Jinja2](http://jinja.pocoo.org/)
+templating engine (very similar to the Django templating engine).
+
+Finally, define your *views* (either complex or simple) in YAML format,
+telling **Statik** how to render your data and templates to specific URLs for
+your shiny new static web site. Write queries for your views in SQLAlchemy's
+[ORM syntax](http://docs.sqlalchemy.org/en/rel_1_0/orm/tutorial.html) to
+make your life easier.
+
+See the [wiki](https://github.com/thanethomson/statik/wiki) for more details.
 
 ## Requirements
 In order to install **Statik**, what you need is:
@@ -63,23 +78,6 @@ templates/ - Jinja2 template files.
 
 For example projects, see the `examples` directory in the source repository.
 For more information, see the [wiki](https://github.com/thanethomson/statik/wiki).
-
-## Under the Hood
-Instead of forcing you to adhere to a particular data structure/model,
-**Statik** allows you to define your own data models in YAML format, and
-instances of those data models either in YAML or Markdown.
-
-This is all loaded into an in-memory [SQLAlchemy](http://www.sqlalchemy.org/)
-SQLite database when rendering your *views*.
-
-You then write up your templates using the [Jinja2](http://jinja.pocoo.org/)
-templating engine (very similar to the Django templating engine).
-
-Finally, define your *views* (either complex or simple) in YAML format,
-telling **Statik** how to render your data and templates to specific URLs for
-your shiny new static web site. Write queries for your views in SQLAlchemy's
-[ORM syntax](http://docs.sqlalchemy.org/en/rel_1_0/orm/tutorial.html) to
-make your life easier.
 
 ## License
 **The MIT License (MIT)**
