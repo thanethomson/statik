@@ -39,8 +39,14 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         self.assertEqual('html', homepage.findall('.')[0].tag)
         self.assertEqual('Welcome to the test blog', homepage.findall('./head/title')[0].text.strip())
         self.assertEqual('Home page', homepage.findall('./body/h1')[0].text.strip())
+        # Test the project-wide static context variables
+        self.assertEqual(
+                'This is some information about the unit test web site.',
+                homepage.findall("./body/div[@class='site-summary']")[0].text.strip(),
+        )
         self.assertEqual('/2016/06/15/my-first-post/', homepage.findall('./body/ul/li/a')[0].attrib['href'])
         self.assertEqual('My first post', homepage.findall('./body/ul/li/a')[0].text.strip())
+        # Test the project-wide dynamic context variables
         self.assertEqual("Andrew Michaels", homepage.findall("./body/div[@class='all-authors']/ul/li")[0].text.strip())
         self.assertEqual("Michael Anderson", homepage.findall("./body/div[@class='all-authors']/ul/li")[1].text.strip())
 

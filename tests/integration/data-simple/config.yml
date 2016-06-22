@@ -2,6 +2,6 @@ project-name: Unit Test Project
 base-path: /
 context:
   static:
-    default-page-title: Untitled Page
+    site-summary: This is some information about the unit test web site.
   dynamic:
     all-authors: session.query(Author).order_by(Author.first_name.asc()).all()
