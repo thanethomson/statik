@@ -62,6 +62,7 @@ templates/ - HTML template files.
 ```
 
 For example projects, see the `examples` directory in the source repository.
+For more information, see the [wiki](https://github.com/thanethomson/statik/wiki).
 
 ## License
 **The MIT License (MIT)**
