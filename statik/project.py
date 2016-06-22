@@ -53,6 +53,10 @@ class StatikProject(object):
         self.views = self.load_views()
         self.template_env.statik_views = self.views
         self.template_env.statik_base_url = self.config.base_path
+        self.template_env.statik_base_asset_url = add_url_path_component(
+                self.config.base_path,
+                self.config.assets_dest_path
+        )
         self.db = self.load_db_data(self.models)
         self.project_context = self.load_project_context()
 
@@ -77,6 +81,7 @@ class StatikProject(object):
             loader=jinja2.FileSystemLoader(template_path),
             extensions=[
                 'statik.jinja2ext.StatikUrlExtension',
+                'statik.jinja2ext.StatikAssetExtension',
             ]
         )
         env.filters['date'] = filter_datetime

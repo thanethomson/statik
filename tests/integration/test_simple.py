@@ -49,6 +49,8 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         # Test the project-wide dynamic context variables
         self.assertEqual("Andrew Michaels", homepage.findall("./body/div[@class='all-authors']/ul/li")[0].text.strip())
         self.assertEqual("Michael Anderson", homepage.findall("./body/div[@class='all-authors']/ul/li")[1].text.strip())
+        # Test the new {% asset %} tag
+        self.assertEqual("/assets/testfile.txt", homepage.findall("./body/div[@class='download']/a")[0].attrib['href'])
 
         post = ET.fromstring(output_data['2016']['06']['15']['my-first-post']['index.html'])
         self.assertEqual('html', post.findall('.')[0].tag)
@@ -63,8 +65,11 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         self.assertEqual('code', post_content_els[1].tag)
         self.assertEqual('HTML', post_content_els[1].text.strip())
         post_content_text = get_plain_text_in_el(post_content)
-        self.assertEqual("This is the Markdown content of the first post, which should appropriately be translated into the relevant HTML code.",
-            post_content_text)
+        self.assertEqual(
+                "This is the Markdown content of the first post, which should appropriately be translated into the " +
+                "relevant HTML code.",
+                post_content_text
+        )
 
         bio = ET.fromstring(output_data['bios']['michael']['index.html'])
         self.assertEqual('html', bio.findall('.')[0].tag)
@@ -94,6 +99,7 @@ def strip_str(s):
     """Strips out newlines and whitespace from the given string."""
     return ' '.join([w.strip() for w in s.strip().split('\n')])
 
+
 def get_plain_text_in_el(el, root_level=True):
     """Strips out all of the plain text within the given XML element, and
     all of its first-level sub-elements.
@@ -108,6 +114,7 @@ def get_plain_text_in_el(el, root_level=True):
     return ' '.join([el_text, ] +
         ([get_plain_text_in_el(e, root_level=False) for e in sub_els] if sub_els else [])
     ).strip()
+
 
 if __name__ == "__main__":
     unittest.main()

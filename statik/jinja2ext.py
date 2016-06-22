@@ -7,11 +7,14 @@ from statik.utils import add_url_path_component
 
 __all__ = [
     'StatikUrlExtension',
+    'StatikAssetExtension',
     'filter_datetime',
 ]
 
 
 class StatikUrlExtension(Extension):
+    """Provides the `{% url %}` extension for reverse-location of URLs from views/data."""
+
     tags = {'url'}
 
     def __init__(self, environment):
@@ -46,6 +49,36 @@ class StatikUrlExtension(Extension):
 
         return nodes.Output(
             [self.call_method('_url', args)],
+            lineno=lineno
+        )
+
+
+class StatikAssetExtension(Extension):
+    """Provides the `{% asset %}` extension for embedding URLs to asset files in your templates."""
+
+    tags = {'asset'}
+
+    def __init__(self, environment):
+        super().__init__(environment)
+
+        environment.extend(
+            statik_base_asset_url=''
+        )
+
+    def _asset(self, filename):
+        return add_url_path_component(
+            self.environment.statik_base_asset_url,
+            filename
+        )
+
+    def parse(self, parser):
+        lineno = next(parser.stream).lineno
+
+        # get the first parameter: the relative URL of the asset file
+        args = [parser.parse_expression()]
+
+        return nodes.Output(
+            [self.call_method('_asset', args)],
             lineno=lineno
         )
 
