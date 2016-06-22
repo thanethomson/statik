@@ -5,6 +5,9 @@ import os.path
 from copy import deepcopy, copy
 import shutil
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 __all__ = [
     'list_files',
@@ -15,8 +18,13 @@ __all__ = [
     'add_url_path_component',
     'copy_tree',
     'calculate_association_table_name',
-    'get_url_file_ext'
+    'get_url_file_ext',
+    'generate_quickstart'
 ]
+
+DEFAULT_CONFIG_CONTENT = """project-name: Your project name
+base-path: /
+"""
 
 
 def list_files(base_path, ext=None):
@@ -134,3 +142,27 @@ def get_url_file_ext(url):
     filename = url.split('/')[-1]
     _, ext = os.path.splitext(filename)
     return ext
+
+
+def generate_quickstart(project_path):
+    """Generates all of the basic paths for a Statik project within the given project path. If the project path
+     doesn't exist, it will be created."""
+    ensure_path_exists(project_path)
+    ensure_file_exists(os.path.join(project_path, "config.yml"), DEFAULT_CONFIG_CONTENT)
+    ensure_path_exists(os.path.join(project_path, 'models'))
+    ensure_path_exists(os.path.join(project_path, 'data'))
+    ensure_path_exists(os.path.join(project_path, 'templates'))
+    ensure_path_exists(os.path.join(project_path, 'views'))
+
+
+def ensure_path_exists(path):
+    if not os.path.isdir(path):
+        logger.info('Creating path: %s' % path)
+        os.makedirs(path)
+
+
+def ensure_file_exists(path, default_content):
+    if not os.path.isfile(path):
+        logger.info('Creating file: %s' % path)
+        with open(path, 'wt') as f:
+            f.write(default_content)

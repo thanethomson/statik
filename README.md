@@ -1,6 +1,6 @@
 # Statik
 
-[![PyPI version 0.2.2](https://img.shields.io/badge/pypi-v0.2.2-blue.svg)](https://pypi.python.org/pypi/statik/0.2.2)
+[![PyPI version 0.2.3](https://img.shields.io/badge/pypi-v0.2.3-blue.svg)](https://pypi.python.org/pypi/statik/0.2.3)
 
 ## Overview
 **Statik** aims to be a simple, yet powerful, generic static web site generator.
@@ -51,14 +51,21 @@ To build a project in another directory, writing output files to the
 `public` directory within *that* directory:
 
 ```bash
-> statik -i /path/to/input/folder
+> statik -p /path/to/project/folder
 ```
 
 To build a project in another directory, with control over where to place the
 output files:
 
 ```bash
-> statik -i /path/to/input/folder -o /path/to/output/folder
+> statik -p /path/to/project/folder -o /path/to/output/folder
+```
+
+## Project QuickStart
+To create an empty project folder with the required project structure, simply run:
+
+```bash
+> statik -p /path/to/project/ --quickstart
 ```
 
 ## Statik Projects
