@@ -41,6 +41,8 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         self.assertEqual('Home page', homepage.findall('./body/h1')[0].text.strip())
         self.assertEqual('/2016/06/15/my-first-post/', homepage.findall('./body/ul/li/a')[0].attrib['href'])
         self.assertEqual('My first post', homepage.findall('./body/ul/li/a')[0].text.strip())
+        self.assertEqual("Andrew Michaels", homepage.findall("./body/div[@class='all-authors']/ul/li")[0].text.strip())
+        self.assertEqual("Michael Anderson", homepage.findall("./body/div[@class='all-authors']/ul/li")[1].text.strip())
 
         post = ET.fromstring(output_data['2016']['06']['15']['my-first-post']['index.html'])
         self.assertEqual('html', post.findall('.')[0].tag)
@@ -69,6 +71,17 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         self.assertEqual('Markdown', bio_content_els[0].text.strip())
         bio_content_text = get_plain_text_in_el(bio_content)
         self.assertEqual("This is Michael's bio, in Markdown format.", bio_content_text)
+
+        bio = ET.fromstring(output_data['bios']['andrew']['index.html'])
+        self.assertEqual('html', bio.findall('.')[0].tag)
+        self.assertEqual('Andrew Michaels', bio.findall('./head/title')[0].text.strip())
+        self.assertEqual('mailto:amichaels@somewhere.com', bio.findall(".//div[@class='meta']/a")[0].attrib['href'])
+        self.assertEqual('Contact Andrew', bio.findall(".//div[@class='meta']/a")[0].text.strip())
+        bio_content = bio.findall(".//div[@class='content']/p")[0]
+        bio_content_els = [el for el in bio_content]
+        self.assertEqual('em', bio_content_els[0].tag)
+        bio_content_text = get_plain_text_in_el(bio_content)
+        self.assertEqual("Here's Andrew's bio!", bio_content_text)
 
 
 def strip_str(s):

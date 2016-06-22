@@ -3,10 +3,19 @@
 {% block title %}{{ page_title }}{% endblock %}
 
 {% block content %}
-  <h1>Home page</h1>
-  <ul>
-    {% for post in posts %}
-      <li><a href="{% url "posts", post %}">{{ post.title }}</a></li>
-    {% endfor %}
-  </ul>
+    <h1>Home page</h1>
+    <ul>
+        {% for post in posts %}
+            <li><a href="{% url "posts", post %}">{{ post.title }}</a></li>
+        {% endfor %}
+    </ul>
+
+    <div class="all-authors">
+        See work by all authors:
+        <ul>
+            {% for author in all_authors %}
+                <li>{{ author.first_name }} {{ author.last_name }}</li>
+            {% endfor %}
+        </ul>
+    </div>
 {% endblock %}

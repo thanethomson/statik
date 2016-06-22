@@ -1,9 +1,7 @@
 # -*- coding:utf-8 -*-
 
-import os.path
-import yaml
-
 from statik.common import YamlLoadable
+from statik.utils import underscore_var_names
 
 import logging
 logger = logging.getLogger(__name__)
@@ -26,13 +24,25 @@ class StatikConfig(YamlLoadable):
             if 'dest' in self.vars['assets'] and isinstance(self.vars['assets']['dest'], str):
                 self.assets_dest_path = self.vars['assets']['dest']
 
+        self.context_static = {}
+        self.context_dynamic = {}
+
+        if 'context' in self.vars and isinstance(self.vars['context'], dict):
+            if 'static' in self.vars['context'] and isinstance(self.vars['context']['static'], dict):
+                self.context_static = underscore_var_names(self.vars['context']['static'])
+
+            if 'dynamic' in self.vars['context'] and isinstance(self.vars['context']['dynamic'], dict):
+                self.context_dynamic = underscore_var_names(self.vars['context']['dynamic'])
+
         logging.debug("%s" % self)
 
     def __repr__(self):
         return ("<StatikConfig project_name=%s\n" +
                 "              base_path=%s\n" +
-                "              assets_src_path=%s\n"+
-                "              assets_dest_path=%s>") % (
+                "              assets_src_path=%s\n" +
+                "              assets_dest_path=%s\n" +
+                "              context_static=%s\n" +
+                "              context_dynamic=%s>") % (
                     self.project_name, self.base_path, self.assets_src_path,
-                    self.assets_dest_path
+                    self.assets_dest_path, self.context_static, self.context_dynamic
                 )

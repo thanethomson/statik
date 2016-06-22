@@ -28,7 +28,7 @@ class StatikView(YamlLoadable):
         self.path_template = None
         self.path_variable = None
         self.path_query = None
-        self.context = {}
+        self.context = kwargs.get('initial_context', {})
         self.context_static = {}
         self.context_dynamic = {}
         self.template_ext = '.html'
@@ -113,7 +113,7 @@ class StatikView(YamlLoadable):
                 self.context_dynamic = underscore_var_names(deepcopy(self.vars['context']['dynamic']))
 
     def process(self, db):
-        self.context = deepcopy(self.context_static)
+        self.context.update(self.context_static)
         self.context.update(self.process_context_dynamic(db))
         return self.process_complex(db) if self.complex else self.process_simple(db)
 

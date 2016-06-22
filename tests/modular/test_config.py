@@ -12,6 +12,11 @@ base-path: /blog/
 assets:
     source: src_static
     dest: dest_static
+context:
+    static:
+        some-project-var: The global value
+    dynamic:
+        users: session.query(User).filter(User.active == True).all()
 """
 
 
@@ -34,6 +39,8 @@ class TestStatikProjectConfig(unittest.TestCase):
         self.assertEqual("/blog/", config.base_path)
         self.assertEqual("src_static", config.assets_src_path)
         self.assertEqual("dest_static", config.assets_dest_path)
+        self.assertEqual('The global value', config.context_static['some_project_var'])
+        self.assertEqual('session.query(User).filter(User.active == True).all()', config.context_dynamic['users'])
 
     def test_file_config(self):
         test_path = os.path.dirname(os.path.realpath(__file__))

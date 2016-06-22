@@ -2,6 +2,7 @@
 
 import os.path
 import jinja2
+from copy import copy
 
 from statik.config import StatikConfig
 from statik.utils import *
@@ -26,7 +27,7 @@ class StatikProject(object):
     TEMPLATES_DIR = "templates"
     DATA_DIR = "data"
 
-    def __init__(self, path):
+    def __init__(self, path, **kwargs):
         """Constructor.
 
         Args:
@@ -34,24 +35,26 @@ class StatikProject(object):
         """
         self.path = path
         logger.info("Using project source directory: %s" % path)
-        self.config = None
+        self.config = kwargs.get('config', None)
         self.models = {}
         self.template_env = None
         self.views = {}
         self.db = None
+        self.project_context = {}
 
     def generate(self, output_path=None, in_memory=False):
         """Executes the Statik project generator."""
         if output_path is None and not in_memory:
             raise ValueError("If project is not to be generated in-memory, an output path must be specified")
 
-        self.config = StatikConfig(os.path.join(self.path, 'config.yml'))
+        self.config = self.config or StatikConfig(os.path.join(self.path, 'config.yml'))
         self.models = self.load_models()
         self.template_env = self.configure_templates()
         self.views = self.load_views()
         self.template_env.statik_views = self.views
         self.template_env.statik_base_url = self.config.base_path
         self.db = self.load_db_data(self.models)
+        self.project_context = self.load_project_context()
 
         in_memory_result = self.process_views()
 
@@ -72,7 +75,9 @@ class StatikProject(object):
 
         env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(template_path),
-            extensions=['statik.jinja2ext.StatikUrlExtension']
+            extensions=[
+                'statik.jinja2ext.StatikUrlExtension',
+            ]
         )
         env.filters['date'] = filter_datetime
         return env
@@ -128,11 +133,32 @@ class StatikProject(object):
 
         return StatikDatabase(data_path, models)
 
+    def load_project_context(self):
+        """Loads the project context (static and dynamic) from the database/models for common use amongst
+        the project's views."""
+        # just make a copy of the project context
+        context = copy(self.config.context_static)
+        context['project_name'] = self.config.project_name
+        context['base_path'] = self.config.base_path
+
+        # now load the dynamic context
+        context.update(self.load_project_dynamic_context())
+        return context
+
+    def load_project_dynamic_context(self):
+        """Loads the dynamic context for this project, if any."""
+        context = {}
+        for varname, query in self.config.context_dynamic.items():
+            context[varname] = self.db.query(query)
+        return context
+
     def process_views(self):
         """Processes the loaded views to generate the required output data."""
         output = {}
         logger.debug("Processing %d view(s)..." % len(self.views))
         for view_name, view in self.views.items():
+            # first update the view's context with the project context
+            view.context.update(self.project_context)
             output.update(view.process(self.db))
         return output
 
