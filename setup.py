@@ -5,19 +5,22 @@ Setup script for Statik, the static web site generator.
 """
 
 from setuptools import setup
-from pip.req import parse_requirements
 
-# work out our installation requirements from the requirements.txt file
-install_reqs = parse_requirements("requirements.txt", session=False)
+INSTALL_REQUIREMENTS = [
+    "jinja2==2.8",
+    "PyYAML==3.11",
+    "SQLAlchemy==1.0.13",
+    "markdown==2.6.6"
+]
 
 setup(
     name="statik",
-    version="0.2.0",
+    version="0.2.1",
     description="General-purpose static web site generator",
     author="Thane Thomson",
     author_email="connect@thanethomson.com",
     url="https://github.com/thanethomson/statik",
-    install_requires=[str(ir.req) for ir in install_reqs],
+    install_requires=INSTALL_REQUIREMENTS,
     scripts=["statik/statik"],
     packages=["statik"],
     classifiers=[
