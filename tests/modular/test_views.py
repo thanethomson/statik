@@ -5,6 +5,7 @@ import xml.etree.ElementTree as ET
 
 from statik.views import *
 from statik.jinja2ext import *
+from statik.utils import add_url_path_component
 
 from jinja2 import Environment, DictLoader
 
@@ -27,6 +28,7 @@ TEST_TEMPLATES = {
     <a href="{% url "home" %}">Go Home</a><br />
     <a href="{{ other_link }}">Go somewhere</a><br />
     {{ some_html|safe }}
+    <img src="{% asset "sitelogo.png" %}" />
 </body>
 </html>
 """,
@@ -60,10 +62,17 @@ class TestStatikViews(unittest.TestCase):
     def configure_env(self, templates_dict=TEST_TEMPLATES, base_path='/'):
         env = Environment(
                 loader=DictLoader(templates_dict),
-                extensions=['statik.jinja2ext.StatikUrlExtension']
+                extensions=[
+                    'statik.jinja2ext.StatikUrlExtension',
+                    'statik.jinja2ext.StatikAssetExtension'
+                ]
         )
         env.filters['date'] = filter_datetime
         env.statik_base_url = base_path
+        env.statik_base_asset_url = add_url_path_component(
+            base_path,
+            'assets',
+        )
         return env
 
     def test_simple_view_processing(self):
@@ -89,6 +98,8 @@ class TestStatikViews(unittest.TestCase):
         # test other variable substitution
         self.assertEqual('http://somewhere.com', parsed.findall('./body/a')[1].attrib['href'])
         self.assertEqual('Hello!', parsed.findall('./body/p/b')[0].text.strip())
+        # Test the new {% asset %} tag
+        self.assertEqual("/assets/sitelogo.png", parsed.findall("./body/img")[0].attrib['src'])
 
     def test_non_standard_base_path(self):
         env = self.configure_env(base_path='/some/base/path/')
@@ -108,6 +119,8 @@ class TestStatikViews(unittest.TestCase):
         self.assertEqual('html', parsed.findall('.')[0].tag)
         # test URL tag
         self.assertEqual('/some/base/path/', parsed.findall('./body/a')[0].attrib['href'])
+        # Test the new {% asset %} tag
+        self.assertEqual("/some/base/path/assets/sitelogo.png", parsed.findall("./body/img")[0].attrib['src'])
 
     def test_xml_generation(self):
         env = self.configure_env()
