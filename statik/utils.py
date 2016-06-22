@@ -15,6 +15,7 @@ __all__ = [
     'add_url_path_component',
     'copy_tree',
     'calculate_association_table_name',
+    'get_url_file_ext'
 ]
 
 
@@ -125,3 +126,11 @@ def copy_tree(src_path, dest_path):
 
 def calculate_association_table_name(model1_name, model2_name):
     return '%s%s' % (tuple(sorted([model1_name, model2_name])))
+
+
+def get_url_file_ext(url):
+    """Attempts to extract the file extension from the given URL."""
+    # get the last part of the path component
+    filename = url.split('/')[-1]
+    _, ext = os.path.splitext(filename)
+    return ext

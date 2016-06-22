@@ -29,15 +29,34 @@ TEST_TEMPLATES = {
     {{ some_html|safe }}
 </body>
 </html>
+""",
+    'rss.xml': """<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Sample RSS Feed</title>
+    <link>http://somewhere.com/</link>
+
+    <item>
+      <title>Sample post</title>
+      <link>http://somewhere.com/2016/02/24/some-post/</link>
+      <pubDate>Wed, 24 Feb 2016 11:12:41 +0200</pubDate>
+      <guid>http://somewhere.com/2016/02/24/some-post/</guid>
+    </item>
+  </channel>
+</rss>
 """
 }
+
+TEST_XML_VIEW = """path: /index.xml
+template: rss.xml
+"""
 
 
 class TestStatikViews(unittest.TestCase):
 
-    def configure_env(self, base_path='/'):
+    def configure_env(self, templates_dict=TEST_TEMPLATES, base_path='/'):
         env = Environment(
-                loader=DictLoader(TEST_TEMPLATES),
+                loader=DictLoader(templates_dict),
                 extensions=['statik.jinja2ext.StatikUrlExtension']
         )
         env.filters['date'] = filter_datetime
@@ -86,6 +105,22 @@ class TestStatikViews(unittest.TestCase):
         self.assertEqual('html', parsed.findall('.')[0].tag)
         # test URL tag
         self.assertEqual('/some/base/path/', parsed.findall('./body/a')[0].attrib['href'])
+
+    def test_xml_generation(self):
+        env = self.configure_env()
+        view = StatikView(
+                from_string=TEST_XML_VIEW,
+                name='rssfeed',
+                models={},
+                template_env=env,
+        )
+        processed = view.process(None)
+        self.assertIn('index.xml', processed)
+        self.assertEqual(1, len(processed))
+
+        # parse the generated XML
+        parsed = ET.fromstring(processed['index.xml'])
+        self.assertEqual('rss', parsed.findall('.')[0].tag)
 
 
 if __name__ == "__main__":

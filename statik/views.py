@@ -1,5 +1,7 @@
 # -*- coding:utf-8 -*-
 
+import os.path
+
 from copy import deepcopy
 
 from statik.common import YamlLoadable
@@ -29,6 +31,8 @@ class StatikView(YamlLoadable):
         self.context = {}
         self.context_static = {}
         self.context_dynamic = {}
+        self.template_ext = '.html'
+        self.default_output_filename = 'index'
 
         if 'name' in kwargs:
             self.name = kwargs['name']
@@ -72,7 +76,15 @@ class StatikView(YamlLoadable):
 
         if 'template' not in self.vars:
             raise MissingParameterError("Missing variable \"template\" in view: %s" % self.name)
-        self.template = self.template_env.get_template('%s.html' % self.vars['template'])
+        template_filename, template_ext = os.path.splitext(self.vars['template'])
+        if template_ext is None or len(template_ext) == 0:
+            template_path = '%s.html' % self.vars['template']
+            self.template_ext = '.html'
+        else:
+            template_path = self.vars['template']
+            self.template_ext = template_ext
+        logger.debug("Attempting to load template: %s" % template_path)
+        self.template = self.template_env.get_template(template_path)
 
         self.configure_context()
 
@@ -112,8 +124,14 @@ class StatikView(YamlLoadable):
         for inst in path_var_instances:
             # render the path template to get this instance's view path
             inst_path = self.reverse_url(inst=inst)
-            if not inst_path.endswith('/index.html'):
-                inst_path = add_url_path_component(inst_path, 'index.html')
+            inst_path_ext = get_url_file_ext(inst_path)
+            # if the output path doesn't have an output file extension, we assume that we have to add one
+            if inst_path_ext is None or len(inst_path_ext) == 0:
+                inst_path = add_url_path_component(
+                        inst_path,
+                        '%s%s' % (self.default_output_filename, self.template_ext)
+                )
+
             # update the context with the current path variable instance
             self.context[self.path_variable] = inst
             # render the template itself
@@ -125,8 +143,13 @@ class StatikView(YamlLoadable):
         return rendered_views
 
     def process_simple(self, db):
+        inst_path_ext = get_url_file_ext(self.path)
+        if inst_path_ext is None or len(inst_path_ext) == 0:
+            path = add_url_path_component(self.path, '%s%s' % (self.default_output_filename, self.template_ext))
+        else:
+            path = self.path
         return dict_from_path(
-            self.path if self.path.endswith('/index.html') else add_url_path_component(self.path, 'index.html'),
+            path,
             final_value=self.template.render(**self.context),
         )
 
