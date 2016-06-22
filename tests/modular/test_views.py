@@ -33,7 +33,7 @@ TEST_TEMPLATES = {
     'rss.xml': """<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Sample RSS Feed</title>
+    <title>{{ feed_title }}</title>
     <link>http://somewhere.com/</link>
 
     <item>
@@ -49,6 +49,9 @@ TEST_TEMPLATES = {
 
 TEST_XML_VIEW = """path: /index.xml
 template: rss.xml
+context:
+  static:
+    feed-title: My RSS Feed
 """
 
 
@@ -121,6 +124,7 @@ class TestStatikViews(unittest.TestCase):
         # parse the generated XML
         parsed = ET.fromstring(processed['index.xml'])
         self.assertEqual('rss', parsed.findall('.')[0].tag)
+        self.assertEqual('My RSS Feed', parsed.findall('./channel/title')[0].text.strip())
 
 
 if __name__ == "__main__":
