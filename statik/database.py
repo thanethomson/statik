@@ -3,7 +3,7 @@
 import os.path
 import yaml
 
-from sqlalchemy import MetaData, String, Integer, Column, Table, ForeignKey, \
+from sqlalchemy import String, Integer, Column, Table, ForeignKey, \
     Boolean, DateTime, Text, create_engine
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
@@ -12,6 +12,9 @@ from statik.common import ContentLoadable
 from statik.fields import *
 from statik.errors import *
 from statik.utils import *
+
+# utility imports for SQLAlchemy code execution
+from datetime import datetime, date, timedelta
 
 import logging
 logger = logging.getLogger(__name__)
@@ -203,7 +206,7 @@ class StatikDatabaseInstance(ContentLoadable):
             elif isinstance(field, StatikManyToManyField):
                 if not isinstance(self.field_values[field_name], list):
                     raise InvalidFieldTypeError("ManyToMany field values are expected to be lists (see %s.%s)" % (
-                        self.model.name, self.field_name
+                        self.model.name, field_name
                     ))
 
                 # convert the list of field values to a query to look up the
