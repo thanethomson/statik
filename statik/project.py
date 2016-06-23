@@ -50,7 +50,11 @@ class StatikProject(object):
         self.config = self.config or StatikConfig(os.path.join(self.path, 'config.yml'))
         self.models = self.load_models()
         self.template_env = self.configure_templates()
+
         self.views = self.load_views()
+        if len(self.views) == 0:
+            raise NoViewsError("Project has no views configured")
+
         self.template_env.statik_views = self.views
         self.template_env.statik_base_url = self.config.base_path
         self.template_env.statik_base_asset_url = add_url_path_component(
