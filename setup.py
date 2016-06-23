@@ -21,7 +21,11 @@ setup(
     author_email="connect@thanethomson.com",
     url="https://github.com/thanethomson/statik",
     install_requires=INSTALL_REQUIREMENTS,
-    scripts=["statik/statik"],
+    entry_points={
+        'console_scripts': [
+            'statik = statik.cmdline:main',
+        ]
+    },
     packages=["statik"],
     classifiers=[
         "Development Status :: 3 - Alpha",
