@@ -15,7 +15,7 @@ INSTALL_REQUIREMENTS = [
 
 setup(
     name="statik",
-    version="0.2.5",
+    version="0.2.6",
     description="General-purpose static web site generator",
     author="Thane Thomson",
     author_email="connect@thanethomson.com",
@@ -35,7 +35,7 @@ setup(
         "Natural Language :: English",
         "Operating System :: POSIX",
         "Operating System :: MacOS",
-        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.5",
         "Topic :: Internet :: WWW/HTTP",
         "Topic :: Utilities",
     ]
