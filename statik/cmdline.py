@@ -4,6 +4,7 @@ import os
 import os.path
 import argparse
 import logging
+import livereload
 
 from statik.generator import generate
 from statik.utils import generate_quickstart
@@ -34,6 +35,11 @@ def main():
              "directory).",
     )
     parser.add_argument(
+        '--runserver',
+        help="Statik will run a reloading web server at http://0.0.0.0:8000/. The output path must exist outside of the source path or else hot-reload will recurse infinitely.",
+        action='store_true',
+    )
+    parser.add_argument(
         '--quickstart',
         help="Statik will generate a basic directory structure for you in the project directory.",
         action='store_true',
@@ -48,7 +54,14 @@ def main():
     output_path = args.output if args.output is not None else os.path.join(project_path, 'public')
 
     configure_logging(verbose=args.verbose)
-    if args.quickstart:
+    if args.runserver:
+        if output_path.startswith(project_path):
+            raise Exception("The output path cannot exist inside the source path when hot-reloading is enabled.")
+        generate(project_path, output_path=output_path, in_memory=False)
+        server = livereload.Server()
+        server.watch(project_path, lambda: generate(project_path, output_path=output_path, in_memory=False))
+        server.serve(root=output_path, host='0.0.0.0', port=8000)
+    elif args.quickstart:
         generate_quickstart(project_path)
     else:
         generate(project_path, output_path=output_path, in_memory=False)
