@@ -52,3 +52,7 @@ def main():
         generate_quickstart(project_path)
     else:
         generate(project_path, output_path=output_path, in_memory=False)
+
+
+if __name__ == "__main__":
+    main()
