@@ -26,6 +26,7 @@ class StatikProject(object):
     MODELS_DIR = "models"
     TEMPLATES_DIR = "templates"
     DATA_DIR = "data"
+    CONFIG_FILE = "config.yml"
 
     def __init__(self, path, **kwargs):
         """Constructor.
@@ -47,7 +48,7 @@ class StatikProject(object):
         if output_path is None and not in_memory:
             raise ValueError("If project is not to be generated in-memory, an output path must be specified")
 
-        self.config = self.config or StatikConfig(os.path.join(self.path, 'config.yml'))
+        self.config = self.config or StatikConfig(os.path.join(self.path, StatikProject.CONFIG_FILE))
         self.models = self.load_models()
         self.template_env = self.configure_templates()
 
