@@ -11,7 +11,7 @@ INSTALL_REQUIREMENTS = [
     "PyYAML==3.11",
     "SQLAlchemy==1.0.13",
     "markdown==2.6.6",
-    "livereload==2.4.1"
+    "livereload==2.4.1",
 ]
 
 setup(
