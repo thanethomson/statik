@@ -118,7 +118,7 @@ def copy_tree(src_path, dest_path):
         if not os.path.isdir(dest_path):
             os.makedirs(dest_path)
 
-        for entry in os.path.listdir(src_path):
+        for entry in os.listdir(src_path):
             src_entry_path = os.path.join(src_path, entry)
             dest_entry_path = os.path.join(dest_path, entry)
             # if it's a sub-folder
