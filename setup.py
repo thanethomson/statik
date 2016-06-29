@@ -10,12 +10,13 @@ INSTALL_REQUIREMENTS = [
     "jinja2==2.8",
     "PyYAML==3.11",
     "SQLAlchemy==1.0.13",
-    "markdown==2.6.6"
+    "markdown==2.6.6",
+    "livereload==2.4.1"
 ]
 
 setup(
     name="statik",
-    version="0.2.6",
+    version="0.3.0",
     description="General-purpose static web site generator",
     author="Thane Thomson",
     author_email="connect@thanethomson.com",
@@ -28,7 +29,7 @@ setup(
     },
     packages=["statik"],
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 4 - Beta",
         "Environment :: Console",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
