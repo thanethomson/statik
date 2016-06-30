@@ -6,6 +6,10 @@ from statik.utils import underscore_var_names
 import logging
 logger = logging.getLogger(__name__)
 
+__all__ = [
+    'StatikConfig',
+]
+
 
 class StatikConfig(YamlLoadable):
     """Encapsulates a configuration object for a Statik project.
