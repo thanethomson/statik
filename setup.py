@@ -20,7 +20,7 @@ setup(
     description="General-purpose static web site generator",
     author="Thane Thomson",
     author_email="connect@thanethomson.com",
-    url="https://github.com/thanethomson/statik",
+    url="https://getstatik.com",
     install_requires=INSTALL_REQUIREMENTS,
     entry_points={
         'console_scripts': [
