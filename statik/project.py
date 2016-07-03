@@ -87,6 +87,10 @@ class StatikProject(object):
             extensions=[
                 'statik.jinja2ext.StatikUrlExtension',
                 'statik.jinja2ext.StatikAssetExtension',
+                'jinja2.ext.do',
+                'jinja2.ext.loopcontrols',
+                'jinja2.ext.with_',
+                'jinja2.ext.autoescape',
             ]
         )
         env.filters['date'] = filter_datetime
