@@ -33,6 +33,8 @@ class YamlLoadable(object):
 
         # load the variables from the YAML file
         self.vars = yaml.load(self.file_content) if len(self.file_content) else {}
+        if not isinstance(self.vars, dict):
+            self.vars = {}
 
 
 class ContentLoadable(object):
@@ -85,9 +87,14 @@ class ContentLoadable(object):
             # if it's a YAML file
             if self.file_type == 'yaml':
                 self.vars = yaml.load(self.file_content) if len(self.file_content) else {}
+                if not isinstance(self.vars, dict):
+                    self.vars = {}
             else:
                 md = Markdown(
-                    extensions=[MarkdownYamlMetaExtension()],
+                    extensions=[
+                        MarkdownYamlMetaExtension(),
+                        'markdown.extensions.fenced_code',
+                    ],
                 )
                 self.content = md.convert(self.file_content)
                 self.vars = md.meta
