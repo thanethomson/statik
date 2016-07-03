@@ -4,7 +4,7 @@ import yaml
 
 from statik.common import YamlLoadable
 from statik.fields import *
-from statik.utils import extract_filename, calculate_association_table_name
+from statik.utils import extract_filename
 from statik.errors import *
 
 import logging
