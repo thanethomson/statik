@@ -84,8 +84,7 @@ class StatikDatabase(object):
     def load_all_model_data(self, models):
         # we load the data now based on the sorted order of our tables, so
         # we can load our foreign key dependencies properly
-        for table in self.Base.metadata.sorted_tables:
-            model_name = table.name
+        for model_name in self.sort_models():
             # we won't be loading data for many-to-many relationships
             if model_name in models:
                 logger.debug("Loading data for model: %s" % model_name)
@@ -95,6 +94,43 @@ class StatikDatabase(object):
                     self.load_model_data(model_data_path, model)
             else:
                 logger.debug("Skipping loading data models for table: %s" % model_name)
+
+    def sort_models(self):
+        """Sorts the database models appropriately based on their relationships so that we load our data
+        in the appropriate order.
+
+        Returns:
+            A sorted list containing the names of the models.
+        """
+        model_names = [table.name for table in self.Base.metadata.sorted_tables if table.name in self.models]
+        logger.debug("Unsorted models: %s" % model_names)
+        model_count = len(model_names)
+
+        swapped = True
+        sort_round = 0
+        while swapped:
+            sort_round += 1
+            logger.debug('Sorting round: %d (%s)' % (sort_round, model_names))
+
+            sorted_models = []
+            for i in range(model_count):
+                model = self.models[model_names[i]]
+                # check if this model has any dependencies which haven't been taken care of in this round
+                for foreign_model_name in model.foreign_models:
+                    if foreign_model_name not in sorted_models:
+                        sorted_models.append(foreign_model_name)
+
+                if model.name not in sorted_models:
+                    sorted_models.append(model.name)
+
+            # we're done here (no changes after this sorting round)
+            if model_names == sorted_models:
+                swapped = False
+
+            model_names = sorted_models
+
+        logger.debug("Sorted models: %s (%d rounds)" % (model_names, sort_round))
+        return model_names
 
     def create_model_table(self, model):
         """Creates the table for the given model.
@@ -230,6 +266,8 @@ class StatikDatabaseInstance(ContentLoadable):
                         self.model.name, field_name
                     ))
 
+                logger.debug("Attempting to look up primary keys for ManyToMany " +
+                             "field relationship: %s" % self.field_values[field_name])
                 # convert the list of field values to a query to look up the
                 # primary keys of the corresponding table
                 other_model = globals()[field.field_type]

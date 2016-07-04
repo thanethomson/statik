@@ -18,7 +18,15 @@ __all__ = [
 class StatikModel(YamlLoadable):
     """Represents a single model in our Statik project."""
 
-    RESERVED_FIELD_NAMES = {'name', 'model_names', 'field_names', 'content_field', 'filename', 'additional_rels'}
+    RESERVED_FIELD_NAMES = {
+        'name',
+        'model_names',
+        'field_names',
+        'content_field',
+        'filename',
+        'additional_rels',
+        'foreign_models',
+    }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -39,6 +47,8 @@ class StatikModel(YamlLoadable):
         self.content_field = None
         # additional back-reference relationships, indexed by field name
         self.additional_rels = {}
+        # all of the foreign models to which this model refers
+        self.foreign_models = set()
 
         # build up all of our fields from the model configuration
         for field_name, field_type in self.vars.items():
@@ -56,11 +66,14 @@ class StatikModel(YamlLoadable):
                 )
 
             self.field_names.append(new_field_name)
+            new_field = construct_field(new_field_name, field_type, self.model_names)
             setattr(
                 self,
                 new_field_name,
-                construct_field(new_field_name, field_type, self.model_names)
+                new_field,
             )
+            if isinstance(new_field, StatikForeignKeyField) or isinstance(new_field, StatikManyToManyField):
+                self.foreign_models.add(new_field.field_type)
 
     def find_additional_rels(self, all_models):
         """Attempts to scan for additional relationship fields for this model based on all of the other models'

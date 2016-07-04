@@ -19,7 +19,7 @@ __all__ = [
     'copy_tree',
     'calculate_association_table_name',
     'get_url_file_ext',
-    'generate_quickstart'
+    'generate_quickstart',
 ]
 
 DEFAULT_CONFIG_CONTENT = """project-name: Your project name
