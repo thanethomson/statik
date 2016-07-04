@@ -40,13 +40,6 @@ def set_global(name, val):
 set_global.tracked_globals = set()
 
 
-def get_global(name, default_value=None):
-    if name in globals() and globals()[name] is not None:
-        return globals()[name]
-    set_global(name, default_value)
-    return default_value
-
-
 def clear_tracked_globals():
     for name in set_global.tracked_globals:
         logger.debug('Clearing tracked global: %s' % name)
@@ -70,7 +63,6 @@ class StatikDatabase(object):
         self.Base = declarative_base()
         self.session = sessionmaker(bind=self.engine)()
         set_global('session', self.session)
-        #globals()['session'] = self.session
         self.find_backrefs()
         self.create_db(models)
 
@@ -256,7 +248,11 @@ class StatikDatabaseInstance(ContentLoadable):
     def __repr__(self):
         result_lines = ["<StatikDatabaseInstance model=%s" % self.model.name]
         for field_name, field_value in self.field_values.items():
-            result_lines.append("                        %s=%s" % (field_name, field_value))
+            model_field = getattr(self.model, field_name, None)
+            if isinstance(model_field, StatikContentField) or isinstance(model_field, StatikTextField):
+                result_lines.append("                        %s=<...>" % field_name)
+            else:
+                result_lines.append("                        %s=%s" % (field_name, field_value))
         result_lines[-1] += '>'
         return '\n'.join(result_lines)
 
@@ -277,7 +273,6 @@ def db_model_factory(Base, model, all_models):
                 Column('%s_pk' % model2_name.lower(), String, ForeignKey('%s.pk' % model2_name))
         )
         # track it in our globals
-        #globals()[_association_table_name] = _association_table
         set_global(_association_table_name, _association_table)
         return _association_table
 
@@ -361,5 +356,4 @@ def db_model_factory(Base, model, all_models):
 
     # add the model class reference to the global scope
     set_global(model.name, Model)
-    #globals()[model.name] = Model
     return Model
