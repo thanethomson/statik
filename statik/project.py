@@ -68,14 +68,21 @@ class StatikProject(object):
         in_memory_result = self.process_views()
 
         if in_memory:
-            return in_memory_result
+            result = in_memory_result
         else:
             # dump the in-memory output to files
             file_count = self.dump_in_memory_result(in_memory_result, output_path)
             logger.info('Wrote %d output file(s) to folder: %s' % (file_count, output_path))
             # copy any assets across, recursively
             self.copy_assets(output_path)
-            return file_count
+            result = file_count
+
+        # make sure to destroy the database engine (to provide for the possibility of database engine
+        # reloads when watching for changes)
+        self.db.shutdown()
+
+        # done
+        return result
 
     def configure_templates(self):
         template_path = os.path.join(self.path, StatikProject.TEMPLATES_DIR)

@@ -33,6 +33,27 @@ SQLALCHEMY_FIELD_MAPPER = {
 }
 
 
+def set_global(name, val):
+    logger.debug('Setting global: %s = %s' % (name, val))
+    globals()[name] = val
+    set_global.tracked_globals.add(name)
+set_global.tracked_globals = set()
+
+
+def get_global(name, default_value=None):
+    if name in globals() and globals()[name] is not None:
+        return globals()[name]
+    set_global(name, default_value)
+    return default_value
+
+
+def clear_tracked_globals():
+    for name in set_global.tracked_globals:
+        logger.debug('Clearing tracked global: %s' % name)
+        del globals()[name]
+    set_global.tracked_globals = set()
+
+
 class StatikDatabase(object):
 
     def __init__(self, data_path, models):
@@ -48,7 +69,8 @@ class StatikDatabase(object):
         self.engine = create_engine('sqlite:///:memory:')
         self.Base = declarative_base()
         self.session = sessionmaker(bind=self.engine)()
-        globals()['session'] = self.session
+        set_global('session', self.session)
+        #globals()['session'] = self.session
         self.find_backrefs()
         self.create_db(models)
 
@@ -176,6 +198,13 @@ class StatikDatabase(object):
         )
         return locals()['result']
 
+    def shutdown(self):
+        """Shuts down the database engine."""
+        self.session.close_all()
+        self.engine.dispose()
+        # clear all tracked global variables
+        clear_tracked_globals()
+
 
 class StatikDatabaseInstance(ContentLoadable):
 
@@ -248,7 +277,8 @@ def db_model_factory(Base, model, all_models):
                 Column('%s_pk' % model2_name.lower(), String, ForeignKey('%s.pk' % model2_name))
         )
         # track it in our globals
-        globals()[_association_table_name] = _association_table
+        #globals()[_association_table_name] = _association_table
+        set_global(_association_table_name, _association_table)
         return _association_table
 
     logger.debug('-----')
@@ -330,5 +360,6 @@ def db_model_factory(Base, model, all_models):
     logger.debug("Model %s fields = %s" % (model.name, model_fields))
 
     # add the model class reference to the global scope
-    globals()[model.name] = Model
+    set_global(model.name, Model)
+    #globals()[model.name] = Model
     return Model
