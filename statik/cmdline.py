@@ -3,11 +3,13 @@
 import os
 import os.path
 import argparse
-import logging
 
 from statik.generator import generate
 from statik.utils import generate_quickstart
 from statik.watcher import watch
+
+import logging
+logger = logging.getLogger(__name__)
 
 __all__ = [
     'main',
@@ -62,12 +64,20 @@ def main():
         help="Whether or not to output verbose logging information (default: false).",
         action='store_true',
     )
+    parser.add_argument(
+        '--version',
+        help='Display version info for Statik',
+        action='store_true',
+    )
     args = parser.parse_args()
     project_path = args.project if args.project is not None else os.getcwd()
     output_path = args.output if args.output is not None else os.path.join(project_path, 'public')
 
     configure_logging(verbose=args.verbose)
-    if args.watch:
+    if args.version:
+        from statik import STATIK_VERSION
+        logger.info('Statik v%s' % STATIK_VERSION)
+    elif args.watch:
         watch(project_path, output_path, host=args.host, port=args.port)
     elif args.quickstart:
         generate_quickstart(project_path)
