@@ -1,0 +1,8 @@
+path:
+  template: /by-author/{{ author.pk }}/
+  for-each:
+    author: session.query(Author).all()
+template: posts-by-author
+context:
+  for-each:
+    posts: session.query(Post).filter(Post.author == author).order_by(Post.published.desc()).all()
