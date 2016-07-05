@@ -15,6 +15,8 @@ from statik.utils import *
 
 # utility imports for SQLAlchemy code execution
 from datetime import datetime, date, timedelta
+from sqlalchemy import func, distinct
+import sqlalchemy
 
 import logging
 logger = logging.getLogger(__name__)
