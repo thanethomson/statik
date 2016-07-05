@@ -9,6 +9,7 @@ from statik.errors import MissingParameterError
 from statik.utils import *
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 __all__ = [
@@ -17,7 +18,6 @@ __all__ = [
 
 
 class StatikView(YamlLoadable):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -28,9 +28,10 @@ class StatikView(YamlLoadable):
         self.path_template = None
         self.path_variable = None
         self.path_query = None
-        self.context = kwargs.get('initial_context', {})
-        self.context_static = {}
-        self.context_dynamic = {}
+        self.context = kwargs.get('initial_context', dict())
+        self.context_static = dict()
+        self.context_dynamic = dict()
+        self.context_for_each = dict()
         self.template_ext = '.html'
         self.default_output_filename = 'index'
 
@@ -54,11 +55,11 @@ class StatikView(YamlLoadable):
         logger.debug('%s' % self)
 
     def __repr__(self):
-        return ('<StatikView name=%s\n'+
-                '            path=%s\n'+
+        return ('<StatikView name=%s\n' +
+                '            path=%s\n' +
                 '            template=%s>\n') % (
-                    self.name, self.path, self.template,
-                )
+                   self.name, self.path, self.template,
+               )
 
     def configure(self):
         # process the parsed view variables
@@ -90,11 +91,14 @@ class StatikView(YamlLoadable):
 
     def configure_complex_view(self, path):
         if 'template' not in path:
-            raise MissingParameterError("Complex \"path\" variable must contain a \"template\" value in view: %s" % self.name)
+            raise MissingParameterError(
+                "Complex \"path\" variable must contain a \"template\" value in view: %s" % self.name)
         if 'for-each' not in path:
-            raise MissingParameterError("Complex \"path\" variable must contain a \"for-each\" value in view: %s" % self.name)
+            raise MissingParameterError("Complex \"path\" variable must contain a \"for-each\" value in view: " +
+                                        "%s" % self.name)
         if not isinstance(path['for-each'], dict) or len(path['for-each']) != 1:
-            raise ValueError("Complex \"path\" variable's \"for-each\" value must be a single-valued dictionary in view: %s" % self.name)
+            raise ValueError("Complex \"path\" variable's \"for-each\" value must be a single-valued dictionary " +
+                             "in view: %s" % self.name)
 
         self.complex = True
         self.path_template = path['template']
@@ -111,6 +115,9 @@ class StatikView(YamlLoadable):
 
             if 'dynamic' in self.vars['context'] and isinstance(self.vars['context']['dynamic'], dict):
                 self.context_dynamic = underscore_var_names(deepcopy(self.vars['context']['dynamic']))
+
+            if 'for-each' in self.vars['context'] and isinstance(self.vars['context']['for-each'], dict):
+                self.context_for_each = underscore_var_names(deepcopy(self.vars['context']['for-each']))
 
     def process(self, db):
         self.context.update(self.context_static)
@@ -134,13 +141,20 @@ class StatikView(YamlLoadable):
 
             # update the context with the current path variable instance
             self.context[self.path_variable] = inst
+            self.context.update(self.render_context_for_each(db, inst))
             # render the template itself
             rendered_view = self.template.render(**self.context)
             rendered_views = deep_merge_dict(
-                rendered_views,
-                dict_from_path(inst_path, final_value=rendered_view)
+                    rendered_views,
+                    dict_from_path(inst_path, final_value=rendered_view)
             )
         return rendered_views
+
+    def render_context_for_each(self, db, inst):
+        result = dict()
+        for k, v in self.context_for_each.items():
+            result[k] = db.query(v, additional_locals={self.path_variable: inst})
+        return result
 
     def process_simple(self, db):
         inst_path_ext = get_url_file_ext(self.path)
@@ -149,8 +163,8 @@ class StatikView(YamlLoadable):
         else:
             path = self.path
         return dict_from_path(
-            path,
-            final_value=self.template.render(**self.context),
+                path,
+                final_value=self.template.render(**self.context),
         )
 
     def process_context_dynamic(self, db):
@@ -162,9 +176,9 @@ class StatikView(YamlLoadable):
     def reverse_url(self, inst=None):
         """Returns the reverse lookup URL for this view."""
         result = self.template_env.from_string(
-            self.path_template
+                self.path_template
         ).render(
-            **{self.path_variable: inst}
+                **{self.path_variable: inst}
         ) if self.complex else self.path
 
         return result if result.endswith('/') else ('%s/' % result)
