@@ -11,6 +11,9 @@ from statik.models import StatikModel
 from statik.views import StatikView
 from statik.jinja2ext import *
 from statik.database import StatikDatabase
+from statik import templatetags
+import statik.tags
+import statik.filters
 
 import logging
 logger = logging.getLogger(__name__)
@@ -27,6 +30,7 @@ class StatikProject(object):
     TEMPLATES_DIR = "templates"
     DATA_DIR = "data"
     CONFIG_FILE = "config.yml"
+    TEMPLATETAGS_DIR = "templatetags"
 
     def __init__(self, path, **kwargs):
         """Constructor.
@@ -89,18 +93,28 @@ class StatikProject(object):
         if not os.path.isdir(template_path):
             raise MissingProjectFolderError(StatikProject.TEMPLATES_DIR, "Project is missing its templates folder")
 
+        templatetags_path = os.path.join(self.path, StatikProject.TEMPLATETAGS_DIR)
+        if os.path.isdir(templatetags_path):
+            # dynamically import modules; they register themselves with our template tag store
+            modules = import_python_modules_by_path(templatetags_path)
+
         env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(template_path),
             extensions=[
                 'statik.jinja2ext.StatikUrlExtension',
                 'statik.jinja2ext.StatikAssetExtension',
+                'statik.jinja2ext.StatikTemplateTagsExtension',
                 'jinja2.ext.do',
                 'jinja2.ext.loopcontrols',
                 'jinja2.ext.with_',
                 'jinja2.ext.autoescape',
             ]
         )
-        env.filters['date'] = filter_datetime
+
+        if templatetags.store.filters:
+            print("Loaded custom template tag filters: %s" % (", ".join(templatetags.store.filters), ))
+            env.filters.update(templatetags.store.filters)
+
         return env
 
     def load_models(self):
