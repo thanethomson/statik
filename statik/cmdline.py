@@ -75,7 +75,7 @@ def main():
 
     configure_logging(verbose=args.verbose)
     if args.version:
-        from statik import STATIK_VERSION
+        from statik.constants import STATIK_VERSION
         logger.info('Statik v%s' % STATIK_VERSION)
     elif args.watch:
         watch(project_path, output_path, host=args.host, port=args.port)
