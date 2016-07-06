@@ -1,3 +1,3 @@
 # -*- coding:utf-8 -*-
-from statik.generator import generate
-from statik.cmdline import main
+
+__version__ = "0.4.2"

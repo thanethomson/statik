@@ -14,7 +14,7 @@ from statik.errors import *
 from statik.utils import *
 
 # utility imports for SQLAlchemy code execution
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, time
 from sqlalchemy import func, distinct
 import sqlalchemy
 import math

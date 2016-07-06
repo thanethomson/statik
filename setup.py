@@ -5,7 +5,7 @@ Setup script for Statik, the static web site generator.
 """
 
 from setuptools import setup
-from statik.constants import STATIK_VERSION
+from statik import __version__
 
 INSTALL_REQUIREMENTS = [
     "jinja2==2.8",
@@ -17,7 +17,7 @@ INSTALL_REQUIREMENTS = [
 
 setup(
     name="statik",
-    version=STATIK_VERSION,
+    version=__version__,
     description="General-purpose static web site generator",
     author="Thane Thomson",
     author_email="connect@thanethomson.com",

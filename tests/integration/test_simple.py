@@ -4,7 +4,7 @@ import os.path
 import xml.etree.ElementTree as ET
 import unittest
 
-import statik
+from statik.generator import generate
 
 
 class TestSimpleStatikIntegration(unittest.TestCase):
@@ -14,7 +14,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
 
         # Run the Statik generator on our unit test data project, put the
         # result in memory
-        output_data = statik.generate(
+        output_data = generate(
             os.path.join(test_path, 'data-simple'),
             in_memory=True,
         )
