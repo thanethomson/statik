@@ -17,6 +17,7 @@ from statik.utils import *
 from datetime import datetime, date, timedelta
 from sqlalchemy import func, distinct
 import sqlalchemy
+import math
 
 import logging
 logger = logging.getLogger(__name__)
