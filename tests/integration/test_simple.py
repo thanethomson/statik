@@ -24,6 +24,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
 
         # Check that the generated posts are there
         self.assertIn('2016', output_data)
+        self.assertIn('tag-testing', output_data)
         self.assertIn('06', output_data['2016'])
         self.assertIn('12', output_data['2016']['06'])
         self.assertIn('15', output_data['2016']['06'])
@@ -37,6 +38,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         self.assertIn('index.html', output_data['2016']['06']['15']['my-first-post'])
         self.assertIn('index.html', output_data['2016']['06']['18']['second-post'])
         self.assertIn('index.html', output_data['2016']['06']['25']['andrew-second-post'])
+        self.assertIn('index.html', output_data['tag-testing'])
 
         # Check that the generated author bio is there
         self.assertIn('bios', output_data)
@@ -176,6 +178,13 @@ class TestSimpleStatikIntegration(unittest.TestCase):
                 ],
                 link_titles_by_author,
         )
+
+        # Test the custom template tags/filters functionality
+        tt = ET.fromstring(output_data['tag-testing']['index.html'])
+        self.assertEqual('html', tt.findall('.')[0].tag)
+        para_tags = tt.findall('./body/p')
+        self.assertEqual('Hello world!', para_tags[0].text.strip())
+        self.assertEqual('an uppercase string', para_tags[1].text.strip())
 
 
 def strip_str(s):

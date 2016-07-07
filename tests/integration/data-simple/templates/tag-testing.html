@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Template Tag Testing{% endblock %}
+
+{% block content %}
+    <h1>Template Tag Testing</h1>
+    <p>
+        {% hello_world %}
+    </p>
+    <p>
+        {% with some_string = "AN UPPERCASE STRING" %}
+            {{ some_string|test_lower }}
+        {% endwith %}
+    </p>
+{% endblock %}
