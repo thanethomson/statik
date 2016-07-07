@@ -4,8 +4,8 @@ import unittest
 import xml.etree.ElementTree as ET
 
 from statik.views import *
-from statik.jinja2ext import *
 from statik.utils import add_url_path_component
+from statik.filters import filter_datetime
 
 from jinja2 import Environment, DictLoader
 
