@@ -12,6 +12,9 @@ from statik.views import StatikView
 from statik.database import StatikDatabase
 from statik import templatetags
 
+import statik.filters
+import statik.tags
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -100,8 +103,6 @@ class StatikProject(object):
                 # reloads when watching for changes)
                 self.db.shutdown()
 
-                # clean up the loaded template tags
-                templatetags.register.clean_up()
             except Exception as e:
                 logger.error("Unable to clean up properly: %s" % e)
 
