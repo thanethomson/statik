@@ -9,11 +9,8 @@ from statik.utils import *
 from statik.errors import *
 from statik.models import StatikModel
 from statik.views import StatikView
-from statik.jinja2ext import *
 from statik.database import StatikDatabase
 from statik import templatetags
-import statik.tags
-import statik.filters
 
 import logging
 logger = logging.getLogger(__name__)
@@ -29,8 +26,8 @@ class StatikProject(object):
     MODELS_DIR = "models"
     TEMPLATES_DIR = "templates"
     DATA_DIR = "data"
-    CONFIG_FILE = "config.yml"
     TEMPLATETAGS_DIR = "templatetags"
+    CONFIG_FILE = "config.yml"
 
     def __init__(self, path, **kwargs):
         """Constructor.
@@ -112,7 +109,7 @@ class StatikProject(object):
         )
 
         if templatetags.store.filters:
-            print("Loaded custom template tag filters: %s" % (", ".join(templatetags.store.filters), ))
+            logger.debug("Loaded custom template tag filters: %s" % (", ".join(templatetags.store.filters), ))
             env.filters.update(templatetags.store.filters)
 
         return env

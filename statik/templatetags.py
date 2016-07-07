@@ -1,3 +1,12 @@
+# -*- coding:utf-8 -*-
+
+import logging
+logger = logging.getLogger(__name__)
+
+__all__ = [
+    'TemplateTagStore',
+    'register',
+]
 
 
 class TemplateTagStore(object):
@@ -30,13 +39,13 @@ class TemplateTagStore(object):
         name = kwargs.pop('name', None)
         if name:
             def decorator(fn):
-                print("Registering tag: %s" % name)
+                logger.debug("Registering tag: %s" % name)
                 self.register_tag(name, fn)
             ret = decorator
         else:
             fn = args[0]
             name = getattr(fn, '_decorated_function', fn).__name__
-            print("Registering tag: %s" % name)
+            logger.debug("Registering tag: %s" % name)
             self.register_tag(name, fn)
             ret = None
 
@@ -49,13 +58,13 @@ class TemplateTagStore(object):
         name = kwargs.pop('name', None)
         if name:
             def decorator(fn):
-                print("Registering filter: %s" % name)
+                logger.debug("Registering filter: %s" % name)
                 self.register_filter(name, fn)
             ret = decorator
         else:
             fn = args[0]
             name = getattr(fn, '_decorated_function', fn).__name__
-            print("Registering filter: %s" % name)
+            logger.debug("Registering filter: %s" % name)
             self.register_filter(name, fn)
             ret = None
 
