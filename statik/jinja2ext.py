@@ -2,13 +2,15 @@
 
 from jinja2 import nodes
 from jinja2.ext import Extension
+from jinja2.exceptions import TemplateSyntaxError
 
 from statik.utils import add_url_path_component
+from statik import templatetags
 
 __all__ = [
     'StatikUrlExtension',
     'StatikAssetExtension',
-    'filter_datetime',
+    'StatikTemplateTagsExtension',
 ]
 
 
@@ -83,5 +85,39 @@ class StatikAssetExtension(Extension):
         )
 
 
-def filter_datetime(value, format="%Y-%m-%d %H:%M:%S"):
-    return value.strftime(format)
+class StatikTemplateTagsExtension(Extension):
+    @property
+    def tags(self):
+        return set(templatetags.store.tags.keys())
+
+    def __init__(self, environment):
+        super().__init__(environment)
+        print("Loaded custom template tags: %s" % (", ".join(self.tags), ))
+
+    def _invoke_tag(self, context, *args, **kwargs):
+        return templatetags.store.invoke_tag(self.active_tag, context, *args, **kwargs)
+
+    def parse(self, parser):
+        lineno = next(parser.stream).lineno
+
+        # get the context
+        context = nodes.ContextReference()
+
+        # get the arguments
+        args = []
+        try:
+            while True:
+                args.append(parser.parse_expression())
+        except TemplateSyntaxError:
+            pass  # no more arguments
+
+        # get the tag_name for use in looking up callable
+        self.active_tag = parser._tag_stack[-1]
+
+        # create the node
+        node = self.call_method('_invoke_tag', [context, *args], lineno=lineno)
+
+        return nodes.Output(
+            [node],
+            lineno=lineno
+        )

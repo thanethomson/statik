@@ -4,6 +4,7 @@ import os
 import os.path
 from copy import deepcopy, copy
 import shutil
+import importlib
 
 import logging
 logger = logging.getLogger(__name__)
@@ -20,6 +21,7 @@ __all__ = [
     'calculate_association_table_name',
     'get_url_file_ext',
     'generate_quickstart',
+    'import_python_modules_by_path'
 ]
 
 DEFAULT_CONFIG_CONTENT = """project-name: Your project name
@@ -167,3 +169,11 @@ def ensure_file_exists(path, default_content):
         logger.info('Creating file: %s' % path)
         with open(path, 'wt') as f:
             f.write(default_content)
+
+
+def import_python_modules_by_path(path):
+    for filename in list_files(path, "py"):
+        name = extract_filename(filename)
+        spec = importlib.util.spec_from_file_location(name, os.path.join(path, filename))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
