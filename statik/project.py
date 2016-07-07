@@ -45,42 +45,65 @@ class StatikProject(object):
         self.project_context = {}
 
     def generate(self, output_path=None, in_memory=False):
-        """Executes the Statik project generator."""
-        if output_path is None and not in_memory:
-            raise ValueError("If project is not to be generated in-memory, an output path must be specified")
+        """Executes the Statik project generator.
 
-        self.config = self.config or StatikConfig(os.path.join(self.path, StatikProject.CONFIG_FILE))
-        self.models = self.load_models()
-        self.template_env = self.configure_templates()
+        Args:
+            output_path: The path to which to write output files.
+            in_memory: Whether or not to generate the results in memory. If True, this will generate the output
+                result as a dictionary. If False, this will write the output to files in the output_path.
 
-        self.views = self.load_views()
-        if len(self.views) == 0:
-            raise NoViewsError("Project has no views configured")
+        Returns:
+            If in_memory is True, this returns a dictionary containing the actual generated static content. If
+            in_memory is False, this returns an integer indicating the number of files generated in the
+            output path.
+        """
+        result = dict() if in_memory else 0
+        try:
+            if output_path is None and not in_memory:
+                raise ValueError("If project is not to be generated in-memory, an output path must be specified")
 
-        self.template_env.statik_views = self.views
-        self.template_env.statik_base_url = self.config.base_path
-        self.template_env.statik_base_asset_url = add_url_path_component(
-                self.config.base_path,
-                self.config.assets_dest_path
-        )
-        self.db = self.load_db_data(self.models)
-        self.project_context = self.load_project_context()
+            self.config = self.config or StatikConfig(os.path.join(self.path, StatikProject.CONFIG_FILE))
+            self.models = self.load_models()
+            self.template_env = self.configure_templates()
 
-        in_memory_result = self.process_views()
+            self.views = self.load_views()
+            if len(self.views) == 0:
+                raise NoViewsError("Project has no views configured")
 
-        if in_memory:
-            result = in_memory_result
-        else:
-            # dump the in-memory output to files
-            file_count = self.dump_in_memory_result(in_memory_result, output_path)
-            logger.info('Wrote %d output file(s) to folder: %s' % (file_count, output_path))
-            # copy any assets across, recursively
-            self.copy_assets(output_path)
-            result = file_count
+            self.template_env.statik_views = self.views
+            self.template_env.statik_base_url = self.config.base_path
+            self.template_env.statik_base_asset_url = add_url_path_component(
+                    self.config.base_path,
+                    self.config.assets_dest_path
+            )
+            self.db = self.load_db_data(self.models)
+            self.project_context = self.load_project_context()
 
-        # make sure to destroy the database engine (to provide for the possibility of database engine
-        # reloads when watching for changes)
-        self.db.shutdown()
+            in_memory_result = self.process_views()
+
+            if in_memory:
+                result = in_memory_result
+            else:
+                # dump the in-memory output to files
+                file_count = self.dump_in_memory_result(in_memory_result, output_path)
+                logger.info('Wrote %d output file(s) to folder: %s' % (file_count, output_path))
+                # copy any assets across, recursively
+                self.copy_assets(output_path)
+                result = file_count
+
+        except Exception as e:
+            logger.error("Error caught: %s" % e)
+
+        finally:
+            try:
+                # make sure to destroy the database engine (to provide for the possibility of database engine
+                # reloads when watching for changes)
+                self.db.shutdown()
+
+                # clean up the loaded template tags
+                templatetags.register.clean_up()
+            except Exception as e:
+                logger.error("Unable to clean up properly: %s" % e)
 
         # done
         return result
@@ -93,7 +116,7 @@ class StatikProject(object):
         templatetags_path = os.path.join(self.path, StatikProject.TEMPLATETAGS_DIR)
         if os.path.isdir(templatetags_path):
             # dynamically import modules; they register themselves with our template tag store
-            modules = import_python_modules_by_path(templatetags_path)
+            import_python_modules_by_path(templatetags_path)
 
         env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(template_path),
