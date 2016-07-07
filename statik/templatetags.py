@@ -73,6 +73,12 @@ class TemplateTagStore(object):
 
         return ret
 
+    def clean_up(self):
+        """Called to re-initialise this store's context variables, in case of running Statik in watch mode."""
+        self.filters = {}
+        self.tags = {}
+        self.takes_context = {}
+
 
 store = TemplateTagStore()
 register = store  # for clarity when using decorators
