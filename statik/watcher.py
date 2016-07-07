@@ -69,6 +69,7 @@ def watch(project_path, output_path, host='0.0.0.0', port=8000, min_reload_time=
         StatikProject.DATA_DIR,
         StatikProject.TEMPLATES_DIR,
         StatikProject.VIEWS_DIR,
+        StatikProject.TEMPLATETAGS_DIR,
         config.assets_src_path,
     ]
     watch_folders = [f if os.path.isabs(f) else os.path.join(project_path, f) for f in watch_folders]
