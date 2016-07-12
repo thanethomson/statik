@@ -13,8 +13,11 @@ __all__ = [
 class MarkdownYamlMetaExtension(Extension):
 
     def extendMarkdown(self, md, md_globals):
-        md.preprocessors.add('yaml-meta', MarkdownYamlMetaPreprocessor(md),
-            ">normalize_whitespace")
+        md.preprocessors.add(
+            'yaml-meta',
+            MarkdownYamlMetaPreprocessor(md),
+            ">normalize_whitespace",
+        )
 
 
 class MarkdownYamlMetaPreprocessor(Preprocessor):
@@ -39,9 +42,11 @@ class MarkdownYamlMetaPreprocessor(Preprocessor):
                     else:
                         yaml_lines.append(line)
                 else:
-                    result.append(line)
+                    result.append(line.encode("ascii", "xmlcharrefreplace").decode("utf-8"))
 
             if len(yaml_lines) > 0:
-                self.markdown.meta = yaml.load('\n'.join(yaml_lines))
+                self.markdown.meta = yaml.load(
+                    '\n'.join(yaml_lines).encode("ascii", "xmlcharrefreplace").decode("utf-8")
+                )
 
         return result
