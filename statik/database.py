@@ -215,12 +215,22 @@ class StatikDatabase(object):
             db_entry = db_model(**entry.field_values)
             self.session.add(db_entry)
 
-    def query(self, query, additional_locals=dict()):
-        """Executes the given SQLAlchemy query string."""
+    def query(self, query, additional_locals=None):
+        """Executes the given SQLAlchemy query string.
+
+        Args:
+            query: The SQLAlchemy ORM query (or Python code) to be executed.
+            additional_locals: Any additional local variables to inject into the execution context when executing
+                the query.
+
+        Returns:
+            The result of executing the query.
+        """
         logger.debug("Attempting to execute database query: %s" % query)
 
-        for k, v in additional_locals.items():
-            locals()[k] = v
+        if additional_locals is not None:
+            for k, v in additional_locals.items():
+                locals()[k] = v
 
         exec(
             compile(
