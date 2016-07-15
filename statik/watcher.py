@@ -62,7 +62,7 @@ def watch(project_path, output_path, host='0.0.0.0', port=8000, min_reload_time=
         min_reload_time: The minimum time (in seconds) between reloads when files change.
     """
     _project_path, config_file = get_project_config_file(project_path, StatikProject.CONFIG_FILE)
-    watcher = StatikWatcher(_project_path, output_path, min_reload_time=min_reload_time)
+    watcher = StatikWatcher(config_file, output_path, min_reload_time=min_reload_time)
     # generate once-off before starting the server
     watcher.generate()
 

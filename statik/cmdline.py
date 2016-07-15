@@ -71,20 +71,21 @@ def main():
         action='store_true',
     )
     args = parser.parse_args()
-    project_path = args.project if args.project is not None else os.getcwd()
-    _project_path, _ = get_project_config_file(project_path, StatikProject.CONFIG_FILE)
-    output_path = args.output if args.output is not None else os.path.join(_project_path, 'public')
+
+    _project_path = args.project if args.project is not None else os.getcwd()
+    project_path, config_file_path = get_project_config_file(_project_path, StatikProject.CONFIG_FILE)
+    output_path = args.output if args.output is not None else os.path.join(project_path, 'public')
 
     configure_logging(verbose=args.verbose)
     if args.version:
         from statik import __version__
         logger.info('Statik v%s' % __version__)
     elif args.watch:
-        watch(project_path, output_path, host=args.host, port=args.port)
+        watch(config_file_path, output_path, host=args.host, port=args.port)
     elif args.quickstart:
-        generate_quickstart(project_path)
+        generate_quickstart(config_file_path)
     else:
-        generate(project_path, output_path=output_path, in_memory=False)
+        generate(config_file_path, output_path=output_path, in_memory=False)
 
 
 if __name__ == "__main__":

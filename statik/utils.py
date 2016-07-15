@@ -187,15 +187,16 @@ def get_project_config_file(path, default_config_file_name):
     directory, it automatically assumes a "config.yml" file will be in that directory. If the path is to
     a .yml file, it assumes that that is the root configuration file for the project."""
     _path, _config_file_path = None, None
+    path = os.path.abspath(path)
 
     if os.path.isdir(path):
-        _path = os.path.abspath(path)
+        _path = path
         # use the default config file
-        _config_file_path = os.path.join(path, default_config_file_name)
+        _config_file_path = os.path.join(_path, default_config_file_name)
         logger.debug("Using default project configuration file path: %s" % _config_file_path)
     elif path.endswith(".yml"):
-        _path = os.path.dirname(os.path.abspath(path))
-        _config_file_path = os.path.abspath(path)
+        _path = os.path.dirname(path)
+        _config_file_path = path
         logger.debug("Using custom project configuration file path: %s" % _config_file_path)
 
     return _path, _config_file_path
