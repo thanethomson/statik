@@ -23,6 +23,7 @@ __all__ = [
     'generate_quickstart',
     'import_python_modules_by_path',
     'get_project_config_file',
+    'dict_strip',
 ]
 
 DEFAULT_CONFIG_CONTENT = """project-name: Your project name
@@ -198,3 +199,22 @@ def get_project_config_file(path, default_config_file_name):
         logger.debug("Using custom project configuration file path: %s" % _config_file_path)
 
     return _path, _config_file_path
+
+
+def dict_strip(d):
+    """Strips whitespace from the string values of the given dictionary (recursively).
+
+    Args:
+        d: A dictionary object.
+
+    Returns:
+        A new dictionary object, whose string values' whitespace has been stripped out.
+    """
+    _d = deepcopy(d)
+    for k, v in d.items():
+        if isinstance(v, str):
+            _d[k] = v.strip()
+        elif isinstance(v, dict):
+            _d[k] = dict_strip(v)
+
+    return _d

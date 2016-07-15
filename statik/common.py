@@ -35,6 +35,9 @@ class YamlLoadable(object):
         self.vars = yaml.load(self.file_content) if len(self.file_content) else {}
         if not isinstance(self.vars, dict):
             self.vars = {}
+        else:
+            # strip out any extra whitespace from the variables
+            self.vars = dict_strip(self.vars)
 
 
 class ContentLoadable(object):
@@ -98,3 +101,6 @@ class ContentLoadable(object):
                 )
                 self.content = md.convert(self.file_content)
                 self.vars = md.meta
+
+        if isinstance(self.vars, dict):
+            self.vars = dict_strip(self.vars)
