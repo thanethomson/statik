@@ -5,8 +5,9 @@ import os.path
 import argparse
 
 from statik.generator import generate
-from statik.utils import generate_quickstart
+from statik.utils import generate_quickstart, get_project_config_file
 from statik.watcher import watch
+from statik.project import StatikProject
 
 import logging
 logger = logging.getLogger(__name__)
@@ -71,7 +72,8 @@ def main():
     )
     args = parser.parse_args()
     project_path = args.project if args.project is not None else os.getcwd()
-    output_path = args.output if args.output is not None else os.path.join(project_path, 'public')
+    _project_path, _ = get_project_config_file(project_path, StatikProject.CONFIG_FILE)
+    output_path = args.output if args.output is not None else os.path.join(_project_path, 'public')
 
     configure_logging(verbose=args.verbose)
     if args.version:

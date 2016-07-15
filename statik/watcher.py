@@ -27,6 +27,8 @@ class StatikWatcher(object):
         self.output_path = output_path
         self.min_reload_time = min_reload_time
         self.last_generated = 0
+        logger.debug("Watching project path: %s" % self.project_path)
+        logger.debug("Output path: %s" % self.output_path)
 
     def generator_factory(self, folder):
         """Produces a function that can be called by the folder watcher to regenerate the project based on changes
@@ -59,11 +61,11 @@ def watch(project_path, output_path, host='0.0.0.0', port=8000, min_reload_time=
         port: The port to which to bind when serving output files.
         min_reload_time: The minimum time (in seconds) between reloads when files change.
     """
-    watcher = StatikWatcher(project_path, output_path, min_reload_time=min_reload_time)
+    _project_path, config_file = get_project_config_file(project_path, StatikProject.CONFIG_FILE)
+    watcher = StatikWatcher(_project_path, output_path, min_reload_time=min_reload_time)
     # generate once-off before starting the server
     watcher.generate()
 
-    _project_path, config_file = get_project_config_file(project_path, StatikProject.CONFIG_FILE)
     config = StatikConfig(config_file)
     watch_folders = [
         StatikProject.MODELS_DIR,
