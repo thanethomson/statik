@@ -4,6 +4,10 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.6.2` - 15 July 2016
+
+* Fixing another bug in watcher code to do with non-standard configuration (facepalm here).
+
 ### `v0.6.1` - 15 July 2016
 
 * Fixing bug in watcher code with non-standard configuration file.
