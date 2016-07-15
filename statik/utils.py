@@ -21,7 +21,8 @@ __all__ = [
     'calculate_association_table_name',
     'get_url_file_ext',
     'generate_quickstart',
-    'import_python_modules_by_path'
+    'import_python_modules_by_path',
+    'get_project_config_file',
 ]
 
 DEFAULT_CONFIG_CONTENT = """project-name: Your project name
@@ -178,3 +179,22 @@ def import_python_modules_by_path(path):
         spec = importlib.util.spec_from_file_location(name, os.path.join(path, filename))
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
+
+
+def get_project_config_file(path, default_config_file_name):
+    """Attempts to extract the project config file's absolute path from the given path. If the path is a
+    directory, it automatically assumes a "config.yml" file will be in that directory. If the path is to
+    a .yml file, it assumes that that is the root configuration file for the project."""
+    _path, _config_file_path = None, None
+
+    if os.path.isdir(path):
+        _path = os.path.abspath(path)
+        # use the default config file
+        _config_file_path = os.path.join(path, default_config_file_name)
+        logger.debug("Using default project configuration file path: %s" % _config_file_path)
+    elif path.endswith(".yml"):
+        _path = os.path.dirname(os.path.abspath(path))
+        _config_file_path = os.path.abspath(path)
+        logger.debug("Using custom project configuration file path: %s" % _config_file_path)
+
+    return _path, _config_file_path

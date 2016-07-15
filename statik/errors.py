@@ -4,6 +4,7 @@ __all__ = [
     'ReservedFieldNameError',
     'InvalidFieldTypeError',
     'MissingProjectFolderError',
+    'MissingProjectConfig',
     'MissingParameterError',
     'DuplicateModelInstanceError',
     'InvalidModelCollectionDataError',
@@ -23,6 +24,10 @@ class MissingProjectFolderError(ValueError):
     def __init__(self, folder, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.folder = folder
+
+
+class MissingProjectConfig(Exception):
+    pass
 
 
 class MissingParameterError(ValueError):

@@ -29,7 +29,7 @@ def main():
     )
     parser.add_argument(
         '-p', '--project',
-        help="The path to your Statik project (default: current directory).",
+        help="The path to your Statik project or project YAML configuration file (default: current directory).",
     )
     parser.add_argument(
         '-o', '--output',

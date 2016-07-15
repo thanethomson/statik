@@ -8,6 +8,7 @@ from livereload import Server
 from statik.generator import generate
 from statik.project import StatikProject
 from statik.config import StatikConfig
+from statik.utils import get_project_config_file
 
 import logging
 logger = logging.getLogger(__name__)
@@ -62,7 +63,7 @@ def watch(project_path, output_path, host='0.0.0.0', port=8000, min_reload_time=
     # generate once-off before starting the server
     watcher.generate()
 
-    config_file = os.path.join(project_path, StatikProject.CONFIG_FILE)
+    _, config_file = get_project_config_file(project_path, StatikProject.CONFIG_FILE)
     config = StatikConfig(config_file)
     watch_folders = [
         StatikProject.MODELS_DIR,

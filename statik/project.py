@@ -38,9 +38,18 @@ class StatikProject(object):
         Args:
             path: The full filesystem path to the base of the project.
         """
-        self.path = path
-        logger.info("Using project source directory: %s" % path)
-        self.config = kwargs.get('config', None)
+        if 'config' in kwargs and isinstance(kwargs['config'], dict):
+            logger.debug("Loading project configuration from constructor arguments")
+            self.config = kwargs['config']
+        else:
+            self.config = None
+
+        self.path, self.config_file_path = get_project_config_file(path, StatikProject.CONFIG_FILE)
+        if (self.path is None or self.config_file_path is None) and self.config is None:
+            raise MissingProjectConfig("No configuration could be found for project")
+
+        logger.info("Project path configured as: %s" % self.path)
+
         self.models = {}
         self.template_env = None
         self.views = {}
@@ -65,7 +74,7 @@ class StatikProject(object):
             if output_path is None and not in_memory:
                 raise ValueError("If project is not to be generated in-memory, an output path must be specified")
 
-            self.config = self.config or StatikConfig(os.path.join(self.path, StatikProject.CONFIG_FILE))
+            self.config = self.config or StatikConfig(self.config_file_path)
             self.models = self.load_models()
             self.template_env = self.configure_templates()
 
