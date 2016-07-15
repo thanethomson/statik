@@ -63,7 +63,7 @@ def watch(project_path, output_path, host='0.0.0.0', port=8000, min_reload_time=
     # generate once-off before starting the server
     watcher.generate()
 
-    _, config_file = get_project_config_file(project_path, StatikProject.CONFIG_FILE)
+    _project_path, config_file = get_project_config_file(project_path, StatikProject.CONFIG_FILE)
     config = StatikConfig(config_file)
     watch_folders = [
         StatikProject.MODELS_DIR,
@@ -73,7 +73,7 @@ def watch(project_path, output_path, host='0.0.0.0', port=8000, min_reload_time=
         StatikProject.TEMPLATETAGS_DIR,
         config.assets_src_path,
     ]
-    watch_folders = [f if os.path.isabs(f) else os.path.join(project_path, f) for f in watch_folders]
+    watch_folders = [f if os.path.isabs(f) else os.path.join(_project_path, f) for f in watch_folders]
     server = Server()
     for f in watch_folders:
         server.watch(f, func=watcher.generator_factory(f))
