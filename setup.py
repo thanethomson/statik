@@ -10,7 +10,7 @@ from statik import __version__
 INSTALL_REQUIREMENTS = [
     "jinja2==2.8",
     "PyYAML==3.11",
-    "SQLAlchemy==1.0.13",
+    "SQLAlchemy==1.0.14",
     "markdown==2.6.6",
     "livereload==2.4.1",
 ]
