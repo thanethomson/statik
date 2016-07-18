@@ -4,6 +4,11 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.6.4` - 18 July 2016
+
+* Yet another bugfix with regard to non-standard config file path (need more unit tests for this).
+* Updating SQLAlchemy dependency to latest version (1.0.14).
+
 ### `v0.6.3` - 15 July 2016
 
 * More bugfixes with regard to non-standard config file path.
