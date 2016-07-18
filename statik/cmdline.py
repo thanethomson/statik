@@ -83,7 +83,7 @@ def main():
     elif args.watch:
         watch(config_file_path, output_path, host=args.host, port=args.port)
     elif args.quickstart:
-        generate_quickstart(config_file_path)
+        generate_quickstart(project_path)
     else:
         generate(config_file_path, output_path=output_path, in_memory=False)
 
