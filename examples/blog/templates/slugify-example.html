@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block body %}
+    <h1>Slugify Custom Template Filter Example</h1>
+    <p>
+        This page is purely just an example of how to use custom template filters with Statik.
+    </p>
+    <ul>
+        {% for post in posts %}
+            <li>{{ post.title }} -&gt; {{ post.title|slugify }}</li>
+        {% endfor %}
+    </ul>
+{% endblock %}

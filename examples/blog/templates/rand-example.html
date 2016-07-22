@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block body %}
+    <h1>Random number generator custom tag example</h1>
+    <p>
+        This page is purely just an example of how to use custom template tags with Statik.
+    </p>
+    <ul>
+        <li>rand without arguments: {% rand %}</li>
+        <li>rand between 25 and 255: {% rand 25 255 %}</li>
+    </ul>
+{% endblock %}
