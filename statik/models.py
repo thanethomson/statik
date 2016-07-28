@@ -18,16 +18,6 @@ __all__ = [
 class StatikModel(YamlLoadable):
     """Represents a single model in our Statik project."""
 
-    RESERVED_FIELD_NAMES = {
-        'name',
-        'model_names',
-        'field_names',
-        'content_field',
-        'filename',
-        'additional_rels',
-        'foreign_models',
-    }
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # if we're explicitly overriding a model name
@@ -41,12 +31,15 @@ class StatikModel(YamlLoadable):
 
         if 'model_names' not in kwargs:
             raise MissingParameterError("Missing list of model names in model constructor")
+
         self.model_names = kwargs['model_names']
+        # our model's fields
+        self.fields = dict()
         self.field_names = []
         # if this model has a Content field
         self.content_field = None
         # additional back-reference relationships, indexed by field name
-        self.additional_rels = {}
+        self.additional_rels = dict()
         # all of the foreign models to which this model refers
         self.foreign_models = set()
 
@@ -58,20 +51,9 @@ class StatikModel(YamlLoadable):
                 self.content_field = field_name
 
             new_field_name = field_name.replace('-', '_')
-
-            # some reserved field names
-            if new_field_name in StatikModel.RESERVED_FIELD_NAMES:
-                raise ReservedFieldNameError(
-                        "Field name \"%s\" is reserved for internal use and cannot be used on a model" % new_field_name
-                )
-
             self.field_names.append(new_field_name)
             new_field = construct_field(new_field_name, field_type, self.model_names)
-            setattr(
-                self,
-                new_field_name,
-                new_field,
-            )
+            self.fields[new_field_name] = new_field
             if isinstance(new_field, StatikForeignKeyField) or isinstance(new_field, StatikManyToManyField):
                 self.foreign_models.add(new_field.field_type)
 
@@ -82,7 +64,7 @@ class StatikModel(YamlLoadable):
         for model_name, model in all_models.items():
             if model_name != self.name:
                 for field_name in model.field_names:
-                    field = getattr(model, field_name)
+                    field = model.fields[field_name]
                     # if this field type references the current model
                     if field.field_type == self.name and field.back_populates is not None and \
                             (isinstance(field, StatikForeignKeyField) or isinstance(field, StatikManyToManyField)):

@@ -59,7 +59,7 @@ class StatikDatabase(object):
             data_path: The full path to where the database files can be found.
             models: Loaded model/field data.
         """
-        self.tables = {}
+        self.tables = dict()
         self.data_path = data_path
         self.models = models
         self.engine = create_engine('sqlite:///:memory:')
@@ -269,7 +269,7 @@ class StatikDatabaseInstance(ContentLoadable):
 
         # run through the foreign key fields to check their assignment
         for field_name in self.model.field_names:
-            field = getattr(self.model, field_name)
+            field = self.model.fields[field_name]
             # if it's a foreign key
             if isinstance(field, StatikForeignKeyField):
                 # if we've got a pk value for a foreign key field
@@ -303,7 +303,7 @@ class StatikDatabaseInstance(ContentLoadable):
     def __repr__(self):
         result_lines = ["<StatikDatabaseInstance model=%s" % self.model.name]
         for field_name, field_value in self.field_values.items():
-            model_field = getattr(self.model, field_name, None)
+            model_field = self.model.fields.get(field_name, None)
             if isinstance(model_field, StatikContentField) or isinstance(model_field, StatikTextField):
                 result_lines.append("                        %s=<...>" % field_name)
             else:
@@ -352,7 +352,7 @@ def db_model_factory(Base, model, all_models):
 
     # now populate all of the standard fields
     for field_name in model.field_names:
-        field = getattr(model, field_name)
+        field = model.fields[field_name]
         if field.field_type in SQLALCHEMY_FIELD_MAPPER:
             # if it's a simple field
             model_fields[field.name] = Column(
