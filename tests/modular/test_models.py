@@ -13,6 +13,7 @@ int-field: Integer
 bool-field: Boolean
 some-content-field: Content
 text-field: Text
+name: String
 """
 
 TEST_MODEL_INVALID_FK = """string-field: String
@@ -37,12 +38,13 @@ class TestStatikModels(unittest.TestCase):
             model_names=['TestModel']
         )
         self.assertEqual('TestModel', model.name)
-        self.assertIsInstance(getattr(model, 'string_field'), StatikStringField)
-        self.assertIsInstance(getattr(model, 'datetime_field'), StatikDateTimeField)
-        self.assertIsInstance(getattr(model, 'int_field'), StatikIntegerField)
-        self.assertIsInstance(getattr(model, 'bool_field'), StatikBooleanField)
-        self.assertIsInstance(getattr(model, 'some_content_field'), StatikContentField)
-        self.assertIsInstance(getattr(model, 'text_field'), StatikTextField)
+        self.assertIsInstance(model.fields['string_field'], StatikStringField)
+        self.assertIsInstance(model.fields['datetime_field'], StatikDateTimeField)
+        self.assertIsInstance(model.fields['int_field'], StatikIntegerField)
+        self.assertIsInstance(model.fields['bool_field'], StatikBooleanField)
+        self.assertIsInstance(model.fields['some_content_field'], StatikContentField)
+        self.assertIsInstance(model.fields['text_field'], StatikTextField)
+        self.assertIsInstance(model.fields['name'], StatikStringField)
 
     def test_model_invalid_fk(self):
         with self.assertRaises(InvalidFieldTypeError):
@@ -59,9 +61,9 @@ class TestStatikModels(unittest.TestCase):
             model_names=['TestModel', 'OtherModel']
         )
         self.assertEqual('TestModel', model.name)
-        self.assertIsInstance(getattr(model, 'string_field'), StatikStringField)
-        self.assertIsInstance(getattr(model, 'other_field'), StatikForeignKeyField)
-        self.assertEqual('OtherModel', model.other_field.field_type)
+        self.assertIsInstance(model.fields['string_field'], StatikStringField)
+        self.assertIsInstance(model.fields['other_field'], StatikForeignKeyField)
+        self.assertEqual('OtherModel', model.fields['other_field'].field_type)
 
 
 if __name__ == "__main__":
