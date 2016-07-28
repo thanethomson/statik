@@ -4,6 +4,11 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.6.5` - 28 July 2016
+
+* Now allowing pretty much any name as a field name for Statik models (i.e. you can now use `name` as a valid
+  field name).
+
 ### `v0.6.4` - 18 July 2016
 
 * Yet another bugfix with regard to non-standard config file path (need more unit tests for this).
