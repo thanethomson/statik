@@ -1,0 +1,5 @@
+path:
+  template: /overlap/{{ post.slug }}/
+  for-each:
+    post: session.query(Post).filter(Post.draft==False).all()
+template: overlap

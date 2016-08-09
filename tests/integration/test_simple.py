@@ -39,6 +39,16 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         self.assertIn('index.html', output_data['2016']['06']['18']['second-post'])
         self.assertIn('index.html', output_data['2016']['06']['25']['andrew-second-post'])
         self.assertIn('index.html', output_data['tag-testing'])
+        self.assertIn('overlap', output_data)
+        self.assertIn('index.html', output_data['overlap'])
+        self.assertIn('andrew-hello-world', output_data['overlap'])
+        self.assertIn('index.html', output_data['overlap']['andrew-hello-world'])
+        self.assertIn('my-first-post', output_data['overlap'])
+        self.assertIn('index.html', output_data['overlap']['my-first-post'])
+        self.assertIn('second-post', output_data['overlap'])
+        self.assertIn('index.html', output_data['overlap']['second-post'])
+        self.assertIn('andrew-second-post', output_data['overlap'])
+        self.assertIn('index.html', output_data['overlap']['andrew-second-post'])
 
         # Check that the generated author bio is there
         self.assertIn('bios', output_data)
