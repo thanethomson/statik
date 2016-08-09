@@ -224,7 +224,7 @@ class StatikProject(object):
         for view_name, view in self.views.items():
             # first update the view's context with the project context
             view.context.update(self.project_context)
-            output.update(view.process(self.db))
+            output = deep_merge_dict(output, view.process(self.db))
         return output
 
     def dump_in_memory_result(self, result, output_path):
