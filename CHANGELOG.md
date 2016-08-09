@@ -4,6 +4,10 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.6.6` - 09 August 2016
+
+* Fixing issue #26 - now allowing for overlapping simple and complex views.
+
 ### `v0.6.5` - 28 July 2016
 
 * Now allowing pretty much any name as a field name for Statik models (i.e. you can now use `name` as a valid
