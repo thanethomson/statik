@@ -196,6 +196,32 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         self.assertEqual('Hello world!', para_tags[0].text.strip())
         self.assertEqual('an uppercase string', para_tags[1].text.strip())
 
+        # Check the contents of the overlapping simple/complex views
+        ov = ET.fromstring(output_data['overlap']['index.html'])
+        self.assertEqual('html', ov.findall('.')[0].tag)
+        self.assertEqual('Overlap Test', ov.findall('./head/title')[0].text.strip())
+        self.assertEqual('Overlap Test', ov.findall('./body/h1')[0].text.strip())
+
+        ov = ET.fromstring(output_data['overlap']['andrew-hello-world']['index.html'])
+        self.assertEqual('html', ov.findall('.')[0].tag)
+        self.assertEqual('Overlap Test', ov.findall('./head/title')[0].text.strip())
+        self.assertEqual('Andrew says Hello World', ov.findall('./body/h1')[0].text.strip())
+
+        ov = ET.fromstring(output_data['overlap']['my-first-post']['index.html'])
+        self.assertEqual('html', ov.findall('.')[0].tag)
+        self.assertEqual('Overlap Test', ov.findall('./head/title')[0].text.strip())
+        self.assertEqual('My first post', ov.findall('./body/h1')[0].text.strip())
+
+        ov = ET.fromstring(output_data['overlap']['second-post']['index.html'])
+        self.assertEqual('html', ov.findall('.')[0].tag)
+        self.assertEqual('Overlap Test', ov.findall('./head/title')[0].text.strip())
+        self.assertEqual('Second post', ov.findall('./body/h1')[0].text.strip())
+
+        ov = ET.fromstring(output_data['overlap']['andrew-second-post']['index.html'])
+        self.assertEqual('html', ov.findall('.')[0].tag)
+        self.assertEqual('Overlap Test', ov.findall('./head/title')[0].text.strip())
+        self.assertEqual("Andrew's Second Post", ov.findall('./body/h1')[0].text.strip())
+
 
 def strip_str(s):
     """Strips out newlines and whitespace from the given string."""
