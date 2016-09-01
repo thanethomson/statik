@@ -4,6 +4,10 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.6.7` - 01 September 2016
+
+* Fixing issue #28 - trailing comma issue (which only seems to come up with Python 3.4 for some reason).
+
 ### `v0.6.6` - 09 August 2016
 
 * Fixing issue #26 - now allowing for overlapping simple and complex views.
