@@ -395,7 +395,7 @@ def db_model_factory(Base, model, all_models):
                 ))
                 model_fields[field.name] = relationship(
                     field.field_type,
-                    **kwargs,
+                    **kwargs
                 )
 
         else:
