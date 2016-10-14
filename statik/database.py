@@ -161,7 +161,7 @@ class StatikDatabase(object):
     def load_model_data_collection(self, path, model):
         db_model = globals()[model.name]
         # load the collection data from the collection file
-        with open(os.path.join(path, '_all.yml'), 'rt') as f:
+        with open(os.path.join(path, '_all.yml'), mode='rt', encoding='utf-8') as f:
             collection = yaml.load(f.read())
 
         if not isinstance(collection, list):
