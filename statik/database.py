@@ -52,7 +52,7 @@ def clear_tracked_globals():
 
 class StatikDatabase(object):
 
-    def __init__(self, data_path, models, encoding):
+    def __init__(self, data_path, models, encoding=None):
         """Constructor.
 
         Args:
