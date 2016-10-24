@@ -52,13 +52,16 @@ def clear_tracked_globals():
 
 class StatikDatabase(object):
 
-    def __init__(self, data_path, models):
+    def __init__(self, data_path, models, encoding=None):
         """Constructor.
 
         Args:
             data_path: The full path to where the database files can be found.
             models: Loaded model/field data.
+            encoding: The encoding to load files as ('utf-8', etc). If 'None', will
+                      default to the system-preferred default encoding
         """
+        self.encoding = encoding
         self.tables = dict()
         self.data_path = data_path
         self.models = models
@@ -161,7 +164,7 @@ class StatikDatabase(object):
     def load_model_data_collection(self, path, model):
         db_model = globals()[model.name]
         # load the collection data from the collection file
-        with open(os.path.join(path, '_all.yml'), 'rt') as f:
+        with open(os.path.join(path, '_all.yml'), mode='rt', encoding=self.encoding) as f:
             collection = yaml.load(f.read())
 
         if not isinstance(collection, list):
@@ -181,6 +184,7 @@ class StatikDatabase(object):
                 from_dict=item,
                 model=model,
                 session=self.session,
+                encoding=self.encoding
             )
             # duplicate primary key!
             if entry.field_values['pk'] in seen_entries:
@@ -203,6 +207,7 @@ class StatikDatabase(object):
                 os.path.join(path, entry_file),
                 model=model,
                 session=self.session,
+                encoding=self.encoding
             )
             # duplicate primary key!
             if entry.field_values['pk'] in seen_entries:

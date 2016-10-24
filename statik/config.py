@@ -19,6 +19,7 @@ class StatikConfig(YamlLoadable):
         super().__init__(*args, **kwargs)
         self.project_name = self.vars.get('project-name', 'Untitled project')
         self.base_path = self.vars.get('base-path', '/')
+        self.encoding = self.vars.get('encoding')
         # relative to the output folder
         self.assets_src_path = self.assets_dest_path = 'assets'
         if 'assets' in self.vars and isinstance(self.vars['assets'], dict):
@@ -43,10 +44,11 @@ class StatikConfig(YamlLoadable):
     def __repr__(self):
         return ("<StatikConfig project_name=%s\n" +
                 "              base_path=%s\n" +
+                "              encoding=%s\n" +
                 "              assets_src_path=%s\n" +
                 "              assets_dest_path=%s\n" +
                 "              context_static=%s\n" +
                 "              context_dynamic=%s>") % (
-                    self.project_name, self.base_path, self.assets_src_path,
+                    self.project_name, self.base_path, self.encoding, self.assets_src_path,
                     self.assets_dest_path, self.context_static, self.context_dynamic
                 )

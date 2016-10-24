@@ -75,6 +75,12 @@ class StatikProject(object):
                 raise ValueError("If project is not to be generated in-memory, an output path must be specified")
 
             self.config = self.config or StatikConfig(self.config_file_path)
+
+            if self.config.encoding != None:
+                logger.info("Using encoding: %s" % self.config.encoding)
+            else:
+                logger.debug("Using encoding: %s" % self.config.encoding)
+
             self.models = self.load_models()
             self.template_env = self.configure_templates()
 
@@ -162,6 +168,7 @@ class StatikProject(object):
             model_name = extract_filename(model_file)
             models[model_name] = StatikModel(
                 os.path.join(models_path, model_file),
+                encoding=self.config.encoding,
                 name=model_name,
                 model_names=model_names
             )
@@ -183,6 +190,7 @@ class StatikProject(object):
             view_name = extract_filename(view_file)
             views[view_name] = StatikView(
                 os.path.join(view_path, view_file),
+                encoding=self.config.encoding,
                 name=view_name,
                 models=self.models,
                 template_env=self.template_env,
@@ -196,7 +204,7 @@ class StatikProject(object):
         if not os.path.isdir(data_path):
             raise MissingProjectFolderError(StatikProject.DATA_DIR, "Project is missing its data folder")
 
-        return StatikDatabase(data_path, models)
+        return StatikDatabase(data_path, models, self.config.encoding)
 
     def load_project_context(self):
         """Loads the project context (static and dynamic) from the database/models for common use amongst

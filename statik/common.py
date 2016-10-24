@@ -21,7 +21,12 @@ class YamlLoadable(object):
     def __init__(self, *args, **kwargs):
         if len(args) > 0:
             self.filename = args[0]
-            with open(self.filename, 'rt') as f:
+
+            self.encoding = None
+            if 'encoding' in kwargs:
+                self.encoding = kwargs['encoding']
+
+            with open(self.filename, mode='rt', encoding=self.encoding) as f:
                 self.file_content = f.read()
 
         elif 'from_string' in kwargs:
@@ -55,13 +60,18 @@ class ContentLoadable(object):
 
         if len(args) > 0:
             self.filename = args[0]
+
+            self.encoding = None
+            if 'encoding' in kwargs:
+                self.encoding = kwargs['encoding']
+
             if self.file_type is None:
                 ext = list(os.path.splitext(self.filename))[1].lstrip('.')
                 if ext not in ['yml', 'yaml', 'md', 'markdown']:
                     raise ValueError("File is not a YAML or Markdown-formatted file")
                 self.file_type = 'yaml' if (ext in ['yml', 'yaml']) else 'markdown'
 
-            with open(self.filename, 'rt') as f:
+            with open(self.filename, mode='rt', encoding=self.encoding) as f:
                 self.file_content = f.read()
 
         elif 'from_string' in kwargs:
