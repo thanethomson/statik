@@ -1,6 +1,6 @@
 # Statik
 
-[![PyPI version 0.6.7](https://img.shields.io/badge/pypi-v0.6.7-blue.svg)](https://pypi.python.org/pypi/statik/0.6.7)
+[![PyPI version 0.7.0](https://img.shields.io/badge/pypi-v0.7.0-blue.svg)](https://pypi.python.org/pypi/statik/0.7.0)
 
 ## Overview
 **Statik** aims to be a simple, yet powerful, generic static web site generator.
