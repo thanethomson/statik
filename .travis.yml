@@ -1,0 +1,11 @@
+language: python
+python:
+  - "3.5"
+install:
+  - "python setup.py install"
+script:
+  - "python -m unittest"
+env:
+  - "LC_ALL=en_US.UTF-8"
+  - "LC_CTYPE=en_US.UTF-8"
+
