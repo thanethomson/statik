@@ -1,7 +1,7 @@
 # Statik
 
-[![PyPI version 0.7.1](https://img.shields.io/badge/pypi-v0.7.1-blue.svg)](https://pypi.python.org/pypi/statik/0.7.1)
 [![Build Status](https://travis-ci.org/thanethomson/statik.svg?branch=master)](https://travis-ci.org/thanethomson/statik)
+[![PyPI version 0.8.0](https://img.shields.io/badge/pypi-v0.8.0-blue.svg)](https://pypi.python.org/pypi/statik/0.8.0)
 
 ## Overview
 **Statik** aims to be a simple, yet powerful, generic static web site generator.
@@ -24,8 +24,9 @@ make your life easier.
 See the [wiki](https://github.com/thanethomson/statik/wiki) for more details.
 
 ## Requirements
-In order to install **Statik**, what you need is:
-* Python 3 (3.5+)
+In order to install **Statik**, you will need:
+
+* Python 2.7+ or Python 3.5+
 * `pip` or `easy_install`
 
 ## Installation
