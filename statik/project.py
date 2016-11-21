@@ -264,7 +264,7 @@ class StatikProject(object):
                 filename = os.path.join(output_path, k)
                 logger.info("Writing output file: %s" % filename)
                 # dump the contents of the file
-                with open(filename, 'wt') as f:
+                with open(filename, 'wt', encoding=self.config.encoding) as f:
                     f.write(v)
 
                 file_count += 1
