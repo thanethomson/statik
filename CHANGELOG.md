@@ -4,6 +4,15 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.7.1` - 21 November 2016
+
+* Adding traceback to exception logging
+
+### `v0.7.0` - 24 October 2016
+
+* Merged pull request #29 - Add 'encoding' config option to allow / force
+  opening files with a specific encoding
+
 ### `v0.6.7` - 01 September 2016
 
 * Fixing issue #28 - trailing comma issue (which only seems to come up with Python 3.4 for some reason).
