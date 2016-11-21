@@ -76,10 +76,10 @@ class StatikProject(object):
 
             self.config = self.config or StatikConfig(self.config_file_path)
 
-            if self.config.encoding != None:
+            if self.config.encoding is not None:
                 logger.info("Using encoding: %s" % self.config.encoding)
             else:
-                logger.debug("Using encoding: %s" % self.config.encoding)
+                logger.info("Using encoding: %s" % self.config.encoding)
 
             self.models = self.load_models()
             self.template_env = self.configure_templates()
@@ -110,7 +110,7 @@ class StatikProject(object):
                 result = file_count
 
         except Exception as e:
-            logger.error("Error caught: %s" % e)
+            logger.exception("Error caught: %s" % e)
 
         finally:
             try:
@@ -119,7 +119,7 @@ class StatikProject(object):
                 self.db.shutdown()
 
             except Exception as e:
-                logger.error("Unable to clean up properly: %s" % e)
+                logger.exception("Unable to clean up properly: %s" % e)
 
         # done
         return result
