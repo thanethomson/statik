@@ -1,5 +1,7 @@
 # -*- coding:utf-8 -*-
 
+from __future__ import unicode_literals
+
 import yaml
 from markdown.preprocessors import Preprocessor
 from markdown.extensions import Extension

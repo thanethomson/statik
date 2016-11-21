@@ -1,5 +1,7 @@
 # -*- coding:utf-8 -*-
 
+from __future__ import unicode_literals
+
 from statik.common import YamlLoadable
 from statik.utils import underscore_var_names
 
@@ -16,7 +18,7 @@ class StatikConfig(YamlLoadable):
     """
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(StatikConfig, self).__init__(*args, **kwargs)
         self.project_name = self.vars.get('project-name', 'Untitled project')
         self.base_path = self.vars.get('base-path', '/')
         self.encoding = self.vars.get('encoding')

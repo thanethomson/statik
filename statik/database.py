@@ -1,5 +1,9 @@
 # -*- coding:utf-8 -*-
 
+from __future__ import unicode_literals
+from future.utils import iteritems
+from io import open
+
 import os.path
 import yaml
 
@@ -73,7 +77,7 @@ class StatikDatabase(object):
         self.create_db(models)
 
     def find_backrefs(self):
-        for model_name, model in self.models.items():
+        for model_name, model in iteritems(self.models):
             logger.debug('Attempting to find backrefs for model: %s' % model_name)
             model.find_additional_rels(self.models)
 
@@ -81,7 +85,7 @@ class StatikDatabase(object):
         """Creates the in-memory SQLite database from the model
         configuration."""
         # first create the table definitions
-        self.tables = dict([(model_name, self.create_model_table(model)) for model_name, model in models.items()])
+        self.tables = dict([(model_name, self.create_model_table(model)) for model_name, model in iteritems(models)])
         # now create the tables in memory
         logger.debug("Creating %d database table(s)..." % len(self.tables))
         self.Base.metadata.create_all(self.engine)
@@ -234,7 +238,7 @@ class StatikDatabase(object):
         logger.debug("Attempting to execute database query: %s" % query)
 
         if additional_locals is not None:
-            for k, v in additional_locals.items():
+            for k, v in iteritems(additional_locals):
                 locals()[k] = v
 
         exec(
@@ -259,7 +263,7 @@ class StatikDatabase(object):
 class StatikDatabaseInstance(ContentLoadable):
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(StatikDatabaseInstance, self).__init__(*args, **kwargs)
         if 'model' not in kwargs:
             raise MissingParameterError("Missing parameter \"model\" for database instance constructor")
         self.model = kwargs['model']
@@ -307,7 +311,7 @@ class StatikDatabaseInstance(ContentLoadable):
 
     def __repr__(self):
         result_lines = ["<StatikDatabaseInstance model=%s" % self.model.name]
-        for field_name, field_value in self.field_values.items():
+        for field_name, field_value in iteritems(self.field_values):
             model_field = self.model.fields.get(field_name, None)
             if isinstance(model_field, StatikContentField) or isinstance(model_field, StatikTextField):
                 result_lines.append("                        %s=<...>" % field_name)
@@ -344,7 +348,7 @@ def db_model_factory(Base, model, all_models):
     }
 
     # populate all of the relevant additional relationships for this model
-    for field_name, rel in model.additional_rels.items():
+    for field_name, rel in iteritems(model.additional_rels):
         kwargs = {}
         if rel.get('back_populates', None) is not None:
             kwargs['back_populates'] = rel['back_populates']
@@ -407,7 +411,7 @@ def db_model_factory(Base, model, all_models):
             raise InvalidFieldTypeError("Unsupported database field type: %s" % field.field_type)
 
     Model = type(
-        model.name,
+        str(model.name),
         (Base,),
         model_fields
     )

@@ -1,5 +1,7 @@
 # -*- coding:utf-8 -*-
 
+from __future__ import unicode_literals
+
 from jinja2 import nodes
 from jinja2.ext import Extension
 from jinja2.exceptions import TemplateSyntaxError
@@ -23,7 +25,7 @@ class StatikUrlExtension(Extension):
     tags = {'url'}
 
     def __init__(self, environment):
-        super().__init__(environment)
+        super(StatikUrlExtension, self).__init__(environment)
 
         environment.extend(
             statik_views={},
@@ -64,7 +66,7 @@ class StatikAssetExtension(Extension):
     tags = {'asset'}
 
     def __init__(self, environment):
-        super().__init__(environment)
+        super(StatikAssetExtension, self).__init__(environment)
 
         environment.extend(
             statik_base_asset_url=''
@@ -89,12 +91,13 @@ class StatikAssetExtension(Extension):
 
 
 class StatikTemplateTagsExtension(Extension):
+
     @property
     def tags(self):
         return set(templatetags.store.tags.keys())
 
     def __init__(self, environment):
-        super().__init__(environment)
+        super(StatikTemplateTagsExtension, self).__init__(environment)
         self.active_tag = None
         logger.debug("Loaded custom template tags: %s" % (", ".join(self.tags), ))
 
@@ -108,7 +111,7 @@ class StatikTemplateTagsExtension(Extension):
         context = nodes.ContextReference()
 
         # get the arguments
-        args = []
+        args = [context]
         try:
             while True:
                 args.append(parser.parse_expression())
@@ -119,7 +122,7 @@ class StatikTemplateTagsExtension(Extension):
         self.active_tag = parser._tag_stack[-1]
 
         # create the node
-        node = self.call_method('_invoke_tag', [context, *args], lineno=lineno)
+        node = self.call_method('_invoke_tag', args=args, lineno=lineno)
 
         return nodes.Output(
             [node],

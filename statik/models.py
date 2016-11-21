@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 
-import yaml
+from __future__ import unicode_literals
+from future.utils import iteritems
 
 from statik.common import YamlLoadable
 from statik.fields import *
@@ -19,7 +20,7 @@ class StatikModel(YamlLoadable):
     """Represents a single model in our Statik project."""
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(StatikModel, self).__init__(*args, **kwargs)
         # if we're explicitly overriding a model name
         if 'name' in kwargs:
             self.name = kwargs['name']
@@ -44,7 +45,7 @@ class StatikModel(YamlLoadable):
         self.foreign_models = set()
 
         # build up all of our fields from the model configuration
-        for field_name, field_type in self.vars.items():
+        for field_name, field_type in iteritems(self.vars):
             if field_type == 'Content':
                 if self.content_field is not None:
                     raise ValueError("Only one \"Content\" field is allowed per model (%s)" % self.name)
@@ -61,7 +62,7 @@ class StatikModel(YamlLoadable):
         """Attempts to scan for additional relationship fields for this model based on all of the other models'
         structures and relationships.
         """
-        for model_name, model in all_models.items():
+        for model_name, model in iteritems(all_models):
             if model_name != self.name:
                 for field_name in model.field_names:
                     field = model.fields[field_name]

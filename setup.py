@@ -8,6 +8,7 @@ from setuptools import setup
 from statik import __version__
 
 INSTALL_REQUIREMENTS = [
+    "future==0.16.0",
     "jinja2==2.8",
     "PyYAML==3.11",
     "SQLAlchemy==1.0.14",
@@ -37,6 +38,7 @@ setup(
         "Natural Language :: English",
         "Operating System :: POSIX",
         "Operating System :: MacOS",
+        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3.5",
         "Topic :: Internet :: WWW/HTTP",
         "Topic :: Utilities",

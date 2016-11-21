@@ -1,10 +1,22 @@
 # -*- coding:utf-8 -*-
 
+from __future__ import unicode_literals
+from future.utils import iteritems
+from io import open
+
 import os
 import os.path
 from copy import deepcopy, copy
 import shutil
-import importlib
+
+import six
+
+if six.PY3:
+    import importlib.util
+elif six.PY2:
+    import imp
+
+from glob import glob
 
 import logging
 logger = logging.getLogger(__name__)
@@ -82,7 +94,7 @@ def deep_merge_dict(a, b):
     _a = copy(a)
     _b = copy(b)
 
-    for key_b, val_b in _b.items():
+    for key_b, val_b in iteritems(_b):
         # if it's a sub-dictionary
         if isinstance(val_b, dict):
             if key_b not in _a or not isinstance(_a[key_b], dict):
@@ -99,7 +111,7 @@ def deep_merge_dict(a, b):
 
 def underscore_var_names(d):
     _d = {}
-    for k, v in d.items():
+    for k, v in iteritems(d):
         _k = k.replace('-', '_')
         # perform the underscoring recursively
         _d[_k] = underscore_var_names(v) if isinstance(v, dict) else v
@@ -174,12 +186,20 @@ def ensure_file_exists(path, default_content):
             f.write(default_content)
 
 
-def import_python_modules_by_path(path):
-    for filename in list_files(path, "py"):
-        name = extract_filename(filename)
-        spec = importlib.util.spec_from_file_location(name, os.path.join(path, filename))
+def import_module(module_name, path):
+    if six.PY3:
+        spec = importlib.util.spec_from_file_location(module_name, path)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
+    elif six.PY2:
+        imp.load_source(module_name, path)
+
+
+def import_python_modules_by_path(path):
+    module_files = glob(os.path.join(path, "*.py"))
+    for filename in module_files:
+        name = extract_filename(filename)
+        import_module(name, filename)
 
 
 def get_project_config_file(path, default_config_file_name):
@@ -212,7 +232,7 @@ def dict_strip(d):
         A new dictionary object, whose string values' whitespace has been stripped out.
     """
     _d = deepcopy(d)
-    for k, v in d.items():
+    for k, v in iteritems(d):
         if isinstance(v, str):
             _d[k] = v.strip()
         elif isinstance(v, dict):

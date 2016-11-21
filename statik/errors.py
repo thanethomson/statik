@@ -1,5 +1,7 @@
 # -*- coding:utf-8 -*-
 
+from __future__ import unicode_literals
+
 __all__ = [
     'ReservedFieldNameError',
     'InvalidFieldTypeError',
@@ -22,7 +24,7 @@ class InvalidFieldTypeError(ValueError):
 
 class MissingProjectFolderError(ValueError):
     def __init__(self, folder, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(MissingProjectFolderError, self).__init__(*args, **kwargs)
         self.folder = folder
 
 

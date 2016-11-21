@@ -1,5 +1,7 @@
 # -*- coding:utf-8 -*-
 
+from __future__ import unicode_literals
+
 from copy import copy
 
 from statik.errors import InvalidFieldTypeError
@@ -37,43 +39,43 @@ class StatikModelField(object):
 
 class StatikDateTimeField(StatikModelField):
     def __init__(self, name, **kwargs):
-        super().__init__(name, 'DateTime', **kwargs)
+        super(StatikDateTimeField, self).__init__(name, 'DateTime', **kwargs)
 
 
 class StatikStringField(StatikModelField):
     def __init__(self, name, **kwargs):
-        super().__init__(name, 'String', **kwargs)
+        super(StatikStringField, self).__init__(name, 'String', **kwargs)
 
 
 class StatikTextField(StatikModelField):
     def __init__(self, name, **kwargs):
-        super().__init__(name, 'Text', **kwargs)
+        super(StatikTextField, self).__init__(name, 'Text', **kwargs)
 
 
 class StatikIntegerField(StatikModelField):
     def __init__(self, name, **kwargs):
-        super().__init__(name, 'Integer', **kwargs)
+        super(StatikIntegerField, self).__init__(name, 'Integer', **kwargs)
 
 
 class StatikBooleanField(StatikModelField):
     def __init__(self, name, **kwargs):
-        super().__init__(name, 'Boolean', **kwargs)
+        super(StatikBooleanField, self).__init__(name, 'Boolean', **kwargs)
 
 
 class StatikContentField(StatikModelField):
     def __init__(self, name, **kwargs):
-        super().__init__(name, 'Content', **kwargs)
+        super(StatikContentField, self).__init__(name, 'Content', **kwargs)
 
 
 class StatikForeignKeyField(StatikModelField):
     def __init__(self, name, foreign_model, **kwargs):
-        super().__init__(name, foreign_model, **kwargs)
+        super(StatikForeignKeyField, self).__init__(name, foreign_model, **kwargs)
         self.back_populates = kwargs.get('back_populates', None)
 
 
 class StatikManyToManyField(StatikModelField):
     def __init__(self, name, foreign_model, **kwargs):
-        super().__init__(name, foreign_model, **kwargs)
+        super(StatikManyToManyField, self).__init__(name, foreign_model, **kwargs)
         self.back_populates = kwargs.get('back_populates', None)
 
 

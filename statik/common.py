@@ -1,5 +1,8 @@
 # -*- coding:utf-8 -*-
 
+from __future__ import unicode_literals
+from io import open
+
 import os.path
 import yaml
 from markdown import Markdown

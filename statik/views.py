@@ -1,5 +1,8 @@
 # -*- coding:utf-8 -*-
 
+from __future__ import unicode_literals
+from future.utils import iteritems
+
 import os.path
 
 from copy import deepcopy
@@ -19,7 +22,7 @@ __all__ = [
 
 class StatikView(YamlLoadable):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(StatikView, self).__init__(*args, **kwargs)
 
         # defaults
         self.complex = False
@@ -152,7 +155,7 @@ class StatikView(YamlLoadable):
 
     def render_context_for_each(self, db, inst):
         result = dict()
-        for k, v in self.context_for_each.items():
+        for k, v in iteritems(self.context_for_each):
             result[k] = db.query(v, additional_locals={self.path_variable: inst})
         return result
 
@@ -169,7 +172,7 @@ class StatikView(YamlLoadable):
 
     def process_context_dynamic(self, db):
         result = {}
-        for var, query in self.context_dynamic.items():
+        for var, query in iteritems(self.context_dynamic):
             result[var] = db.query(query)
         return result
 

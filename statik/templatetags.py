@@ -1,5 +1,8 @@
 # -*- coding:utf-8 -*-
 
+from __future__ import unicode_literals
+from builtins import dict
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -20,9 +23,9 @@ class TemplateTagStore(object):
     """
 
     def __init__(self):
-        self.filters = {}
-        self.tags = {}
-        self.takes_context = {}
+        self.filters = dict()
+        self.tags = dict()
+        self.takes_context = dict()
 
     def invoke_tag(self, tag_name, context, *args, **kwargs):
         if self.takes_context[tag_name]:
@@ -36,11 +39,12 @@ class TemplateTagStore(object):
         self.filters[name] = fn
 
     def simple_tag(self, *args, **kwargs):
+        _self = self
         name = kwargs.pop('name', None)
-        if name:
+        if name is not None:
             def decorator(fn):
                 logger.debug("Registering tag: %s" % name)
-                self.register_tag(name, fn)
+                _self.register_tag(name, fn)
             ret = decorator
         else:
             fn = args[0]
@@ -55,11 +59,12 @@ class TemplateTagStore(object):
         return ret
 
     def filter(self, *args, **kwargs):
+        _self = self
         name = kwargs.pop('name', None)
-        if name:
+        if name is not None:
             def decorator(fn):
                 logger.debug("Registering filter: %s" % name)
-                self.register_filter(name, fn)
+                _self.register_filter(name, fn)
             ret = decorator
         else:
             fn = args[0]
