@@ -32,14 +32,17 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         self.assertIn('15', output_data['2016']['06'])
         self.assertIn('18', output_data['2016']['06'])
         self.assertIn('25', output_data['2016']['06'])
+        self.assertIn('30', output_data['2016']['06'])
         self.assertIn('andrew-hello-world', output_data['2016']['06']['12'])
         self.assertIn('my-first-post', output_data['2016']['06']['15'])
         self.assertIn('second-post', output_data['2016']['06']['18'])
         self.assertIn('andrew-second-post', output_data['2016']['06']['25'])
+        self.assertIn('tables-test', output_data['2016']['06']['30'])
         self.assertIn('index.html', output_data['2016']['06']['12']['andrew-hello-world'])
         self.assertIn('index.html', output_data['2016']['06']['15']['my-first-post'])
         self.assertIn('index.html', output_data['2016']['06']['18']['second-post'])
         self.assertIn('index.html', output_data['2016']['06']['25']['andrew-second-post'])
+        self.assertIn('index.html', output_data['2016']['06']['30']['tables-test'])
         self.assertIn('index.html', output_data['tag-testing'])
         self.assertIn('overlap', output_data)
         self.assertIn('index.html', output_data['overlap'])
@@ -81,19 +84,21 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         homepage_link_titles = [el.text.strip() for el in homepage_link_els]
         self.assertEqual(
             [
+                '/2016/06/30/tables-test/',
                 '/2016/06/25/andrew-second-post/',
                 '/2016/06/18/second-post/',
                 '/2016/06/15/my-first-post/',
-                '/2016/06/12/andrew-hello-world/',
+                '/2016/06/12/andrew-hello-world/'
             ],
             homepage_links,
         )
         self.assertEqual(
             [
+                'Testing Markdown tables',
                 'Andrew\'s Second Post',
                 'Second post',
                 'My first post',
-                'Andrew says Hello World',
+                'Andrew says Hello World'
             ],
             homepage_link_titles,
         )
@@ -156,15 +161,17 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         link_titles_by_author = [el.text.strip() for el in links_by_author_els]
         self.assertEqual(
             [
+                '/2016/06/30/tables-test/',
                 '/2016/06/25/andrew-second-post/',
-                '/2016/06/12/andrew-hello-world/',
+                '/2016/06/12/andrew-hello-world/'
             ],
             links_by_author
         )
         self.assertEqual(
             [
+                'Testing Markdown tables',
                 'Andrew\'s Second Post',
-                'Andrew says Hello World',
+                'Andrew says Hello World'
             ],
             link_titles_by_author,
         )
@@ -223,6 +230,20 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         self.assertEqual('html', ov.findall('.')[0].tag)
         self.assertEqual('Overlap Test', ov.findall('./head/title')[0].text.strip())
         self.assertEqual("Andrew's Second Post", ov.findall('./body/h1')[0].text.strip())
+
+        # Test the Markdown table generation
+        tables = ET.fromstring(output_data['2016']['06']['30']['tables-test']['index.html'])
+        self.assertEqual('html', tables.findall('.')[0].tag)
+        headings = tables.findall("./body/div[@class='content']/table/thead/tr/th")
+        self.assertEqual(3, len(headings))
+        self.assertEqual(['Heading 1', 'Heading 2', 'Heading 3'], [el.text.strip() for el in headings])
+
+        cells = tables.findall("./body/div[@class='content']/table/tbody/tr/td")
+        self.assertEqual(6, len(cells))
+        self.assertEqual(
+            ['One', 'Two', 'Three', 'Four', 'Five', 'Six'],
+            [el.text.strip() for el in cells]
+        )
 
 
 def strip_str(s):

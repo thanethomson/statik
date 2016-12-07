@@ -110,7 +110,10 @@ class ContentLoadable(object):
                     extensions=[
                         MarkdownYamlMetaExtension(),
                         'markdown.extensions.fenced_code',
-                    ],
+                        'markdown.extensions.tables',
+                        'markdown.extensions.toc',
+                        'markdown.extensions.footnotes'
+                    ]
                 )
                 self.content = md.convert(self.file_content)
                 self.vars = md.meta
