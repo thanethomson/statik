@@ -4,6 +4,15 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.9.0` - 07 December 2016
+
+* Adding `toc`, `footnotes` and `tables` extensions to Markdown
+  parser.
+
+### `v0.8.1` - 21 November 2016
+
+* Minor bugfix to apply encoding to output files as well.
+
 ### `v0.8.0` - 21 November 2016
 
 * Adding support for Python 2.7+
