@@ -8,12 +8,12 @@ from setuptools import setup
 from statik import __version__
 
 INSTALL_REQUIREMENTS = [
-    "future==0.16.0",
-    "jinja2==2.8",
-    "PyYAML==3.11",
-    "SQLAlchemy==1.0.14",
-    "markdown==2.6.6",
-    "livereload==2.4.1",
+    "future>=0.16.0",
+    "jinja2>=2.8",
+    "PyYAML>=3.11",
+    "SQLAlchemy>=1.0.14",
+    "markdown>=2.6.6",
+    "livereload>=2.4.1",
 ]
 
 setup(
