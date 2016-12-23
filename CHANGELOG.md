@@ -4,6 +4,11 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.9.1` - 23 December 2016
+
+* Changed **Statik** dependency versions to look for minimum versions of
+  packages, as per #33.
+
 ### `v0.9.0` - 07 December 2016
 
 * Adding `toc`, `footnotes` and `tables` extensions to Markdown
