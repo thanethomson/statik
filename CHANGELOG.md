@@ -4,6 +4,11 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.10.0` - 26 December 2016
+
+* Added pagination functionality for simplified pagination.
+* Minor tweak to check that path templates are indeed strings.
+
 ### `v0.9.1` - 23 December 2016
 
 * Changed **Statik** dependency versions to look for minimum versions of
