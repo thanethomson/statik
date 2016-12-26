@@ -2,6 +2,7 @@
 
 from __future__ import unicode_literals
 from future.utils import iteritems
+from past.builtins import basestring
 
 import os.path
 
@@ -93,7 +94,7 @@ class StatikView(YamlLoadable):
         self.configure_context()
 
     def configure_complex_view(self, path):
-        if 'template' not in path:
+        if 'template' not in path or not isinstance(path['template'], basestring):
             raise MissingParameterError(
                 "Complex \"path\" variable must contain a \"template\" value in view: %s" % self.name)
         if 'for-each' not in path:
