@@ -16,6 +16,7 @@ from statik.common import ContentLoadable
 from statik.fields import *
 from statik.errors import *
 from statik.utils import *
+from statik.pagination import *
 
 # utility imports for SQLAlchemy code execution
 from datetime import datetime, date, timedelta, time

@@ -54,6 +54,14 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         self.assertIn('index.html', output_data['overlap']['second-post'])
         self.assertIn('andrew-second-post', output_data['overlap'])
         self.assertIn('index.html', output_data['overlap']['andrew-second-post'])
+        # test for pagination: we expect 3 pages at 2 items per page
+        self.assertIn('paged-posts', output_data)
+        self.assertIn('1', output_data['paged-posts'])
+        self.assertIn('index.html', output_data['paged-posts']['1'])
+        self.assertIn('2', output_data['paged-posts'])
+        self.assertIn('index.html', output_data['paged-posts']['2'])
+        self.assertIn('3', output_data['paged-posts'])
+        self.assertIn('index.html', output_data['paged-posts']['3'])
 
         # Check that the generated author bio is there
         self.assertIn('bios', output_data)
@@ -243,6 +251,71 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         self.assertEqual(
             ['One', 'Two', 'Three', 'Four', 'Five', 'Six'],
             [el.text.strip() for el in cells]
+        )
+
+        # Now test for the pagination
+        pp = ET.fromstring(output_data['paged-posts']['1']['index.html'])
+        self.assertEqual('html', pp.findall('.')[0].tag)
+        self.assertEqual('Page 1 of 3', pp.findall('./head/title')[0].text.strip())
+        self.assertEqual('Page 1 of 3', pp.findall('./body/h1')[0].text.strip())
+        pp_els = pp.findall('./body/ul/li/a')
+        pp_links = [el.attrib['href'] for el in pp_els]
+        pp_link_titles = [el.text.strip() for el in pp_els]
+        self.assertEqual(
+            [
+                '/2016/06/30/tables-test/',
+                '/2016/06/25/andrew-second-post/'
+            ],
+            pp_links,
+        )
+        self.assertEqual(
+            [
+                'Testing Markdown tables',
+                'Andrew\'s Second Post'
+            ],
+            pp_link_titles,
+        )
+
+        pp = ET.fromstring(output_data['paged-posts']['2']['index.html'])
+        self.assertEqual('html', pp.findall('.')[0].tag)
+        self.assertEqual('Page 2 of 3', pp.findall('./head/title')[0].text.strip())
+        self.assertEqual('Page 2 of 3', pp.findall('./body/h1')[0].text.strip())
+        pp_els = pp.findall('./body/ul/li/a')
+        pp_links = [el.attrib['href'] for el in pp_els]
+        pp_link_titles = [el.text.strip() for el in pp_els]
+        self.assertEqual(
+            [
+                '/2016/06/18/second-post/',
+                '/2016/06/15/my-first-post/'
+            ],
+            pp_links,
+        )
+        self.assertEqual(
+            [
+                'Second post',
+                'My first post'
+            ],
+            pp_link_titles,
+        )
+
+        pp = ET.fromstring(output_data['paged-posts']['3']['index.html'])
+        self.assertEqual('html', pp.findall('.')[0].tag)
+        self.assertEqual('Page 3 of 3', pp.findall('./head/title')[0].text.strip())
+        self.assertEqual('Page 3 of 3', pp.findall('./body/h1')[0].text.strip())
+        pp_els = pp.findall('./body/ul/li/a')
+        pp_links = [el.attrib['href'] for el in pp_els]
+        pp_link_titles = [el.text.strip() for el in pp_els]
+        self.assertEqual(
+            [
+                '/2016/06/12/andrew-hello-world/'
+            ],
+            pp_links,
+        )
+        self.assertEqual(
+            [
+                'Andrew says Hello World'
+            ],
+            pp_link_titles,
         )
 
 

@@ -1,0 +1,131 @@
+# -*- coding: utf-8 -*-
+
+from __future__ import unicode_literals
+import math
+
+__all__ = [
+    "paginate"
+]
+
+
+class PageIterator:
+    def __init__(self, page):
+        self.page = page
+        self.cur_item = 0
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        if self.cur_item >= self.page.count:
+            raise StopIteration()
+        self.cur_item += 1
+        return self.page.items[self.cur_item - 1]
+
+    def __next__(self):
+        return self.next()
+
+
+class Page(object):
+    """For representing a single page of items."""
+
+    def __init__(self, paginator, number, items):
+        """Constructor.
+
+        Args:
+            paginator: The parent paginator object.
+            number: The number of this page (starting from 1).
+            items: A list of items to belong to this page.
+        """
+        self.paginator = paginator
+        self.number = number
+        self.number0 = number - 1   # for zero-indexed pagination
+        self.items = items
+        self.count = len(items)
+
+        # copy the paginator variables
+        self.total_items = paginator.total_items
+        self.items_per_page = paginator.items_per_page
+        self.total_pages = paginator.total_pages
+        self.page_range = paginator.page_range
+
+    def __iter__(self):
+        return PageIterator(self)
+
+    def __len__(self):
+        return self.count
+
+    def has_next(self):
+        return self.number < self.total_pages
+
+    def has_previous(self):
+        return self.number > 1
+
+
+class PaginatorIterator:
+    """A Python iterator for iterating through paginated items."""
+
+    def __init__(self, paginator):
+        self.paginator = paginator
+        self.cur_page = 1
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        if self.cur_page > self.paginator.total_pages:
+            raise StopIteration()
+        self.cur_page += 1
+        return self.paginator[self.cur_page - 1]
+
+    def __next__(self):
+        return self.next()
+
+
+class Paginator(object):
+    """Paginator class for encapsulating a collection of paged items."""
+
+    def __init__(self, db_query, items_per_page, offset=0):
+        """Constructor.
+
+        Args:
+            db_query: The database query to execute.
+        """
+        self.db_query = db_query
+        self.items_per_page = items_per_page
+        self.offset = offset
+
+        self.total_items = db_query.count() - offset
+        self.total_pages = int(math.ceil(float(self.total_items) / float(items_per_page)))
+        self.page_range = range(1, self.total_pages + 1)
+
+    def empty(self):
+        return self.total_pages == 0
+
+    def __getitem__(self, page):
+        if page < 1 or page > self.total_pages:
+            raise IndexError("Invalid page number: %d" % page)
+        return Page(
+            self,
+            page,
+            self.db_query.offset(
+                self.offset + ((page-1) * self.items_per_page)
+            ).limit(self.items_per_page).all()
+        )
+
+    def __len__(self):
+        return self.total_pages
+
+    def __iter__(self):
+        return PaginatorIterator(self)
+
+
+def paginate(db_query, items_per_page, offset=0):
+    """Instantiates a Paginator instance for database queries.
+
+    Args:
+        db_query: The SQLAlchemy database query to paginate.
+        items_per_page: The desired number of items per page.
+        offset: The number of items to skip when paginating.
+    """
+    return Paginator(db_query, items_per_page, offset=offset)
