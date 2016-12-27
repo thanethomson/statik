@@ -4,6 +4,12 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.10.4` - 27 December 2016
+
+* For pagination: forcing `Page.has_previous()` and `Page.has_next()`
+  results to `bool`.
+* Turned `Page.has_previous` and `Page.has_next` into properties.
+
 ### `v0.10.3` - 27 December 2016
 
 * For pagination: bugfix for incorrect iteration.
