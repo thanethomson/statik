@@ -78,7 +78,7 @@ class PaginatorIterator:
         return self
 
     def next(self):
-        if self.cur_page > self.paginator.total_pages:
+        if self.cur_page > self.paginator.last_page:
             raise StopIteration()
         self.cur_page += 1
         return self.paginator[self.cur_page - 1]
@@ -110,7 +110,7 @@ class Paginator(object):
         return self.total_pages == 0
 
     def __getitem__(self, page):
-        if page < self.start_page or page > self.total_pages:
+        if page < self.start_page or page > self.last_page:
             raise IndexError("Invalid page number: %d" % page)
         return Page(
             self,

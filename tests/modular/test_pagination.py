@@ -39,6 +39,7 @@ class TestStatikPagination(unittest.TestCase):
         self.assertEqual(0, paginator.offset)
         self.assertEqual(100, paginator.total_items)
         self.assertEqual(10, paginator.last_page)
+        self.assertEqual(1, paginator.start_page)
         self.assertFalse(paginator.empty())
 
         page_no = 1
@@ -68,6 +69,8 @@ class TestStatikPagination(unittest.TestCase):
             self.assertEqual(10, page.total_pages)
 
             page_no += 1
+
+        self.assertEqual(11, page_no)
 
     def test_empty_pagination(self):
         db_query = MockDBQuery([])
@@ -116,6 +119,7 @@ class TestStatikPagination(unittest.TestCase):
         paginator = paginate(db_query, 10, start_page=2)
         self.assertEqual(10, len(paginator))
         self.assertEqual(range(2, 12), paginator.page_range)
+        self.assertEqual(2, paginator.start_page)
         self.assertEqual(11, paginator.last_page)
 
         page_number = 2
@@ -134,6 +138,15 @@ class TestStatikPagination(unittest.TestCase):
                 self.assertTrue(page.has_next())
 
             page_number += 1
+
+        self.assertEqual(12, page_number)
+
+    def test_non_standard_starting_page_with_offset(self):
+        db_query = MockDBQuery([i for i in range(100)])
+        paginator = paginate(db_query, 10, offset=5, start_page=2)
+        self.assertEqual(10, len(paginator))
+        self.assertEqual(range(2, 12), paginator.page_range)
+        self.assertEqual(11, paginator.last_page)
 
 
 if __name__ == "__main__":
