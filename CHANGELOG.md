@@ -4,6 +4,10 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.10.2` - 27 December 2016
+
+* For pagination: minor fix for reverse lookup of paginated URLs.
+
 ### `v0.10.1` - 27 December 2016
 
 * For pagination: added ability to manually specify the starting
