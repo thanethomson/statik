@@ -51,6 +51,9 @@ class Page(object):
         self.start_page = paginator.start_page
         self.last_page = paginator.last_page
 
+    def __str__(self):
+        return "%d" % self.number
+
     def __iter__(self):
         return PageIterator(self)
 

@@ -53,6 +53,9 @@ class TestStatikPagination(unittest.TestCase):
                 self.assertTrue(page.has_next())
                 self.assertTrue(page.has_previous())
 
+            # test for page conversion to string -> page number
+            self.assertEqual(page_no, int("%s" % page))
+
             self.assertEqual(page_no, page.number)
             self.assertEqual(page_no-1, page.number0)
             self.assertEqual(10, page.count)
