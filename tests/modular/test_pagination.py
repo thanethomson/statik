@@ -44,15 +44,18 @@ class TestStatikPagination(unittest.TestCase):
 
         page_no = 1
         for page in paginator:
+            self.assertTrue(isinstance(page.has_next, bool))
+            self.assertTrue(isinstance(page.has_previous, bool))
+
             if page_no == 1:
-                self.assertTrue(page.has_next())
-                self.assertFalse(page.has_previous())
+                self.assertTrue(page.has_next)
+                self.assertFalse(page.has_previous)
             elif page_no == 10:
-                self.assertFalse(page.has_next())
-                self.assertTrue(page.has_previous())
+                self.assertFalse(page.has_next)
+                self.assertTrue(page.has_previous)
             else:
-                self.assertTrue(page.has_next())
-                self.assertTrue(page.has_previous())
+                self.assertTrue(page.has_next)
+                self.assertTrue(page.has_previous)
 
             # test for page conversion to string -> page number
             self.assertEqual(page_no, int("%s" % page))
@@ -128,14 +131,14 @@ class TestStatikPagination(unittest.TestCase):
             self.assertEqual([i for i in range((page_number - 2) * 10, (page_number - 1) * 10)], page.items)
 
             if page_number == 2:
-                self.assertFalse(page.has_previous())
-                self.assertTrue(page.has_next())
+                self.assertFalse(page.has_previous)
+                self.assertTrue(page.has_next)
             elif page_number == 11:
-                self.assertTrue(page.has_previous())
-                self.assertFalse(page.has_next())
+                self.assertTrue(page.has_previous)
+                self.assertFalse(page.has_next)
             else:
-                self.assertTrue(page.has_previous())
-                self.assertTrue(page.has_next())
+                self.assertTrue(page.has_previous)
+                self.assertTrue(page.has_next)
 
             page_number += 1
 

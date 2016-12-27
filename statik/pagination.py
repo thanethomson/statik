@@ -60,11 +60,13 @@ class Page(object):
     def __len__(self):
         return self.count
 
+    @property
     def has_next(self):
-        return self.number < self.last_page
+        return True if self.number < self.last_page else False
 
+    @property
     def has_previous(self):
-        return self.number > self.start_page
+        return True if self.number > self.start_page else False
 
 
 class PaginatorIterator:
