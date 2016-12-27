@@ -4,6 +4,11 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.10.1` - 27 December 2016
+
+* For pagination: added ability to manually specify the starting
+  page number.
+
 ### `v0.10.0` - 26 December 2016
 
 * Added pagination functionality for simplified pagination.
