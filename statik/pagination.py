@@ -48,6 +48,8 @@ class Page(object):
         self.items_per_page = paginator.items_per_page
         self.total_pages = paginator.total_pages
         self.page_range = paginator.page_range
+        self.start_page = paginator.start_page
+        self.last_page = paginator.last_page
 
     def __iter__(self):
         return PageIterator(self)
@@ -56,18 +58,18 @@ class Page(object):
         return self.count
 
     def has_next(self):
-        return self.number < self.total_pages
+        return self.number < self.last_page
 
     def has_previous(self):
-        return self.number > 1
+        return self.number > self.start_page
 
 
 class PaginatorIterator:
     """A Python iterator for iterating through paginated items."""
 
-    def __init__(self, paginator):
+    def __init__(self, paginator, start_page=1):
         self.paginator = paginator
-        self.cur_page = 1
+        self.cur_page = start_page
 
     def __iter__(self):
         return self
@@ -85,7 +87,7 @@ class PaginatorIterator:
 class Paginator(object):
     """Paginator class for encapsulating a collection of paged items."""
 
-    def __init__(self, db_query, items_per_page, offset=0):
+    def __init__(self, db_query, items_per_page, offset=0, start_page=1):
         """Constructor.
 
         Args:
@@ -94,22 +96,24 @@ class Paginator(object):
         self.db_query = db_query
         self.items_per_page = items_per_page
         self.offset = offset
+        self.start_page = start_page
 
         self.total_items = db_query.count() - offset
         self.total_pages = int(math.ceil(float(self.total_items) / float(items_per_page)))
-        self.page_range = range(1, self.total_pages + 1)
+        self.last_page = self.start_page + self.total_pages - 1
+        self.page_range = range(self.start_page, self.last_page + 1)
 
     def empty(self):
         return self.total_pages == 0
 
     def __getitem__(self, page):
-        if page < 1 or page > self.total_pages:
+        if page < self.start_page or page > self.total_pages:
             raise IndexError("Invalid page number: %d" % page)
         return Page(
             self,
             page,
             self.db_query.offset(
-                self.offset + ((page-1) * self.items_per_page)
+                self.offset + ((page-self.start_page) * self.items_per_page)
             ).limit(self.items_per_page).all()
         )
 
@@ -117,15 +121,16 @@ class Paginator(object):
         return self.total_pages
 
     def __iter__(self):
-        return PaginatorIterator(self)
+        return PaginatorIterator(self, start_page=self.start_page)
 
 
-def paginate(db_query, items_per_page, offset=0):
+def paginate(db_query, items_per_page, offset=0, start_page=1):
     """Instantiates a Paginator instance for database queries.
 
     Args:
         db_query: The SQLAlchemy database query to paginate.
         items_per_page: The desired number of items per page.
         offset: The number of items to skip when paginating.
+        start_page: The number of the first page when reporting on page numbers.
     """
-    return Paginator(db_query, items_per_page, offset=offset)
+    return Paginator(db_query, items_per_page, offset=offset, start_page=start_page)
