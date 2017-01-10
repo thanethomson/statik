@@ -4,6 +4,10 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.11.0` - 10 January 2017
+
+* Added support for themes.
+
 ### `v0.10.4` - 27 December 2016
 
 * For pagination: forcing `Page.has_previous()` and `Page.has_next()`
