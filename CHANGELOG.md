@@ -4,6 +4,10 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.11.1` - 10 January 2017
+
+* Now testing with Python 3.6 as well.
+
 ### `v0.11.0` - 10 January 2017
 
 * Added support for themes.

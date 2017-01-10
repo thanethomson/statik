@@ -2,8 +2,6 @@
 
 from __future__ import unicode_literals
 
-import os.path
-
 from statik.common import YamlLoadable
 from statik.utils import underscore_var_names
 
