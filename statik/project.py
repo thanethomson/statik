@@ -152,7 +152,7 @@ class StatikProject(object):
             import_python_modules_by_path(templatetags_path)
 
         env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(template_path),
+            loader=jinja2.FileSystemLoader(template_path, encoding=self.config.encoding),
             extensions=[
                 'statik.jinja2ext.StatikUrlExtension',
                 'statik.jinja2ext.StatikAssetExtension',
@@ -221,7 +221,7 @@ class StatikProject(object):
         if not os.path.isdir(data_path):
             raise MissingProjectFolderError(StatikProject.DATA_DIR, "Project is missing its data folder")
 
-        return StatikDatabase(data_path, models, self.config.encoding)
+        return StatikDatabase(data_path, models, self.config.encoding, markdown_config=self.config.markdown_config)
 
     def load_project_context(self):
         """Loads the project context (static and dynamic) from the database/models for common use amongst
@@ -290,7 +290,10 @@ class StatikProject(object):
         """
         src_path = self.config.assets_src_path
         if not os.path.isabs(src_path):
-            src_path = os.path.join(self.path, src_path)
+            if self.config.theme is None:
+                src_path = os.path.join(self.path, src_path)
+            else:
+                src_path = os.path.join(self.path, StatikProject.THEMES_DIR, self.config.theme, src_path)
 
         if os.path.isdir(src_path):
             dest_path = self.config.assets_dest_path

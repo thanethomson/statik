@@ -7,9 +7,10 @@ import os.path
 import yaml
 from markdown import Markdown
 
-from statik.markdownyaml import MarkdownYamlMetaExtension
+from statik.markdown_exts import *
 from statik.utils import *
 from statik.errors import *
+from statik.markdown_config import MarkdownConfig
 
 __all__ = [
     'YamlLoadable',
@@ -22,10 +23,11 @@ class YamlLoadable(object):
     YAML string, passed through to the constructor."""
 
     def __init__(self, *args, **kwargs):
+        # default to UTF-8
+        self.encoding = "utf-8"
         if len(args) > 0:
             self.filename = args[0]
 
-            self.encoding = None
             if 'encoding' in kwargs:
                 self.encoding = kwargs['encoding']
 
@@ -61,10 +63,12 @@ class ContentLoadable(object):
             if self.file_type not in ['yaml', 'markdown']:
                 raise ValueError("Invalid file type for content loadable: %s" % self.file_type)
 
+        self.markdown_config = kwargs.get('markdown_config', None)
+        self.encoding = "utf-8"
+
         if len(args) > 0:
             self.filename = args[0]
 
-            self.encoding = None
             if 'encoding' in kwargs:
                 self.encoding = kwargs['encoding']
 
@@ -106,15 +110,24 @@ class ContentLoadable(object):
                 if not isinstance(self.vars, dict):
                     self.vars = {}
             else:
-                md = Markdown(
-                    extensions=[
-                        MarkdownYamlMetaExtension(),
-                        'markdown.extensions.fenced_code',
-                        'markdown.extensions.tables',
-                        'markdown.extensions.toc',
-                        'markdown.extensions.footnotes'
-                    ]
-                )
+                markdown_ext = [
+                    MarkdownYamlMetaExtension()
+                ]
+                if self.markdown_config.enable_permalinks:
+                    markdown_ext.append(
+                        MarkdownPermalinkExtension(
+                            permalink_text=self.markdown_config.permalink_text,
+                            permalink_class=self.markdown_config.permalink_class,
+                            permalink_title=self.markdown_config.permalink_title,
+                        )
+                    )
+                markdown_ext.extend([
+                    'markdown.extensions.fenced_code',
+                    'markdown.extensions.tables',
+                    'markdown.extensions.toc',
+                    'markdown.extensions.footnotes'
+                ])
+                md = Markdown(extensions=markdown_ext)
                 self.content = md.convert(self.file_content)
                 self.vars = md.meta
 

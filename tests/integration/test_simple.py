@@ -7,6 +7,7 @@ import xml.etree.ElementTree as ET
 import unittest
 
 from statik.generator import generate
+from statik.utils import strip_el_text
 
 
 class TestSimpleStatikIntegration(unittest.TestCase):
@@ -129,7 +130,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         self.assertEqual('Markdown', post_content_els[0].text.strip())
         self.assertEqual('code', post_content_els[1].tag)
         self.assertEqual('HTML', post_content_els[1].text.strip())
-        post_content_text = get_plain_text_in_el(post_content)
+        post_content_text = strip_el_text(post_content, max_depth=1)
         self.assertEqual(
                 "This is the Markdown content of the first post, which should appropriately be translated into the " +
                 "relevant HTML code.",
@@ -145,7 +146,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         bio_content_els = [el for el in bio_content]
         self.assertEqual('strong', bio_content_els[0].tag)
         self.assertEqual('Markdown', bio_content_els[0].text.strip())
-        bio_content_text = get_plain_text_in_el(bio_content)
+        bio_content_text = strip_el_text(bio_content, max_depth=1)
         self.assertEqual("This is Michael's bio, in Markdown format.", bio_content_text)
 
         bio = ET.fromstring(output_data['bios']['andrew']['index.html'])
@@ -156,7 +157,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         bio_content = bio.findall(".//div[@class='content']/p")[0]
         bio_content_els = [el for el in bio_content]
         self.assertEqual('em', bio_content_els[0].tag)
-        bio_content_text = get_plain_text_in_el(bio_content)
+        bio_content_text = strip_el_text(bio_content, max_depth=1)
         self.assertEqual("Here's Andrew's bio!", bio_content_text)
 
         # Test the for-each context rendering
@@ -317,27 +318,6 @@ class TestSimpleStatikIntegration(unittest.TestCase):
             ],
             pp_link_titles,
         )
-
-
-def strip_str(s):
-    """Strips out newlines and whitespace from the given string."""
-    return ' '.join([w.strip() for w in s.strip().split('\n')])
-
-
-def get_plain_text_in_el(el, root_level=True):
-    """Strips out all of the plain text within the given XML element, and
-    all of its first-level sub-elements.
-    """
-    # get the sub-elements within this particular element
-    sub_els = [e for e in el]
-    el_text = strip_str(el.text)
-    # if it's not the root-level element, we also want to append any tail text
-    if not root_level:
-        el_text = ' '.join([el_text, strip_str(el.tail)]).strip()
-
-    return ' '.join([el_text, ] +
-        ([get_plain_text_in_el(e, root_level=False) for e in sub_els] if sub_els else [])
-    ).strip()
 
 
 if __name__ == "__main__":

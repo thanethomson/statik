@@ -36,6 +36,9 @@ __all__ = [
     'import_python_modules_by_path',
     'get_project_config_file',
     'dict_strip',
+    'strip_str',
+    'strip_el_text',
+    '_str'
 ]
 
 DEFAULT_CONFIG_CONTENT = """project-name: Your project name
@@ -203,6 +206,10 @@ def import_python_modules_by_path(path):
         import_module(name, filename)
 
 
+def _str(s):
+    return s.encode("utf-8") if six.PY2 else s
+
+
 def get_project_config_file(path, default_config_file_name):
     """Attempts to extract the project config file's absolute path from the given path. If the path is a
     directory, it automatically assumes a "config.yml" file will be in that directory. If the path is to
@@ -240,3 +247,41 @@ def dict_strip(d):
             _d[k] = dict_strip(v)
 
     return _d
+
+
+def strip_str(s):
+    """Strips newlines and whitespace from the given string."""
+    return ' '.join([w.strip() for w in s.strip().split('\n')])
+
+
+def strip_el_text(el, max_depth=0, cur_depth=0):
+    """Recursively strips the plain text out of the given XML etree element up to the desired depth.
+
+    Args:
+        el: The etree element to scan.
+        max_depth: The depth to which to recursively strip text (default: 0).
+        cur_depth: The current recursive depth to which we've scanned so far.
+
+    Returns:
+        The stripped, plain text from within the element.
+    """
+    # text in front of any child elements
+    el_text = strip_str(el.text if el.text is not None else "")
+
+    if cur_depth < max_depth:
+        for child in el:
+            el_text += " "+strip_el_text(child, max_depth=max_depth, cur_depth=cur_depth+1)
+    else:
+        # add the last child's tail text, if any
+        children = list(el)
+        if children is not None and len(children) > 0:
+            if children[-1].tail is not None:
+                el_text += " "+strip_str(children[-1].tail)
+
+    # we skip the root element
+    if cur_depth > 0:
+        # in case there's any text at the end of the element
+        if el.tail is not None:
+            el_text += " "+strip_str(el.tail)
+
+    return strip_str(el_text)

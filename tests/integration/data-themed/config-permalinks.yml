@@ -1,0 +1,8 @@
+project-name: Permalinks Test Case
+base-path: /
+theme: theme1
+markdown:
+  permalinks:
+    enabled: true
+    class: permalink
+    title: Permalink to this heading

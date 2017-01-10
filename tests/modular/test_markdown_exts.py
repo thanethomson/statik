@@ -4,8 +4,10 @@ from __future__ import unicode_literals
 
 import unittest
 from markdown import Markdown
+import xml.etree.ElementTree as ET
 
-from statik.markdown_ext import MarkdownYamlMetaExtension
+from statik.markdown_exts import *
+from statik.utils import _str
 
 
 TEST_VALID_CONTENT1 = """---
@@ -24,10 +26,31 @@ TEST_VALID_CONTENT2 = """
 This is just some plain old **Markdown** content, without metadata.
 """
 
+TEST_PERMALINK_CONTENT = """
+# Heading 1
+
+Some text goes here.
+
+## Heading 2
+Some sub-text.
+
+### Heading 3
+And even more text.
+
+#### Heading 4
+It goes on...
+
+##### Heading 5
+... and on...
+
+###### Heading 6
+... and on. And finally comes to an end.
+"""
+
 
 class TestMarkdownYamlExtension(unittest.TestCase):
 
-    def test_extension(self):
+    def test_yaml_extension(self):
         md = Markdown(
             extensions=[MarkdownYamlMetaExtension()]
         )
@@ -44,3 +67,24 @@ class TestMarkdownYamlExtension(unittest.TestCase):
         self.assertEqual("<p>This is just some plain old <strong>Markdown</strong> content, without metadata.</p>", html.strip())
         # no metadata
         self.assertEqual({}, md.meta)
+
+    def test_permalink_extension(self):
+        md = Markdown(
+            extensions=[
+                MarkdownPermalinkExtension(
+                    permalink_text="¶",
+                    permalink_class="permalink",
+                    permalink_title="Permalink to this headline"
+                )
+            ]
+        )
+        html = "<html><body>"+md.convert(TEST_PERMALINK_CONTENT)+"</body></html>"
+        tree = ET.fromstring(_str(html))
+
+        for tag_id in range(1, 7):
+            heading = tree.findall('./body/h%d' % tag_id)[0]
+            self.assertEqual('heading-%d' % tag_id, heading.get('id'))
+            link = tree.findall('./body/h%d/a' % tag_id)[0]
+            self.assertEqual('#heading-%d' % tag_id, link.get('href'))
+            self.assertEqual('permalink', link.get('class'))
+            self.assertEqual('Permalink to this headline', link.get('title'))

@@ -39,6 +39,10 @@ class StatikView(YamlLoadable):
         self.template_ext = '.html'
         self.default_output_filename = 'index'
 
+        # coerce to UTF-8 if no encoding is specified
+        if self.encoding is None:
+            self.encoding = "utf-8"
+
         if 'name' in kwargs:
             self.name = kwargs['name']
         elif self.filename is not None:
@@ -74,7 +78,7 @@ class StatikView(YamlLoadable):
         # if it's a complex view
         if isinstance(self.path, dict):
             self.configure_complex_view(self.path)
-        elif isinstance(self.path, str):
+        elif isinstance(self.path, basestring):
             self.configure_simple_view(self.path)
         else:
             raise ValueError("Unrecognised structure for \"path\" configuration in view: %s" % self.name)

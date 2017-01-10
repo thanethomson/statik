@@ -69,14 +69,23 @@ def watch(project_path, output_path, host='0.0.0.0', port=8000, min_reload_time=
     watcher.generate()
 
     config = StatikConfig(config_file)
-    watch_folders = [
-        StatikProject.MODELS_DIR,
-        StatikProject.DATA_DIR,
-        StatikProject.TEMPLATES_DIR,
-        StatikProject.VIEWS_DIR,
-        StatikProject.TEMPLATETAGS_DIR,
-        config.assets_src_path,
-    ]
+    if config.theme is None:
+        watch_folders = [
+            StatikProject.MODELS_DIR,
+            StatikProject.DATA_DIR,
+            StatikProject.TEMPLATES_DIR,
+            StatikProject.VIEWS_DIR,
+            StatikProject.TEMPLATETAGS_DIR,
+            config.assets_src_path
+        ]
+    else:
+        watch_folders = [
+            StatikProject.MODELS_DIR,
+            StatikProject.DATA_DIR,
+            StatikProject.VIEWS_DIR,
+            StatikProject.TEMPLATETAGS_DIR,
+            StatikProject.THEMES_DIR
+        ]
     watch_folders = [f if os.path.isabs(f) else os.path.join(_project_path, f) for f in watch_folders]
     server = Server()
     for f in watch_folders:

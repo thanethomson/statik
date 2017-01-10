@@ -16,6 +16,7 @@ from statik.common import ContentLoadable
 from statik.fields import *
 from statik.errors import *
 from statik.utils import *
+from statik.config import MarkdownConfig
 from statik.pagination import *
 
 # utility imports for SQLAlchemy code execution
@@ -57,7 +58,7 @@ def clear_tracked_globals():
 
 class StatikDatabase(object):
 
-    def __init__(self, data_path, models, encoding=None):
+    def __init__(self, data_path, models, encoding=None, markdown_config=None):
         """Constructor.
 
         Args:
@@ -70,6 +71,7 @@ class StatikDatabase(object):
         self.tables = dict()
         self.data_path = data_path
         self.models = models
+        self.markdown_config = markdown_config
         self.engine = create_engine('sqlite:///:memory:')
         self.Base = declarative_base()
         self.session = sessionmaker(bind=self.engine)()
@@ -189,7 +191,8 @@ class StatikDatabase(object):
                 from_dict=item,
                 model=model,
                 session=self.session,
-                encoding=self.encoding
+                encoding=self.encoding,
+                markdown_config=self.markdown_config
             )
             # duplicate primary key!
             if entry.field_values['pk'] in seen_entries:
@@ -212,7 +215,8 @@ class StatikDatabase(object):
                 os.path.join(path, entry_file),
                 model=model,
                 session=self.session,
-                encoding=self.encoding
+                encoding=self.encoding,
+                markdown_config=self.markdown_config
             )
             # duplicate primary key!
             if entry.field_values['pk'] in seen_entries:

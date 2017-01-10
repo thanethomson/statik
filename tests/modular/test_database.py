@@ -46,11 +46,13 @@ MOCK_MODELS = {
 
 class TestStatikDatabase(unittest.TestCase):
 
+    """
     def setUp(self):
         logging.basicConfig(
             level=logging.DEBUG,
             format='%(asctime)s\t%(name)s\t%(levelname)s\t%(message)s',
         )
+    """
 
     def test_database(self):
         data_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data_test_database')

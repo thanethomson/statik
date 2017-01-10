@@ -2,14 +2,19 @@
 
 from __future__ import unicode_literals
 
+from slugify import slugify
+
 import yaml
 from markdown.preprocessors import Preprocessor
 from markdown.extensions import Extension
 from markdown.treeprocessors import Treeprocessor
 from markdown.util import etree
 
+from statik.utils import strip_el_text
+
 __all__ = [
     'MarkdownYamlMetaExtension',
+    'MarkdownPermalinkExtension',
     'MarkdownYamlMetaPreprocessor',
     'MarkdownPermalinkProcessor'
 ]
@@ -22,6 +27,27 @@ class MarkdownYamlMetaExtension(Extension):
             'yaml-meta',
             MarkdownYamlMetaPreprocessor(md),
             ">normalize_whitespace",
+        )
+
+
+class MarkdownPermalinkExtension(Extension):
+
+    def __init__(self, *args, **kwargs):
+        self.permalink_text = kwargs.pop('permalink_text', None)
+        self.permalink_class = kwargs.pop('permalink_class', None)
+        self.permalink_title = kwargs.pop('permalink_title', None)
+        super(MarkdownPermalinkExtension, self).__init__(*args, **kwargs)
+
+    def extendMarkdown(self, md, md_globals):
+        md.treeprocessors.add(
+            'permalink',
+            MarkdownPermalinkProcessor(
+                md,
+                permalink_text=self.permalink_text,
+                permalink_class=self.permalink_class,
+                permalink_title=self.permalink_title
+            ),
+            '<prettify'
         )
 
 
@@ -57,32 +83,53 @@ class MarkdownYamlMetaPreprocessor(Preprocessor):
         return result
 
 
-def insert_permalinks(el, permalink_class=None, permalink_title=None):
+def insert_permalinks(el, permalink_text=None, permalink_class=None, permalink_title=None):
     for child in el:
         if child.tag in {'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'h7', 'h8'}:
             permalink = etree.Element('a')
+
+            # try to get any existing ID from the heading tag
+            id = child.get('id', None)
+            # if there is none, slugify the text of the heading tag
+            if id is None:
+                heading_text = strip_el_text(child, max_depth=3)
+                id = slugify(heading_text.replace('\'', '').replace('"', ''))
+                # apply the ID to the heading
+                child.set('id', id)
+
+            permalink.set('href', '#%s' % id)
 
             if permalink_class is not None:
                 permalink.set('class', permalink_class)
             if permalink_title is not None:
                 permalink.set('title', permalink_title)
 
-            permalink.set('href', '#%s')
-            child.append(etree.Element('a'))
+            if permalink_text is not None:
+                permalink.text = permalink_text
+
+            child.append(permalink)
+
+        # recursively insert permalinks
+        insert_permalinks(
+            child,
+            permalink_text=permalink_text,
+            permalink_class=permalink_class,
+            permalink_title=permalink_title
+        )
 
 
 class MarkdownPermalinkProcessor(Treeprocessor):
 
-    def __init__(self, **kwargs):
-        self.config = {
-            'permalink_class': None,
-            'permalink_title': None
-        }
-        super(MarkdownPermalinkProcessor, self).__init__(**kwargs)
+    def __init__(self, *args, **kwargs):
+        self.permalink_text = kwargs.pop('permalink_text', None)
+        self.permalink_class = kwargs.pop('permalink_class', None)
+        self.permalink_title = kwargs.pop('permalink_title', None)
+        super(MarkdownPermalinkProcessor, self).__init__(*args, **kwargs)
 
     def run(self, root):
         insert_permalinks(
             root,
-            permalink_class=self.config['permalink_class'],
-            permalink_title=self.config['permalink_title']
+            permalink_text=self.permalink_text,
+            permalink_class=self.permalink_class,
+            permalink_title=self.permalink_title
         )

@@ -4,12 +4,13 @@ from __future__ import unicode_literals
 
 from statik.common import YamlLoadable
 from statik.utils import underscore_var_names
+from statik.markdown_config import MarkdownConfig
 
 import logging
 logger = logging.getLogger(__name__)
 
 __all__ = [
-    'StatikConfig',
+    'StatikConfig'
 ]
 
 
@@ -21,8 +22,9 @@ class StatikConfig(YamlLoadable):
         super(StatikConfig, self).__init__(*args, **kwargs)
         self.project_name = self.vars.get('project-name', 'Untitled project')
         self.base_path = self.vars.get('base-path', '/')
-        self.encoding = self.vars.get('encoding')
+        self.encoding = self.vars.get('encoding', 'utf-8')
         self.theme = self.vars.get('theme', None)
+        self.markdown_config = MarkdownConfig(self.vars.get('markdown', dict()))
         # relative to the output folder
         self.assets_src_path = self.assets_dest_path = 'assets'
         if 'assets' in self.vars and isinstance(self.vars['assets'], dict):

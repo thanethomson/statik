@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 import unittest
 
 from statik.common import ContentLoadable
+from statik.markdown_config import MarkdownConfig
 
 
 TEST_MARKDOWN_CONTENT = """---
@@ -21,6 +22,7 @@ class TestNonAsciiChars(unittest.TestCase):
             from_string=TEST_MARKDOWN_CONTENT,
             file_type="markdown",
             name="test",
+            markdown_config=MarkdownConfig()
         )
         self.assertEqual(
             "This is a &#8220;title&#8221; with some non-standard characters",
