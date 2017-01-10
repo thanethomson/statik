@@ -42,7 +42,7 @@ def main():
     parser.add_argument(
         '-w', '--watch',
         help="Statik will watch the project path for changes and automatically regenerate the project. " +
-            "This also runs a small HTTP server to serve your output files.",
+             "This also runs a small HTTP server to serve your output files.",
         action='store_true',
     )
     parser.add_argument(
