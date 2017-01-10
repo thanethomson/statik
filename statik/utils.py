@@ -167,6 +167,7 @@ def generate_quickstart(project_path):
     ensure_file_exists(os.path.join(project_path, "config.yml"), DEFAULT_CONFIG_CONTENT)
     ensure_path_exists(os.path.join(project_path, 'models'))
     ensure_path_exists(os.path.join(project_path, 'data'))
+    ensure_path_exists(os.path.join(project_path, 'themes'))
     ensure_path_exists(os.path.join(project_path, 'templates'))
     ensure_path_exists(os.path.join(project_path, 'templatetags'))
     ensure_path_exists(os.path.join(project_path, 'views'))
