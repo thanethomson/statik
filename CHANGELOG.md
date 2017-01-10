@@ -4,6 +4,13 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.12.0` - 10 January 2017
+
+* Adding support for permalinking during Markdown processing.
+* Fixing bug where theme-based project generation uses old `assets`
+  folder instead of theme's `assets` folder.
+* Fixing bug where folder watching doesn't work for themed projects.
+
 ### `v0.11.1` - 10 January 2017
 
 * Now testing with Python 3.6 as well.
