@@ -2,6 +2,8 @@
 
 from __future__ import unicode_literals
 
+import os.path
+
 from statik.common import YamlLoadable
 from statik.utils import underscore_var_names
 
@@ -22,6 +24,7 @@ class StatikConfig(YamlLoadable):
         self.project_name = self.vars.get('project-name', 'Untitled project')
         self.base_path = self.vars.get('base-path', '/')
         self.encoding = self.vars.get('encoding')
+        self.theme = self.vars.get('theme', None)
         # relative to the output folder
         self.assets_src_path = self.assets_dest_path = 'assets'
         if 'assets' in self.vars and isinstance(self.vars['assets'], dict):
@@ -47,10 +50,17 @@ class StatikConfig(YamlLoadable):
         return ("<StatikConfig project_name=%s\n" +
                 "              base_path=%s\n" +
                 "              encoding=%s\n" +
+                "              theme=%s\n" +
                 "              assets_src_path=%s\n" +
                 "              assets_dest_path=%s\n" +
                 "              context_static=%s\n" +
                 "              context_dynamic=%s>") % (
-                    self.project_name, self.base_path, self.encoding, self.assets_src_path,
-                    self.assets_dest_path, self.context_static, self.context_dynamic
+                    self.project_name,
+                    self.base_path,
+                    self.encoding,
+                    self.theme,
+                    self.assets_src_path,
+                    self.assets_dest_path,
+                    self.context_static,
+                    self.context_dynamic
                 )

@@ -21,6 +21,10 @@ context:
         users: session.query(User).filter(User.active == True).all()
 """
 
+TEST_THEMED_CONFIG = """project-name: Themed Test Project
+theme: mytheme
+"""
+
 
 class TestStatikProjectConfig(unittest.TestCase):
 
@@ -34,6 +38,7 @@ class TestStatikProjectConfig(unittest.TestCase):
         self.assertEqual("/", config.base_path)
         self.assertEqual("assets", config.assets_src_path)
         self.assertEqual("assets", config.assets_dest_path)
+        self.assertIsNone(config.theme)
 
     def test_string_config(self):
         config = StatikConfig(from_string=TEST_CONFIG)
@@ -43,12 +48,19 @@ class TestStatikProjectConfig(unittest.TestCase):
         self.assertEqual("dest_static", config.assets_dest_path)
         self.assertEqual('The global value', config.context_static['some_project_var'])
         self.assertEqual('session.query(User).filter(User.active == True).all()', config.context_dynamic['users'])
+        self.assertIsNone(config.theme)
 
     def test_file_config(self):
         test_path = os.path.dirname(os.path.realpath(__file__))
         config = StatikConfig(os.path.join(test_path, os.pardir, 'integration', 'data-simple', 'config.yml'))
         self.assertEqual("Unit Test Project", config.project_name)
         self.assertEqual("/", config.base_path)
+        self.assertIsNone(config.theme)
+
+    def test_themed_config(self):
+        config = StatikConfig(from_string=TEST_THEMED_CONFIG)
+        self.assertEqual("Themed Test Project", config.project_name)
+        self.assertEqual("mytheme", config.theme)
 
 
 if __name__ == "__main__":

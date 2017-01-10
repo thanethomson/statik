@@ -34,6 +34,7 @@ class StatikProject(object):
     TEMPLATES_DIR = "templates"
     DATA_DIR = "data"
     TEMPLATETAGS_DIR = "templatetags"
+    THEMES_DIR = "themes"
     CONFIG_FILE = "config.yml"
 
     def __init__(self, path, **kwargs):
@@ -129,7 +130,19 @@ class StatikProject(object):
         return result
 
     def configure_templates(self):
-        template_path = os.path.join(self.path, StatikProject.TEMPLATES_DIR)
+        # if we're not using a specific theme
+        if self.config.theme is None:
+            template_path = os.path.join(self.path, StatikProject.TEMPLATES_DIR)
+            logger.debug("No theme selected")
+        else:
+            template_path = os.path.join(
+                self.path,
+                StatikProject.THEMES_DIR,
+                self.config.theme,
+                StatikProject.TEMPLATES_DIR
+            )
+            logger.debug("Using theme \"%s\" to get to theme path: %s" % (self.config.theme, template_path))
+
         if not os.path.isdir(template_path):
             raise MissingProjectFolderError(StatikProject.TEMPLATES_DIR, "Project is missing its templates folder")
 
