@@ -76,16 +76,21 @@ A **Statik** project must adhere to the directory structure as follows:
 
 ```
 config.yml    - YAML configuration file for the overall project.
-models/       - A folder specifically dedicated to model definitions, in YAML
-                format.
-views/        - Configuration files, in YAML format, defining "recipes" for how
-                to generate various different URLs (which models to use, which
-                data and which templates).
+assets/       - Static assets for the project (images, CSS files,
+                scripts, etc.).
 data/         - Instances for each of the different models, defined either in
                 YAML or Markdown format.
+models/       - A folder specifically dedicated to model definitions, in YAML
+                format.
 templates/    - Jinja2 template files.
 templatetags/ - Python scripts defining custom Jinja2 template tags and
                 filters.
+themes/       - If your project uses themes, place them here. Each theme
+                must be uniquely named, and must contain an "assets"
+                and "templates" folder.
+views/        - Configuration files, in YAML format, defining "recipes" for how
+                to generate various different URLs (which models to use, which
+                data and which templates).
 ```
 
 For example projects, see the `examples` directory in the source repository.
@@ -94,7 +99,7 @@ For more information, see the [wiki](https://github.com/thanethomson/statik/wiki
 ## License
 **The MIT License (MIT)**
 
-Copyright (c) 2016 Thane Thomson
+Copyright (c) 2016-2017 Thane Thomson
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
