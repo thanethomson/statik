@@ -5,10 +5,13 @@ from __future__ import unicode_literals
 import yaml
 from markdown.preprocessors import Preprocessor
 from markdown.extensions import Extension
+from markdown.treeprocessors import Treeprocessor
+from markdown.util import etree
 
 __all__ = [
     'MarkdownYamlMetaExtension',
     'MarkdownYamlMetaPreprocessor',
+    'MarkdownPermalinkProcessor'
 ]
 
 
@@ -52,3 +55,34 @@ class MarkdownYamlMetaPreprocessor(Preprocessor):
                 )
 
         return result
+
+
+def insert_permalinks(el, permalink_class=None, permalink_title=None):
+    for child in el:
+        if child.tag in {'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'h7', 'h8'}:
+            permalink = etree.Element('a')
+
+            if permalink_class is not None:
+                permalink.set('class', permalink_class)
+            if permalink_title is not None:
+                permalink.set('title', permalink_title)
+
+            permalink.set('href', '#%s')
+            child.append(etree.Element('a'))
+
+
+class MarkdownPermalinkProcessor(Treeprocessor):
+
+    def __init__(self, **kwargs):
+        self.config = {
+            'permalink_class': None,
+            'permalink_title': None
+        }
+        super(MarkdownPermalinkProcessor, self).__init__(**kwargs)
+
+    def run(self, root):
+        insert_permalinks(
+            root,
+            permalink_class=self.config['permalink_class'],
+            permalink_title=self.config['permalink_title']
+        )

@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 import unittest
 from markdown import Markdown
 
-from statik.markdownyaml import MarkdownYamlMetaExtension
+from statik.markdown_ext import MarkdownYamlMetaExtension
 
 
 TEST_VALID_CONTENT1 = """---
