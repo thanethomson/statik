@@ -4,6 +4,10 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.13.0` - 12 January 2017
+
+* Adding Lorem Ipsum generator Markdown and Jinja extensions.
+
 ### `v0.12.0` - 10 January 2017
 
 * Adding support for permalinking during Markdown processing.
