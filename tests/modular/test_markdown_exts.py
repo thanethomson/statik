@@ -9,6 +9,8 @@ import xml.etree.ElementTree as ET
 from statik.markdown_exts import *
 from statik.utils import _str
 
+import lipsum
+
 
 TEST_VALID_CONTENT1 = """---
 some-variable: Value
@@ -45,6 +47,22 @@ It goes on...
 
 ###### Heading 6
 ... and on. And finally comes to an end.
+"""
+
+TEST_LOREM_IPSUM_CONTENT = """
+!(lipsum-words:100)
+
+!(lipsum-sentences:5)
+
+!(lipsum-paragraphs:3)
+"""
+
+TEST_LOREM_IPSUM_SINGLE_INSTANCES = """
+!(lipsum-word)
+
+!(lipsum-sentence)
+
+!(lipsum-paragraph)
 """
 
 
@@ -88,3 +106,28 @@ class TestMarkdownYamlExtension(unittest.TestCase):
             self.assertEqual('#heading-%d' % tag_id, link.get('href'))
             self.assertEqual('permalink', link.get('class'))
             self.assertEqual('Permalink to this headline', link.get('title'))
+
+    def test_lorem_ipsum_extension(self):
+        md = Markdown(
+            extensions=[
+                MarkdownYamlMetaExtension(),
+                MarkdownLoremIpsumExtension()
+            ]
+        )
+        html = "<html>"+md.convert(TEST_LOREM_IPSUM_CONTENT)+"</html>"
+        tree = ET.fromstring(_str(html))
+        p = tree.findall('./p')[0]
+        self.assertEqual(100, lipsum.count_words(p.text))
+
+        p = tree.findall('./p')[1]
+        self.assertEqual(5, lipsum.count_sentences(p.text))
+        self.assertEqual(3, len(tree.findall('./p')[2:]))
+
+        html = "<html>"+md.convert(TEST_LOREM_IPSUM_SINGLE_INSTANCES)+"</html>"
+        tree = ET.fromstring(_str(html))
+        p = tree.findall('./p')[0]
+        self.assertEqual(1, lipsum.count_words(p.text))
+
+        p = tree.findall('./p')[1]
+        self.assertEqual(1, lipsum.count_sentences(p.text))
+        self.assertEqual(1, len(tree.findall('./p')[2:]))

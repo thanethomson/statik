@@ -14,7 +14,9 @@ INSTALL_REQUIREMENTS = [
     "SQLAlchemy>=1.0.14",
     "markdown>=2.6.6",
     "livereload>=2.4.1",
-    "python-slugify>=1.2.1"
+    "python-slugify>=1.2.1",
+    "six>=1.10.0",
+    "lipsum>=0.1.1"
 ]
 
 setup(

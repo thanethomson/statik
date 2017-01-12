@@ -111,7 +111,8 @@ class ContentLoadable(object):
                     self.vars = {}
             else:
                 markdown_ext = [
-                    MarkdownYamlMetaExtension()
+                    MarkdownYamlMetaExtension(),
+                    MarkdownLoremIpsumExtension()
                 ]
                 if self.markdown_config.enable_permalinks:
                     markdown_ext.append(

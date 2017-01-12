@@ -6,8 +6,10 @@ import os.path
 import xml.etree.ElementTree as ET
 import unittest
 
+import lipsum
+
 from statik.generator import generate
-from statik.utils import strip_el_text
+from statik.utils import strip_el_text, _str
 
 
 class TestSimpleStatikIntegration(unittest.TestCase):
@@ -77,7 +79,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         self.assertIn('index.html', output_data['by-author']['michael'])
 
         # Parse the home page's XHTML content
-        homepage = ET.fromstring(output_data['index.html'])
+        homepage = ET.fromstring(_str(output_data['index.html']))
         self.assertEqual('html', homepage.findall('.')[0].tag)
         self.assertEqual('Welcome to the test blog', homepage.findall('./head/title')[0].text.strip())
         self.assertEqual('Home page', homepage.findall('./body/h1')[0].text.strip())
@@ -117,6 +119,19 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         self.assertEqual("Michael Anderson", homepage.findall("./body/div[@class='all-authors']/ul/li")[1].text.strip())
         # Test the new {% asset %} tag
         self.assertEqual("/assets/testfile.txt", homepage.findall("./body/div[@class='download']/a")[0].attrib['href'])
+
+        # Test the Lorem Ipsum generators
+        self.assertEqual(
+            100,
+            lipsum.count_words(homepage.findall("./body/div[@class='lorem-ipsum']/p")[0].text.strip())
+        )
+        self.assertEqual(
+            5,
+            lipsum.count_sentences(homepage.findall("./body/div[@class='lorem-ipsum']/p")[1].text.strip())
+        )
+        self.assertTrue(
+            lipsum.count_words(homepage.findall("./body/div[@class='lorem-ipsum']/p")[2].text.strip()) > 1
+        )
 
         post = ET.fromstring(output_data['2016']['06']['15']['my-first-post']['index.html'])
         self.assertEqual('html', post.findall('.')[0].tag)

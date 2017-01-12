@@ -9,6 +9,8 @@ from jinja2.exceptions import TemplateSyntaxError
 from statik.utils import add_url_path_component
 from statik import templatetags
 
+import lipsum
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -16,6 +18,7 @@ __all__ = [
     'StatikUrlExtension',
     'StatikAssetExtension',
     'StatikTemplateTagsExtension',
+    'StatikLoremIpsumExtension'
 ]
 
 
@@ -86,6 +89,48 @@ class StatikAssetExtension(Extension):
 
         return nodes.Output(
             [self.call_method('_asset', args)],
+            lineno=lineno
+        )
+
+
+class StatikLoremIpsumExtension(Extension):
+    """Allows users to generate "Lorem Ipsum" text/filler for their templates. This extension only supports
+    generating words and sentences. It can generate a single paragraph of Lorem Ipsum text if no parameters
+    are supplied."""
+
+    tags = {"lipsum"}
+    GENERATORS = {
+        "words": lipsum.generate_words,
+        "sentences": lipsum.generate_sentences,
+        "paragraphs": lipsum.generate_paragraphs
+    }
+
+    def _lipsum(self, count, kind):
+        return self.GENERATORS[kind](int(count))
+
+    def parse(self, parser):
+        lineno = next(parser.stream).lineno
+
+        next_token = parser.stream.look()
+        # if there are parameters
+        if next_token.type == "comma":
+            args = [parser.parse_expression()]
+            if parser.stream.skip_if('comma'):
+                args.append(parser.parse_expression())
+            else:
+                raise TemplateSyntaxError("Missing Lorem Ipsum generator parameter: kind", lineno)
+
+            if args[1].value not in self.GENERATORS:
+                raise TemplateSyntaxError(
+                    "Supported Lorem Ipsum generator kinds are: %s" % ", ".join(self.GENERATORS.keys()),
+                    lineno
+                )
+        else:
+            # if no parameters were supplied
+            args = [nodes.Const(1), nodes.Const("paragraphs")]
+
+        return nodes.Output(
+            [self.call_method("_lipsum", args)],
             lineno=lineno
         )
 

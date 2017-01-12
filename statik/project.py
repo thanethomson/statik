@@ -156,6 +156,7 @@ class StatikProject(object):
             extensions=[
                 'statik.jinja2ext.StatikUrlExtension',
                 'statik.jinja2ext.StatikAssetExtension',
+                'statik.jinja2ext.StatikLoremIpsumExtension',
                 'statik.jinja2ext.StatikTemplateTagsExtension',
                 'jinja2.ext.do',
                 'jinja2.ext.loopcontrols',

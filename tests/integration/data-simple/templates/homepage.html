@@ -25,4 +25,18 @@
     <div class="download">
         <a href="{% asset "testfile.txt" %}">Click here to download the test file</a>
     </div>
+
+    <div class="lorem-ipsum">
+        <p>
+            {% lipsum 100, "words" %}
+        </p>
+
+        <p>
+            {% lipsum 5, "sentences" %}
+        </p>
+
+        <p>
+            {% lipsum %}
+        </p>
+    </div>
 {% endblock %}

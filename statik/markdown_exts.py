@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 from slugify import slugify
 
+import re
 import yaml
 from markdown.preprocessors import Preprocessor
 from markdown.extensions import Extension
@@ -12,11 +13,15 @@ from markdown.util import etree
 
 from statik.utils import strip_el_text
 
+import lipsum
+
 __all__ = [
     'MarkdownYamlMetaExtension',
     'MarkdownPermalinkExtension',
     'MarkdownYamlMetaPreprocessor',
-    'MarkdownPermalinkProcessor'
+    'MarkdownPermalinkProcessor',
+    'MarkdownLoremIpsumExtension',
+    'MarkdownLoremIpsumProcessor'
 ]
 
 
@@ -48,6 +53,16 @@ class MarkdownPermalinkExtension(Extension):
                 permalink_title=self.permalink_title
             ),
             '<prettify'
+        )
+
+
+class MarkdownLoremIpsumExtension(Extension):
+
+    def extendMarkdown(self, md, md_globals):
+        md.preprocessors.add(
+            "lipsum",
+            MarkdownLoremIpsumProcessor(md),
+            ">yaml-meta"
         )
 
 
@@ -133,3 +148,34 @@ class MarkdownPermalinkProcessor(Treeprocessor):
             permalink_class=self.permalink_class,
             permalink_title=self.permalink_title
         )
+
+
+class MarkdownLoremIpsumProcessor(Preprocessor):
+
+    # we search for a single command on a line
+    REGEXP = re.compile(r"^!\(lipsum-(?P<kind>word[s]?|sentence[s]?|paragraph[s]?)(:(?P<count>\d+))?\)\w*$")
+    GENERATORS = {
+        "word": (lipsum.generate_words, 1),
+        "words": (lipsum.generate_words, None),
+        "sentence": (lipsum.generate_sentences, 1),
+        "sentences": (lipsum.generate_sentences, None),
+        "paragraph": (lipsum.generate_paragraphs, 1),
+        "paragraphs": (lipsum.generate_paragraphs, None)
+    }
+
+    def run(self, lines):
+        new_lines = []
+        for line in lines:
+            m = self.REGEXP.match(line)
+            if m is not None:
+                kind = m.group('kind')
+                gen, count = self.GENERATORS[kind]
+                if m.group('count') is not None:
+                    count = int(m.group('count'))
+                if count is None:
+                    raise SyntaxError("Missing \"count\" parameter for !(lipsum-%s) command" % kind)
+
+                new_lines.extend(gen(count).split("\n"))
+            else:
+                new_lines.append(line)
+        return new_lines
