@@ -4,34 +4,43 @@
 Setup script for Statik, the static web site generator.
 """
 
+import re
+from io import open
+import os.path
 from setuptools import setup
-from statik import __version__
 
-INSTALL_REQUIREMENTS = [
-    "future>=0.16.0",
-    "jinja2>=2.8",
-    "PyYAML>=3.11",
-    "SQLAlchemy>=1.0.14",
-    "markdown>=2.6.6",
-    "livereload>=2.4.1",
-    "python-slugify>=1.2.1",
-    "six>=1.10.0",
-    "lipsum>=0.1.1"
-]
+
+def read_file(filename):
+    full_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), filename)
+    with open(full_path, "rt", encoding="utf-8") as f:
+        lines = [l.strip() for l in f.readlines()]
+    return lines
+
+
+def get_version():
+    pattern = re.compile(r"__version__ = \"(?P<version>[0-9.a-zA-Z-]+)\"")
+    for line in read_file(os.path.join("statik", "__init__.py")):
+        m = pattern.match(line)
+        if m is not None:
+            return m.group('version')
+    raise ValueError("Cannot extract version number for Statik")
+
 
 setup(
     name="statik",
-    version=__version__,
+    version=get_version(),
     description="General-purpose static web site generator",
+    long_description="\n".join(read_file("README.rst")),
     author="Thane Thomson",
     author_email="connect@thanethomson.com",
     url="https://getstatik.com",
-    install_requires=INSTALL_REQUIREMENTS,
+    install_requires=[r for r in read_file("requirements.txt") if len(r) > 0],
     entry_points={
         'console_scripts': [
             'statik = statik.cmdline:main',
         ]
     },
+    license='MIT',
     packages=["statik"],
     classifiers=[
         "Development Status :: 4 - Beta",
