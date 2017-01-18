@@ -4,6 +4,15 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.14.2` - 18 January 2017
+
+* `v0.14.1` fix didn't fix `README.rst` file inclusion issue. Attempting
+  another fix.
+
+### `v0.14.1` - 18 January 2017
+
+* Minor tweak to setup script to fix inclusion of `README.rst` file.
+
 ### `v0.14.0` - 18 January 2017
 
 * Replacing [livereload](https://github.com/lepture/python-livereload)
