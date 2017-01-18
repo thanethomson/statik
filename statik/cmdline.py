@@ -28,7 +28,17 @@ def configure_logging(verbose=False):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Statik, the static web site generator for developers."
+        description="Statik: a static web site generator for developers."
+    )
+    parser.add_argument(
+        '--version',
+        help='Display version info for Statik',
+        action='store_true',
+    )
+    parser.add_argument(
+        '--quickstart',
+        help="Statik will generate a basic directory structure for you in the project directory and exit.",
+        action='store_true',
     )
     parser.add_argument(
         '-p', '--project',
@@ -58,18 +68,14 @@ def main():
         default=8000,
     )
     parser.add_argument(
-        '--quickstart',
-        help="Statik will generate a basic directory structure for you in the project directory.",
+        '-n', '--no-browser',
         action='store_true',
+        default=False,
+        help="Do not attempt to automatically open a web browser at the served URL when watching for changes"
     )
     parser.add_argument(
         '-v', '--verbose',
         help="Whether or not to output verbose logging information (default: false).",
-        action='store_true',
-    )
-    parser.add_argument(
-        '--version',
-        help='Display version info for Statik',
         action='store_true',
     )
     args = parser.parse_args()
@@ -83,7 +89,7 @@ def main():
         from statik import __version__
         logger.info('Statik v%s' % __version__)
     elif args.watch:
-        watch(config_file_path, output_path, host=args.host, port=args.port)
+        watch(config_file_path, output_path, host=args.host, port=args.port, open_browser=(not args.no_browser))
     elif args.quickstart:
         generate_quickstart(project_path)
     else:
