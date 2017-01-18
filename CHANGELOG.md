@@ -4,6 +4,14 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.14.0` - 18 January 2017
+
+* Replacing [livereload](https://github.com/lepture/python-livereload)
+  dependency with
+  [httpwatcher](https://github.com/thanethomson/httpwatcher).
+* Adding ability to automatically open web browser when server starts
+  up (and to turn it off).
+
 ### `v0.13.0` - 12 January 2017
 
 * Adding Lorem Ipsum generator Markdown and Jinja extensions.

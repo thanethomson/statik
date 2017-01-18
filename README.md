@@ -96,6 +96,11 @@ views/        - Configuration files, in YAML format, defining "recipes" for how
 For example projects, see the `examples` directory in the source repository.
 For more information, see the [wiki](https://github.com/thanethomson/statik/wiki).
 
+## Themes
+Themes for **Statik** will slowly start appearing in the
+[Statik Themes](https://github.com/thanethomson/statik-themes)
+repository. Watch that space!
+
 ## License
 **The MIT License (MIT)**
 
