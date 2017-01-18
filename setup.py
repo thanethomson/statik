@@ -13,7 +13,7 @@ from setuptools import setup
 def read_file(filename):
     full_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), filename)
     with open(full_path, "rt", encoding="utf-8") as f:
-        lines = [l.strip() for l in f.readlines()]
+        lines = f.readlines()
     return lines
 
 
@@ -30,11 +30,11 @@ setup(
     name="statik",
     version=get_version(),
     description="General-purpose static web site generator",
-    long_description="\n".join(read_file("README.rst")),
+    long_description="".join(read_file("README.rst")),
     author="Thane Thomson",
     author_email="connect@thanethomson.com",
     url="https://getstatik.com",
-    install_requires=[r for r in read_file("requirements.txt") if len(r) > 0],
+    install_requires=[r.strip() for r in read_file("requirements.txt") if len(r.strip()) > 0],
     entry_points={
         'console_scripts': [
             'statik = statik.cmdline:main',
