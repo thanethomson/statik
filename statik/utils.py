@@ -6,6 +6,7 @@ from io import open
 
 import os
 import os.path
+import stat
 from copy import deepcopy, copy
 import shutil
 
@@ -80,9 +81,9 @@ def extract_filename(path):
     return list(os.path.splitext(os.path.basename(path)))[0]
 
 
-def dict_from_path(path, final_value={}):
+def dict_from_path(path, final_value=dict()):
     components = path.split('/')
-    last_dict = final_value
+    last_dict = deepcopy(final_value)
     cur_dict = {}
     for i in range(-1, -len(components)-1, -1):
         if len(components[i]) > 0:
@@ -126,6 +127,31 @@ def add_url_path_component(path, component):
     return '%s/%s' % (path.rstrip('/'), component.lstrip('/'))
 
 
+def copy_file_if_modified(src_path, dest_path):
+    """Only copies the file from the source path to the destination path if it doesn't exist yet or it has
+    been modified. Intended to provide something of an optimisation when a project has large trees of assets."""
+
+    # if the destination path is a directory, delete it completely - we assume here we are
+    # writing a file to the filesystem
+    if os.path.isdir(dest_path):
+        shutil.rmtree(dest_path)
+
+    must_copy = False
+    if not os.path.exists(dest_path):
+        must_copy = True
+    else:
+        src_stat = os.stat(src_path)
+        dest_stat = os.stat(dest_path)
+
+        # if the size or last modified timestamp are different
+        if ((src_stat[stat.ST_SIZE] != dest_stat[stat.ST_SIZE]) or
+                (src_stat[stat.ST_MTIME] != dest_stat[stat.ST_MTIME])):
+            must_copy = True
+
+    if must_copy:
+        shutil.copy2(src_path, dest_path)
+
+
 def copy_tree(src_path, dest_path):
     """Copies the entire folder tree, recursively, from the given source path
     to the given destination path. If the destination path does not exist, it
@@ -145,7 +171,7 @@ def copy_tree(src_path, dest_path):
                 # copy its contents recursively
                 files_copied += copy_tree(src_entry_path, dest_entry_path)
             else:
-                shutil.copy2(src_entry_path, dest_entry_path)
+                copy_file_if_modified(src_entry_path, dest_entry_path)
                 files_copied += 1
 
     return files_copied
