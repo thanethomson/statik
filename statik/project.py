@@ -35,6 +35,7 @@ class StatikProject(object):
     DATA_DIR = "data"
     TEMPLATETAGS_DIR = "templatetags"
     THEMES_DIR = "themes"
+    ASSETS_DIR = "assets"
     CONFIG_FILE = "config.yml"
 
     def __init__(self, path, **kwargs):
@@ -130,21 +131,24 @@ class StatikProject(object):
         return result
 
     def configure_templates(self):
-        # if we're not using a specific theme
-        if self.config.theme is None:
-            template_path = os.path.join(self.path, StatikProject.TEMPLATES_DIR)
-            logger.debug("No theme selected")
-        else:
-            template_path = os.path.join(
+        # by default, we always look in the project's "templates" folder
+        template_paths = [os.path.join(self.path, StatikProject.TEMPLATES_DIR)]
+
+        # if we're using a specific theme
+        if self.config.theme is not None:
+            # we want the theme's template to be a fallback option
+            template_paths.append(os.path.join(
                 self.path,
                 StatikProject.THEMES_DIR,
                 self.config.theme,
                 StatikProject.TEMPLATES_DIR
-            )
-            logger.debug("Using theme \"%s\" to get to theme path: %s" % (self.config.theme, template_path))
+            ))
+            logger.debug("Using theme \"%s\" to get to theme path: %s" % (self.config.theme, template_paths[0]))
 
-        if not os.path.isdir(template_path):
-            raise MissingProjectFolderError(StatikProject.TEMPLATES_DIR, "Project is missing its templates folder")
+        # make sure all paths exist
+        for path in template_paths:
+            if not os.path.exists(path) or not os.path.isdir(path):
+                raise MissingProjectFolderError(path, "Missing template folder")
 
         templatetags_path = os.path.join(self.path, StatikProject.TEMPLATETAGS_DIR)
         if os.path.isdir(templatetags_path):
@@ -152,7 +156,7 @@ class StatikProject(object):
             import_python_modules_by_path(templatetags_path)
 
         env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(template_path, encoding=self.config.encoding),
+            loader=jinja2.FileSystemLoader(template_paths, encoding=self.config.encoding),
             extensions=[
                 'statik.jinja2ext.StatikUrlExtension',
                 'statik.jinja2ext.StatikAssetExtension',
@@ -289,20 +293,35 @@ class StatikProject(object):
         """Copies all asset files from the source path to the destination
         path. If no such source path exists, no asset copying will be performed.
         """
-        src_path = self.config.assets_src_path
-        if not os.path.isabs(src_path):
-            if self.config.theme is None:
-                src_path = os.path.join(self.path, src_path)
-            else:
-                src_path = os.path.join(self.path, StatikProject.THEMES_DIR, self.config.theme, src_path)
+        src_paths = []
 
-        if os.path.isdir(src_path):
-            dest_path = self.config.assets_dest_path
-            if not os.path.isabs(dest_path):
-                dest_path = os.path.join(output_path, dest_path)
+        # if we have a theme
+        if self.config.theme is not None:
+            # assume it's in the folder: "themes/theme_name/assets"
+            src_paths.append(os.path.join(
+                self.path,
+                StatikProject.THEMES_DIR,
+                self.config.theme,
+                StatikProject.ASSETS_DIR
+            ))
+            # NOTE: Adding the theme's assets directory *before* the project's internal assets directory
+            #       always ensures that the project's own assets are copied *after* the theme's, thereby ensuring
+            #       that the project's assets folder takes precedence over the theme's.
 
-            logger.info("Copying assets from %s to %s..." % (src_path, dest_path))
-            asset_count = copy_tree(src_path, dest_path)
-            logger.info("Copied %s asset(s)" % asset_count)
+        # always attempt to copy from our base assets folder
+        if os.path.isabs(self.config.assets_src_path):
+            src_paths.append(self.config.assets_src_path)
         else:
-            logger.info("Missing assets source path - skipping copying of assets: %s" % src_path)
+            src_paths.append(os.path.join(self.path, self.config.assets_src_path))
+
+        for src_path in src_paths:
+            if os.path.exists(src_path) and os.path.isdir(src_path):
+                dest_path = self.config.assets_dest_path
+                if not os.path.isabs(dest_path):
+                    dest_path = os.path.join(output_path, dest_path)
+
+                logger.info("Copying assets from %s to %s..." % (src_path, dest_path))
+                asset_count = copy_tree(src_path, dest_path)
+                logger.info("Copied %s asset(s)" % asset_count)
+            else:
+                logger.info("Missing assets source path - skipping copying of assets: %s" % src_path)

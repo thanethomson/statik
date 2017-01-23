@@ -34,7 +34,9 @@ def watch(project_path, output_path, host='0.0.0.0', port=8000, min_reload_time=
     watch_folders = [
         StatikProject.MODELS_DIR,
         StatikProject.DATA_DIR,
-        StatikProject.VIEWS_DIR
+        StatikProject.VIEWS_DIR,
+        StatikProject.TEMPLATES_DIR,
+        project.config.assets_src_path
     ]
 
     # let the template tags folder be optional
@@ -42,15 +44,9 @@ def watch(project_path, output_path, host='0.0.0.0', port=8000, min_reload_time=
     if os.path.exists(template_tags_folder) and os.path.isdir(template_tags_folder):
         watch_folders.append(StatikProject.TEMPLATETAGS_DIR)
 
-    # if there's no theme
-    if project.config.theme is None:
-        watch_folders.extend([
-            StatikProject.TEMPLATES_DIR,
-            project.config.assets_src_path
-        ])
-    else:
-        # otherwise watch our themes folder
-        watch_folders.append(StatikProject.THEMES_DIR)
+    # if theming is enabled, watch the specific theme's folder for changes
+    if project.config.theme is not None:
+        watch_folders.append(os.path.join(StatikProject.THEMES_DIR, project.config.theme))
 
     watch_folders = [f if os.path.isabs(f) else os.path.join(project.path, f) for f in watch_folders]
     for folder in watch_folders:
