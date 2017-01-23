@@ -4,6 +4,15 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.14.3` - 23 January 2017
+
+* Now allowing project's `assets` and `templates` folders to
+  override themes' corresponding folders.
+* Optimising asset copying process while watching project for changes
+  (**Statik** now only copies files that have been modified or do not
+  yet exist in the destination assets folder).
+* Bumping minimum version dependency for `httpwatcher` to v0.5.0.
+
 ### `v0.14.2` - 18 January 2017
 
 * `v0.14.1` fix didn't fix `README.rst` file inclusion issue. Attempting
