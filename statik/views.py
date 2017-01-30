@@ -127,14 +127,14 @@ class StatikView(YamlLoadable):
             if 'for-each' in self.vars['context'] and isinstance(self.vars['context']['for-each'], dict):
                 self.context_for_each = underscore_var_names(deepcopy(self.vars['context']['for-each']))
 
-    def process(self, db):
+    def process(self, db, safe_mode=False):
         self.context.update(self.context_static)
-        self.context.update(self.process_context_dynamic(db))
-        return self.process_complex(db) if self.complex else self.process_simple(db)
+        self.context.update(self.process_context_dynamic(db, safe_mode=safe_mode))
+        return self.process_complex(db, safe_mode=safe_mode) if self.complex else self.process_simple(db)
 
-    def process_complex(self, db):
+    def process_complex(self, db, safe_mode=False):
         rendered_views = {}
-        path_var_instances = db.query(self.path_query)
+        path_var_instances = db.query(self.path_query, safe_mode=safe_mode)
         logger.debug("Complex view %s generated %d possible path(s)" % (self.name, len(path_var_instances)))
         for inst in path_var_instances:
             # render the path template to get this instance's view path
@@ -149,7 +149,7 @@ class StatikView(YamlLoadable):
 
             # update the context with the current path variable instance
             self.context[self.path_variable] = inst
-            self.context.update(self.render_context_for_each(db, inst))
+            self.context.update(self.render_context_for_each(db, inst, safe_mode=safe_mode))
             # render the template itself
             rendered_view = self.template.render(**self.context)
             rendered_views = deep_merge_dict(
@@ -158,10 +158,10 @@ class StatikView(YamlLoadable):
             )
         return rendered_views
 
-    def render_context_for_each(self, db, inst):
+    def render_context_for_each(self, db, inst, safe_mode=False):
         result = dict()
         for k, v in iteritems(self.context_for_each):
-            result[k] = db.query(v, additional_locals={self.path_variable: inst})
+            result[k] = db.query(v, additional_locals={self.path_variable: inst}, safe_mode=safe_mode)
         return result
 
     def process_simple(self, db):
@@ -175,10 +175,10 @@ class StatikView(YamlLoadable):
                 final_value=self.template.render(**self.context),
         )
 
-    def process_context_dynamic(self, db):
+    def process_context_dynamic(self, db, safe_mode=False):
         result = {}
         for var, query in iteritems(self.context_dynamic):
-            result[var] = db.query(query)
+            result[var] = db.query(query, safe_mode=safe_mode)
         return result
 
     def reverse_url(self, inst=None):

@@ -1,0 +1,12 @@
+path: /mlalchemy/posts/
+template: homepage
+context:
+  dynamic:
+    posts:
+      from: Post
+      where:
+        draft: false
+      order-by:
+        - "-published"
+  static:
+    page-title: Welcome to the test blog

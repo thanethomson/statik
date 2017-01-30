@@ -16,7 +16,8 @@ __all__ = [
 ]
 
 
-def watch(project_path, output_path, host='0.0.0.0', port=8000, min_reload_time=2.0, open_browser=True):
+def watch(project_path, output_path, host='0.0.0.0', port=8000, min_reload_time=2.0, open_browser=True,
+          safe_mode=False):
     """Watches the given project path for filesystem changes, and automatically rebuilds the project when
     changes are detected. Also serves an HTTP server on the given host/port.
 
@@ -27,9 +28,10 @@ def watch(project_path, output_path, host='0.0.0.0', port=8000, min_reload_time=
         port: The port to which to bind when serving output files.
         min_reload_time: The minimum time (in seconds) between reloads when files change.
         open_browser: Whether or not to automatically open the web browser at the served URL.
+        safe_mode: Whether or not to run Statik in safe mode.
     """
     project = StatikProject(project_path)
-    project.generate(output_path=output_path, in_memory=False)
+    project.generate(output_path=output_path, in_memory=False, safe_mode=safe_mode)
 
     watch_folders = [
         StatikProject.MODELS_DIR,
@@ -57,7 +59,7 @@ def watch(project_path, output_path, host='0.0.0.0', port=8000, min_reload_time=
     httpwatcher.watch(
         output_path,
         watch_paths=watch_folders,
-        on_reload=lambda: project.generate(output_path=output_path, in_memory=False),
+        on_reload=lambda: project.generate(output_path=output_path, in_memory=False, safe_mode=safe_mode),
         host=host,
         port=port,
         server_base_path=project.config.base_path,

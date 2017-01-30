@@ -2,17 +2,40 @@
 
 from __future__ import unicode_literals
 
+import os
 import os.path
 import xml.etree.ElementTree as ET
 import unittest
 
 import lipsum
+import logging
 
+from statik.project import StatikProject
 from statik.generator import generate
 from statik.utils import strip_el_text, _str
+from statik.errors import SafetyViolationError
+
+
+DEBUG = (os.environ.get('DEBUG', False) == "True")
 
 
 class TestSimpleStatikIntegration(unittest.TestCase):
+
+    def setUp(self):
+        if DEBUG:
+            logging.basicConfig(
+                level=logging.DEBUG,
+                format='%(asctime)s\t%(name)s\t%(levelname)s\t%(message)s',
+            )
+
+    def test_safe_mode(self):
+        test_path = os.path.dirname(os.path.realpath(__file__))
+        project = StatikProject(os.path.join(test_path, 'data-simple'))
+        with self.assertRaises(SafetyViolationError):
+            project._generate(
+                in_memory=True,
+                safe_mode=True
+            )
 
     def test_in_memory(self):
         test_path = os.path.dirname(os.path.realpath(__file__))
@@ -28,199 +51,35 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         self.assertIn('index.html', output_data)
 
         # Check that the generated posts are there
-        self.assertIn('2016', output_data)
-        self.assertIn('tag-testing', output_data)
-        self.assertIn('06', output_data['2016'])
-        self.assertIn('12', output_data['2016']['06'])
-        self.assertIn('15', output_data['2016']['06'])
-        self.assertIn('18', output_data['2016']['06'])
-        self.assertIn('25', output_data['2016']['06'])
-        self.assertIn('30', output_data['2016']['06'])
-        self.assertIn('andrew-hello-world', output_data['2016']['06']['12'])
-        self.assertIn('my-first-post', output_data['2016']['06']['15'])
-        self.assertIn('second-post', output_data['2016']['06']['18'])
-        self.assertIn('andrew-second-post', output_data['2016']['06']['25'])
-        self.assertIn('tables-test', output_data['2016']['06']['30'])
-        self.assertIn('index.html', output_data['2016']['06']['12']['andrew-hello-world'])
-        self.assertIn('index.html', output_data['2016']['06']['15']['my-first-post'])
-        self.assertIn('index.html', output_data['2016']['06']['18']['second-post'])
-        self.assertIn('index.html', output_data['2016']['06']['25']['andrew-second-post'])
-        self.assertIn('index.html', output_data['2016']['06']['30']['tables-test'])
-        self.assertIn('index.html', output_data['tag-testing'])
-        self.assertIn('overlap', output_data)
-        self.assertIn('index.html', output_data['overlap'])
-        self.assertIn('andrew-hello-world', output_data['overlap'])
-        self.assertIn('index.html', output_data['overlap']['andrew-hello-world'])
-        self.assertIn('my-first-post', output_data['overlap'])
-        self.assertIn('index.html', output_data['overlap']['my-first-post'])
-        self.assertIn('second-post', output_data['overlap'])
-        self.assertIn('index.html', output_data['overlap']['second-post'])
-        self.assertIn('andrew-second-post', output_data['overlap'])
-        self.assertIn('index.html', output_data['overlap']['andrew-second-post'])
-        # test for pagination: we expect 3 pages at 2 items per page
-        self.assertIn('paged-posts', output_data)
-        self.assertIn('1', output_data['paged-posts'])
-        self.assertIn('index.html', output_data['paged-posts']['1'])
-        self.assertIn('2', output_data['paged-posts'])
-        self.assertIn('index.html', output_data['paged-posts']['2'])
-        self.assertIn('3', output_data['paged-posts'])
-        self.assertIn('index.html', output_data['paged-posts']['3'])
+        self.assert_path_exists("2016/06/12/andrew-hello-world/index.html", output_data)
+        self.assert_path_exists("2016/06/18/second-post/index.html", output_data)
+        self.assert_path_exists("2016/06/25/andrew-second-post/index.html", output_data)
+        self.assert_path_exists("2016/06/30/tables-test/index.html", output_data)
+        self.assert_path_exists("tag-testing/index.html", output_data)
+        self.assert_path_exists("overlap/index.html", output_data)
+        self.assert_path_exists("overlap/andrew-hello-world/index.html", output_data)
+        self.assert_path_exists("overlap/my-first-post/index.html", output_data)
+        self.assert_path_exists("overlap/second-post/index.html", output_data)
+        self.assert_path_exists("overlap/andrew-second-post/index.html", output_data)
 
-        # Check that the generated author bio is there
-        self.assertIn('bios', output_data)
-        self.assertIn('michael', output_data['bios'])
-        self.assertIn('index.html', output_data['bios']['michael'])
+        # Check that the paged posts exist
+        self.assert_path_exists("paged-posts/1/index.html", output_data)
+        self.assert_path_exists("paged-posts/2/index.html", output_data)
+        self.assert_path_exists("paged-posts/3/index.html", output_data)
 
-        # Check that the generated posts-by-author pages are there
-        self.assertIn('by-author', output_data)
-        self.assertIn('andrew', output_data['by-author'])
-        self.assertIn('michael', output_data['by-author'])
-        self.assertIn('index.html', output_data['by-author']['andrew'])
-        self.assertIn('index.html', output_data['by-author']['michael'])
+        # Check that the homepage compiles properly
+        self.assert_homepage_compiles(output_data['index.html'])
 
-        # Parse the home page's XHTML content
-        homepage = ET.fromstring(_str(output_data['index.html']))
-        self.assertEqual('html', homepage.findall('.')[0].tag)
-        self.assertEqual('Welcome to the test blog', homepage.findall('./head/title')[0].text.strip())
-        self.assertEqual('Home page', homepage.findall('./body/h1')[0].text.strip())
-        # Test the project-wide static context variables
-        self.assertEqual(
-                'This is some information about the unit test web site.',
-                homepage.findall("./body/div[@class='site-summary']")[0].text.strip(),
-        )
+        # Check that the post "my-first-post" compiles properly
+        self.assert_my_first_post_compiles(self.assert_path_exists("2016/06/15/my-first-post/index.html", output_data))
 
-        # Test the ordering of links on the homepage
-        homepage_link_els = homepage.findall('./body/ul/li/a')
-        homepage_links = [el.attrib['href'] for el in homepage_link_els]
-        homepage_link_titles = [el.text.strip() for el in homepage_link_els]
-        self.assertEqual(
-            [
-                '/2016/06/30/tables-test/',
-                '/2016/06/25/andrew-second-post/',
-                '/2016/06/18/second-post/',
-                '/2016/06/15/my-first-post/',
-                '/2016/06/12/andrew-hello-world/'
-            ],
-            homepage_links,
-        )
-        self.assertEqual(
-            [
-                'Testing Markdown tables',
-                'Andrew\'s Second Post',
-                'Second post',
-                'My first post',
-                'Andrew says Hello World'
-            ],
-            homepage_link_titles,
-        )
-
-        # Test the project-wide dynamic context variables
-        self.assertEqual("Andrew Michaels", homepage.findall("./body/div[@class='all-authors']/ul/li")[0].text.strip())
-        self.assertEqual("Michael Anderson", homepage.findall("./body/div[@class='all-authors']/ul/li")[1].text.strip())
-        # Test the new {% asset %} tag
-        self.assertEqual("/assets/testfile.txt", homepage.findall("./body/div[@class='download']/a")[0].attrib['href'])
-
-        # Test the Lorem Ipsum generators
-        self.assertEqual(
-            100,
-            lipsum.count_words(homepage.findall("./body/div[@class='lorem-ipsum']/p")[0].text.strip())
-        )
-        self.assertEqual(
-            5,
-            lipsum.count_sentences(homepage.findall("./body/div[@class='lorem-ipsum']/p")[1].text.strip())
-        )
-        self.assertTrue(
-            lipsum.count_words(homepage.findall("./body/div[@class='lorem-ipsum']/p")[2].text.strip()) > 1
-        )
-
-        post = ET.fromstring(output_data['2016']['06']['15']['my-first-post']['index.html'])
-        self.assertEqual('html', post.findall('.')[0].tag)
-        self.assertEqual('My first post', post.findall('./head/title')[0].text.strip())
-        self.assertEqual('2016-06-15', post.findall(".//div[@class='published']")[0].text.strip())
-        self.assertEqual('/bios/michael/', post.findall(".//div[@class='author']/a")[0].attrib['href'])
-        self.assertEqual('By Michael', post.findall(".//div[@class='author']/a")[0].text.strip())
-        post_content = post.findall(".//div[@class='content']/p")[0]
-        post_content_els = [el for el in post_content]
-        self.assertEqual('strong', post_content_els[0].tag)
-        self.assertEqual('Markdown', post_content_els[0].text.strip())
-        self.assertEqual('code', post_content_els[1].tag)
-        self.assertEqual('HTML', post_content_els[1].text.strip())
-        post_content_text = strip_el_text(post_content, max_depth=1)
-        self.assertEqual(
-                "This is the Markdown content of the first post, which should appropriately be translated into the " +
-                "relevant HTML code.",
-                post_content_text
-        )
-
-        bio = ET.fromstring(output_data['bios']['michael']['index.html'])
-        self.assertEqual('html', bio.findall('.')[0].tag)
-        self.assertEqual('Michael Anderson', bio.findall('./head/title')[0].text.strip())
-        self.assertEqual('mailto:manderson@somewhere.com', bio.findall(".//div[@class='meta']/a")[0].attrib['href'])
-        self.assertEqual('Contact Michael', bio.findall(".//div[@class='meta']/a")[0].text.strip())
-        bio_content = bio.findall(".//div[@class='content']/p")[0]
-        bio_content_els = [el for el in bio_content]
-        self.assertEqual('strong', bio_content_els[0].tag)
-        self.assertEqual('Markdown', bio_content_els[0].text.strip())
-        bio_content_text = strip_el_text(bio_content, max_depth=1)
-        self.assertEqual("This is Michael's bio, in Markdown format.", bio_content_text)
-
-        bio = ET.fromstring(output_data['bios']['andrew']['index.html'])
-        self.assertEqual('html', bio.findall('.')[0].tag)
-        self.assertEqual('Andrew Michaels', bio.findall('./head/title')[0].text.strip())
-        self.assertEqual('mailto:amichaels@somewhere.com', bio.findall(".//div[@class='meta']/a")[0].attrib['href'])
-        self.assertEqual('Contact Andrew', bio.findall(".//div[@class='meta']/a")[0].text.strip())
-        bio_content = bio.findall(".//div[@class='content']/p")[0]
-        bio_content_els = [el for el in bio_content]
-        self.assertEqual('em', bio_content_els[0].tag)
-        bio_content_text = strip_el_text(bio_content, max_depth=1)
-        self.assertEqual("Here's Andrew's bio!", bio_content_text)
+        # Check that the two bios compiled properly
+        self.assert_michael_bio_compiles(self.assert_path_exists("bios/michael/index.html", output_data))
+        self.assert_andrew_bio_compiles(self.assert_path_exists("bios/andrew/index.html", output_data))
 
         # Test the for-each context rendering
-        posts_by_author = ET.fromstring(output_data['by-author']['andrew']['index.html'])
-        self.assertEqual('html', posts_by_author.findall('.')[0].tag)
-        self.assertEqual('Posts by Andrew', posts_by_author.findall('./head/title')[0].text.strip())
-        self.assertEqual('Posts by Andrew', posts_by_author.findall('./body/h1')[0].text.strip())
-        links_by_author_els = posts_by_author.findall('.//li/a')
-        links_by_author = [el.attrib['href'] for el in links_by_author_els]
-        link_titles_by_author = [el.text.strip() for el in links_by_author_els]
-        self.assertEqual(
-            [
-                '/2016/06/30/tables-test/',
-                '/2016/06/25/andrew-second-post/',
-                '/2016/06/12/andrew-hello-world/'
-            ],
-            links_by_author
-        )
-        self.assertEqual(
-            [
-                'Testing Markdown tables',
-                'Andrew\'s Second Post',
-                'Andrew says Hello World'
-            ],
-            link_titles_by_author,
-        )
-
-        posts_by_author = ET.fromstring(output_data['by-author']['michael']['index.html'])
-        self.assertEqual('html', posts_by_author.findall('.')[0].tag)
-        self.assertEqual('Posts by Michael', posts_by_author.findall('./head/title')[0].text.strip())
-        self.assertEqual('Posts by Michael', posts_by_author.findall('./body/h1')[0].text.strip())
-        links_by_author_els = posts_by_author.findall('.//li/a')
-        links_by_author = [el.attrib['href'] for el in links_by_author_els]
-        link_titles_by_author = [el.text.strip() for el in links_by_author_els]
-        self.assertEqual(
-                [
-                    '/2016/06/18/second-post/',
-                    '/2016/06/15/my-first-post/',
-                ],
-                links_by_author
-        )
-        self.assertEqual(
-                [
-                    'Second post',
-                    'My first post',
-                ],
-                link_titles_by_author,
-        )
+        self.assert_by_author_andrew_compiles(self.assert_path_exists("by-author/andrew/index.html", output_data))
+        self.assert_by_author_michael_compiles(self.assert_path_exists("by-author/michael/index.html", output_data))
 
         # Test the custom template tags/filters functionality
         tt = ET.fromstring(output_data['tag-testing']['index.html'])
@@ -333,6 +192,178 @@ class TestSimpleStatikIntegration(unittest.TestCase):
             ],
             pp_link_titles,
         )
+
+        self.assert_mlalchemy_complex_path_view_compiles(output_data)
+        self.assert_homepage_compiles(self.assert_path_exists("mlalchemy/posts/index.html", output_data))
+
+    def assert_homepage_compiles(self, page_content):
+        # Parse the home page's XHTML content
+        homepage = ET.fromstring(_str(page_content))
+        self.assertEqual('html', homepage.findall('.')[0].tag)
+        self.assertEqual('Welcome to the test blog', homepage.findall('./head/title')[0].text.strip())
+        self.assertEqual('Home page', homepage.findall('./body/h1')[0].text.strip())
+        # Test the project-wide static context variables
+        self.assertEqual(
+            'This is some information about the unit test web site.',
+            homepage.findall("./body/div[@class='site-summary']")[0].text.strip(),
+        )
+
+        # Test the ordering of links on the homepage
+        homepage_link_els = homepage.findall('./body/ul/li/a')
+        homepage_links = [el.attrib['href'] for el in homepage_link_els]
+        homepage_link_titles = [el.text.strip() for el in homepage_link_els]
+        self.assertEqual(
+            [
+                '/2016/06/30/tables-test/',
+                '/2016/06/25/andrew-second-post/',
+                '/2016/06/18/second-post/',
+                '/2016/06/15/my-first-post/',
+                '/2016/06/12/andrew-hello-world/'
+            ],
+            homepage_links,
+        )
+        self.assertEqual(
+            [
+                'Testing Markdown tables',
+                'Andrew\'s Second Post',
+                'Second post',
+                'My first post',
+                'Andrew says Hello World'
+            ],
+            homepage_link_titles,
+        )
+
+        # Test the project-wide dynamic context variables
+        self.assertEqual("Andrew Michaels", homepage.findall("./body/div[@class='all-authors']/ul/li")[0].text.strip())
+        self.assertEqual("Michael Anderson", homepage.findall("./body/div[@class='all-authors']/ul/li")[1].text.strip())
+        # Test the new {% asset %} tag
+        self.assertEqual("/assets/testfile.txt", homepage.findall("./body/div[@class='download']/a")[0].attrib['href'])
+
+        # Test the Lorem Ipsum generators
+        self.assertEqual(
+            100,
+            lipsum.count_words(homepage.findall("./body/div[@class='lorem-ipsum']/p")[0].text.strip())
+        )
+        self.assertEqual(
+            5,
+            lipsum.count_sentences(homepage.findall("./body/div[@class='lorem-ipsum']/p")[1].text.strip())
+        )
+        self.assertTrue(
+            lipsum.count_words(homepage.findall("./body/div[@class='lorem-ipsum']/p")[2].text.strip()) > 1
+        )
+
+    def assert_my_first_post_compiles(self, content):
+        post = ET.fromstring(content)
+        self.assertEqual('html', post.findall('.')[0].tag)
+        self.assertEqual('My first post', post.findall('./head/title')[0].text.strip())
+        self.assertEqual('2016-06-15', post.findall(".//div[@class='published']")[0].text.strip())
+        self.assertEqual('/bios/michael/', post.findall(".//div[@class='author']/a")[0].attrib['href'])
+        self.assertEqual('By Michael', post.findall(".//div[@class='author']/a")[0].text.strip())
+        post_content = post.findall(".//div[@class='content']/p")[0]
+        post_content_els = [el for el in post_content]
+        self.assertEqual('strong', post_content_els[0].tag)
+        self.assertEqual('Markdown', post_content_els[0].text.strip())
+        self.assertEqual('code', post_content_els[1].tag)
+        self.assertEqual('HTML', post_content_els[1].text.strip())
+        post_content_text = strip_el_text(post_content, max_depth=1)
+        self.assertEqual(
+            "This is the Markdown content of the first post, which should appropriately be translated into the " +
+            "relevant HTML code.",
+            post_content_text
+        )
+
+    def assert_michael_bio_compiles(self, content):
+        bio = ET.fromstring(content)
+        self.assertEqual('html', bio.findall('.')[0].tag)
+        self.assertEqual('Michael Anderson', bio.findall('./head/title')[0].text.strip())
+        self.assertEqual('mailto:manderson@somewhere.com', bio.findall(".//div[@class='meta']/a")[0].attrib['href'])
+        self.assertEqual('Contact Michael', bio.findall(".//div[@class='meta']/a")[0].text.strip())
+        bio_content = bio.findall(".//div[@class='content']/p")[0]
+        bio_content_els = [el for el in bio_content]
+        self.assertEqual('strong', bio_content_els[0].tag)
+        self.assertEqual('Markdown', bio_content_els[0].text.strip())
+        bio_content_text = strip_el_text(bio_content, max_depth=1)
+        self.assertEqual("This is Michael's bio, in Markdown format.", bio_content_text)
+
+    def assert_andrew_bio_compiles(self, content):
+        bio = ET.fromstring(content)
+        self.assertEqual('html', bio.findall('.')[0].tag)
+        self.assertEqual('Andrew Michaels', bio.findall('./head/title')[0].text.strip())
+        self.assertEqual('mailto:amichaels@somewhere.com', bio.findall(".//div[@class='meta']/a")[0].attrib['href'])
+        self.assertEqual('Contact Andrew', bio.findall(".//div[@class='meta']/a")[0].text.strip())
+        bio_content = bio.findall(".//div[@class='content']/p")[0]
+        bio_content_els = [el for el in bio_content]
+        self.assertEqual('em', bio_content_els[0].tag)
+        bio_content_text = strip_el_text(bio_content, max_depth=1)
+        self.assertEqual("Here's Andrew's bio!", bio_content_text)
+
+    def assert_by_author_andrew_compiles(self, content):
+        posts_by_author = ET.fromstring(content)
+        self.assertEqual('html', posts_by_author.findall('.')[0].tag)
+        self.assertEqual('Posts by Andrew', posts_by_author.findall('./head/title')[0].text.strip())
+        self.assertEqual('Posts by Andrew', posts_by_author.findall('./body/h1')[0].text.strip())
+        links_by_author_els = posts_by_author.findall('.//li/a')
+        links_by_author = [el.attrib['href'] for el in links_by_author_els]
+        link_titles_by_author = [el.text.strip() for el in links_by_author_els]
+        self.assertEqual(
+            [
+                '/2016/06/30/tables-test/',
+                '/2016/06/25/andrew-second-post/',
+                '/2016/06/12/andrew-hello-world/'
+            ],
+            links_by_author
+        )
+        self.assertEqual(
+            [
+                'Testing Markdown tables',
+                'Andrew\'s Second Post',
+                'Andrew says Hello World'
+            ],
+            link_titles_by_author,
+        )
+
+    def assert_by_author_michael_compiles(self, content):
+        posts_by_author = ET.fromstring(content)
+        self.assertEqual('html', posts_by_author.findall('.')[0].tag)
+        self.assertEqual('Posts by Michael', posts_by_author.findall('./head/title')[0].text.strip())
+        self.assertEqual('Posts by Michael', posts_by_author.findall('./body/h1')[0].text.strip())
+        links_by_author_els = posts_by_author.findall('.//li/a')
+        links_by_author = [el.attrib['href'] for el in links_by_author_els]
+        link_titles_by_author = [el.text.strip() for el in links_by_author_els]
+        self.assertEqual(
+            [
+                '/2016/06/18/second-post/',
+                '/2016/06/15/my-first-post/',
+            ],
+            links_by_author
+        )
+        self.assertEqual(
+            [
+                'Second post',
+                'My first post',
+            ],
+            link_titles_by_author,
+        )
+
+    def assert_mlalchemy_complex_path_view_compiles(self, output_data):
+        self.assert_path_exists("mlalchemy/andrew-hello-world/index.html", output_data)
+        self.assert_path_exists("mlalchemy/my-first-post/index.html", output_data)
+        self.assert_path_exists("mlalchemy/second-post/index.html", output_data)
+        self.assert_path_exists("mlalchemy/andrew-second-post/index.html", output_data)
+        self.assert_path_exists("mlalchemy/tables-test/index.html", output_data)
+
+        self.assertEqual(
+            output_data['mlalchemy']['andrew-hello-world']['index.html'],
+            output_data['2016']['06']['12']['andrew-hello-world']['index.html']
+        )
+
+    def assert_path_exists(self, path, output_data):
+        path_parts = path.split("/")
+        cur_dict = output_data
+        for part in path_parts:
+            self.assertIn(part, cur_dict)
+            cur_dict = cur_dict[part]
+        return cur_dict
 
 
 if __name__ == "__main__":

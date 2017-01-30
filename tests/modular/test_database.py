@@ -134,7 +134,6 @@ class TestStatikDatabase(unittest.TestCase):
         self.assertIn('single-bed', redroom_tags)
         self.assertIn('shower', redroom_tags)
 
-
     def assertInstanceEqual(self, expected, inst):
         for field_name, field_value in iteritems(expected):
             self.assertEqual(field_value, getattr(inst, field_name))

@@ -1,0 +1,8 @@
+path:
+  template: /mlalchemy/{{ post.slug }}
+  for-each:
+    post:
+      from: Post
+      where:
+        draft: false
+template: post

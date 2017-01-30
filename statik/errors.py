@@ -11,6 +11,7 @@ __all__ = [
     'DuplicateModelInstanceError',
     'InvalidModelCollectionDataError',
     'NoViewsError',
+    'SafetyViolationError'
 ]
 
 
@@ -45,4 +46,8 @@ class InvalidModelCollectionDataError(ValueError):
 
 
 class NoViewsError(Exception):
+    pass
+
+
+class SafetyViolationError(Exception):
     pass

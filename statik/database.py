@@ -12,6 +12,8 @@ from sqlalchemy import String, Integer, Column, Table, ForeignKey, \
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
 
+import mlalchemy
+
 from statik.common import ContentLoadable
 from statik.fields import *
 from statik.errors import *
@@ -229,33 +231,44 @@ class StatikDatabase(object):
             db_entry = db_model(**entry.field_values)
             self.session.add(db_entry)
 
-    def query(self, query, additional_locals=None):
+    def query(self, query, additional_locals=None, safe_mode=False):
         """Executes the given SQLAlchemy query string.
 
         Args:
             query: The SQLAlchemy ORM query (or Python code) to be executed.
             additional_locals: Any additional local variables to inject into the execution context when executing
                 the query.
+            safe_mode: Boolean value indicating whether or not to execute queries in safe mode only. If True,
+                this only allows MLAlchemy-style queries. If False, this allows both exec() and MLAlchemy-style
+                queries. Default: False.
 
         Returns:
             The result of executing the query.
         """
         logger.debug("Attempting to execute database query: %s" % query)
 
-        if additional_locals is not None:
-            for k, v in iteritems(additional_locals):
-                locals()[k] = v
+        if safe_mode and not isinstance(query, dict):
+            raise SafetyViolationError("Queries in safe mode must be MLAlchemy-style queries")
 
-        exec(
-            compile(
-                'result = %s' % query.strip(),
-                '<string>',
-                'exec'
-            ),
-            globals(),
-            locals()
-        )
-        return locals()['result']
+        if isinstance(query, dict):
+            logger.debug("Executing query in safe mode (MLAlchemy)")
+            return mlalchemy.parse_query(query).to_sqlalchemy(self.session, self.tables).all()
+        else:
+            logger.debug("Executing unsafe query (Python exec())")
+            if additional_locals is not None:
+                for k, v in iteritems(additional_locals):
+                    locals()[k] = v
+
+            exec(
+                compile(
+                    'result = %s' % query.strip(),
+                    '<string>',
+                    'exec'
+                ),
+                globals(),
+                locals()
+            )
+            return locals()['result']
 
     def shutdown(self):
         """Shuts down the database engine."""

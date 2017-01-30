@@ -62,19 +62,32 @@ class StatikProject(object):
         self.db = None
         self.project_context = {}
 
-    def generate(self, output_path=None, in_memory=False):
+    def generate(self, output_path=None, in_memory=False, safe_mode=False):
         """Executes the Statik project generator.
 
         Args:
             output_path: The path to which to write output files.
             in_memory: Whether or not to generate the results in memory. If True, this will generate the output
                 result as a dictionary. If False, this will write the output to files in the output_path.
+            safe_mode: Whether or not to generate output in safe mode. Default: False.
 
         Returns:
             If in_memory is True, this returns a dictionary containing the actual generated static content. If
             in_memory is False, this returns an integer indicating the number of files generated in the
             output path.
         """
+        result = dict() if in_memory else 0
+        try:
+            result = self._generate(output_path=output_path, in_memory=in_memory, safe_mode=safe_mode)
+
+        except Exception as e:
+            logger.exception("Error caught: %s" % e)
+
+        # done
+        return result
+
+    def _generate(self, output_path=None, in_memory=False, safe_mode=False):
+        """Unsafe version of the generate() function. Does not perform exception handling."""
         result = dict() if in_memory else 0
         try:
             if output_path is None and not in_memory:
@@ -97,13 +110,13 @@ class StatikProject(object):
             self.template_env.statik_views = self.views
             self.template_env.statik_base_url = self.config.base_path
             self.template_env.statik_base_asset_url = add_url_path_component(
-                    self.config.base_path,
-                    self.config.assets_dest_path
+                self.config.base_path,
+                self.config.assets_dest_path
             )
             self.db = self.load_db_data(self.models)
             self.project_context = self.load_project_context()
 
-            in_memory_result = self.process_views()
+            in_memory_result = self.process_views(safe_mode=safe_mode)
 
             if in_memory:
                 result = in_memory_result
@@ -115,9 +128,6 @@ class StatikProject(object):
                 self.copy_assets(output_path)
                 result = file_count
 
-        except Exception as e:
-            logger.exception("Error caught: %s" % e)
-
         finally:
             try:
                 # make sure to destroy the database engine (to provide for the possibility of database engine
@@ -127,7 +137,6 @@ class StatikProject(object):
             except Exception as e:
                 logger.exception("Unable to clean up properly: %s" % e)
 
-        # done
         return result
 
     def configure_templates(self):
@@ -247,14 +256,14 @@ class StatikProject(object):
             context[varname] = self.db.query(query)
         return context
 
-    def process_views(self):
+    def process_views(self, safe_mode=False):
         """Processes the loaded views to generate the required output data."""
         output = {}
         logger.debug("Processing %d view(s)..." % len(self.views))
         for view_name, view in iteritems(self.views):
             # first update the view's context with the project context
             view.context.update(self.project_context)
-            output = deep_merge_dict(output, view.process(self.db))
+            output = deep_merge_dict(output, view.process(self.db, safe_mode=safe_mode))
         return output
 
     def dump_in_memory_result(self, result, output_path):

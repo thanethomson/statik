@@ -74,6 +74,12 @@ def main():
         help="Do not attempt to automatically open a web browser at the served URL when watching for changes"
     )
     parser.add_argument(
+        '-s', '--safe-mode',
+        action='store_true',
+        default=False,
+        help="Run Statik in safe mode (which disallows unsafe query execution)"
+    )
+    parser.add_argument(
         '-v', '--verbose',
         help="Whether or not to output verbose logging information (default: false).",
         action='store_true',
@@ -89,11 +95,12 @@ def main():
         from statik import __version__
         logger.info('Statik v%s' % __version__)
     elif args.watch:
-        watch(config_file_path, output_path, host=args.host, port=args.port, open_browser=(not args.no_browser))
+        watch(config_file_path, output_path, host=args.host, port=args.port, open_browser=(not args.no_browser),
+              safe_mode=args.safe_mode)
     elif args.quickstart:
         generate_quickstart(project_path)
     else:
-        generate(config_file_path, output_path=output_path, in_memory=False)
+        generate(config_file_path, output_path=output_path, in_memory=False, safe_mode=args.safe_mode)
 
 
 if __name__ == "__main__":

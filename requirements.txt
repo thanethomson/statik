@@ -7,3 +7,4 @@ python-slugify>=1.2.1
 six>=1.10.0
 lipsum>=0.1.1
 httpwatcher>=0.5.0
+mlalchemy>=0.1.3
