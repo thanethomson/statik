@@ -4,6 +4,13 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.15.0` - 30 January 2017
+
+* Adding support for
+  [MLAlchemy](https://github.com/thanethomson/MLAlchemy)-style queries.
+* Adding support for **safe mode**, which only allows for
+  MLAlchemy-style queries.
+
 ### `v0.14.3` - 23 January 2017
 
 * Now allowing project's `assets` and `templates` folders to
