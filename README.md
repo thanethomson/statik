@@ -84,7 +84,7 @@ data/         - Instances for each of the different models, defined either in
                 YAML or Markdown format.
 models/       - A folder specifically dedicated to model definitions, in YAML
                 format.
-templates/    - Jinja2 template files. Ignored if themes are used.
+templates/    - Jinja2/Mustache template files. Ignored if themes are used.
 templatetags/ - Python scripts defining custom Jinja2 template tags and
                 filters.
 themes/       - If your project uses themes, place them here. Each theme
