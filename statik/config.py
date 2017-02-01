@@ -2,9 +2,13 @@
 
 from __future__ import unicode_literals
 
+from copy import copy
+
+from statik.errors import *
 from statik.common import YamlLoadable
 from statik.utils import underscore_var_names
 from statik.markdown_config import MarkdownConfig
+from statik.templating import DEFAULT_TEMPLATE_PROVIDERS
 
 import logging
 logger = logging.getLogger(__name__)
@@ -44,6 +48,22 @@ class StatikConfig(YamlLoadable):
             if 'dynamic' in self.vars['context'] and isinstance(self.vars['context']['dynamic'], dict):
                 self.context_dynamic = underscore_var_names(self.vars['context']['dynamic'])
 
+        # work out our template engine precedence
+        if 'templates' in self.vars and 'providers' in self.vars:
+            if not isinstance(self.vars['templates']['providers'], list):
+                raise TypeError("Template providers in project configuration must be a list")
+            # validate our template providers
+            self.template_providers = [provider for provider in self.vars['templates']['providers'] \
+                                       if provider in DEFAULT_TEMPLATE_PROVIDERS]
+        else:
+            self.template_providers = copy(DEFAULT_TEMPLATE_PROVIDERS)
+
+        if len(self.template_providers) == 0:
+            raise NoSupportedTemplateProvidersError(
+                "No supported template providers in project configuration. "
+                "Available template providers: %s" % ", ".join(DEFAULT_TEMPLATE_PROVIDERS)
+            )
+
         logging.debug("%s" % self)
 
     def __repr__(self):
@@ -51,6 +71,7 @@ class StatikConfig(YamlLoadable):
                 "              base_path=%s\n" +
                 "              encoding=%s\n" +
                 "              theme=%s\n" +
+                "              template_providers=%s\n" +
                 "              assets_src_path=%s\n" +
                 "              assets_dest_path=%s\n" +
                 "              context_static=%s\n" +
@@ -59,6 +80,7 @@ class StatikConfig(YamlLoadable):
                     self.base_path,
                     self.encoding,
                     self.theme,
+                    self.template_providers,
                     self.assets_src_path,
                     self.assets_dest_path,
                     self.context_static,

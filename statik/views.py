@@ -28,7 +28,7 @@ class StatikView(YamlLoadable):
         # defaults
         self.complex = False
         self.path = None
-        self.template = None
+        self.template = kwargs.get('template', None)
         self.path_template = None
         self.path_variable = None
         self.path_query = None
@@ -36,8 +36,8 @@ class StatikView(YamlLoadable):
         self.context_static = dict()
         self.context_dynamic = dict()
         self.context_for_each = dict()
-        self.template_ext = '.html'
-        self.default_output_filename = 'index'
+        self.default_output_ext = kwargs.get('default_output_ext', '.html')
+        self.default_output_filename = kwargs.get('default_output_filename', 'index')
 
         # coerce to UTF-8 if no encoding is specified
         if self.encoding is None:
@@ -55,9 +55,10 @@ class StatikView(YamlLoadable):
         # keep a reference to the models
         self.models = kwargs['models']
 
-        if 'template_env' not in kwargs:
-            raise MissingParameterError("Missing parameter \"template_env\" in view constructor")
-        self.template_env = kwargs['template_env']
+        # if no template was explicitly supplied, we need a template engine with which to load templates
+        if 'template_engine' not in kwargs and self.template is None:
+            raise MissingParameterError("Missing parameter \"template_engine\" in view constructor")
+        self.template_engine = kwargs.get('template_engine', None)
 
         self.configure()
         logger.debug('%s' % self)
@@ -83,17 +84,12 @@ class StatikView(YamlLoadable):
         else:
             raise ValueError("Unrecognised structure for \"path\" configuration in view: %s" % self.name)
 
-        if 'template' not in self.vars:
-            raise MissingParameterError("Missing variable \"template\" in view: %s" % self.name)
-        template_filename, template_ext = os.path.splitext(self.vars['template'])
-        if template_ext is None or len(template_ext) == 0:
-            template_path = '%s.html' % self.vars['template']
-            self.template_ext = '.html'
-        else:
-            template_path = self.vars['template']
-            self.template_ext = template_ext
-        logger.debug("Attempting to load template: %s" % template_path)
-        self.template = self.template_env.get_template(template_path)
+        # if we don't have a template yet
+        if self.template is None:
+            # try to load it
+            if 'template' not in self.vars:
+                raise MissingParameterError("Missing variable \"template\" in view: %s" % self.name)
+            self.template = self.template_engine.load_template(self.vars['template'])
 
         self.configure_context()
 
@@ -144,14 +140,14 @@ class StatikView(YamlLoadable):
             if inst_path_ext is None or len(inst_path_ext) == 0:
                 inst_path = add_url_path_component(
                         inst_path,
-                        '%s%s' % (self.default_output_filename, self.template_ext)
+                        '%s%s' % (self.default_output_filename, self.default_output_ext)
                 )
 
             # update the context with the current path variable instance
             self.context[self.path_variable] = inst
             self.context.update(self.render_context_for_each(db, inst, safe_mode=safe_mode))
             # render the template itself
-            rendered_view = self.template.render(**self.context)
+            rendered_view = self.template.render(self.context)
             rendered_views = deep_merge_dict(
                     rendered_views,
                     dict_from_path(inst_path, final_value=rendered_view)
@@ -167,12 +163,12 @@ class StatikView(YamlLoadable):
     def process_simple(self, db):
         inst_path_ext = get_url_file_ext(self.path)
         if inst_path_ext is None or len(inst_path_ext) == 0:
-            path = add_url_path_component(self.path, '%s%s' % (self.default_output_filename, self.template_ext))
+            path = add_url_path_component(self.path, '%s%s' % (self.default_output_filename, self.default_output_ext))
         else:
             path = self.path
         return dict_from_path(
                 path,
-                final_value=self.template.render(**self.context),
+                final_value=self.template.render(self.context),
         )
 
     def process_context_dynamic(self, db, safe_mode=False):
@@ -183,10 +179,10 @@ class StatikView(YamlLoadable):
 
     def reverse_url(self, inst=None):
         """Returns the reverse lookup URL for this view."""
-        result = self.template_env.from_string(
+        result = self.template_engine.create_template(
                 self.path_template
         ).render(
-                **{self.path_variable: inst}
+                {self.path_variable: inst}
         ) if self.complex else self.path
 
         return result if result.endswith('/') else ('%s/' % result)

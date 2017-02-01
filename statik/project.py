@@ -5,7 +5,6 @@ from future.utils import iteritems
 from io import open
 
 import os.path
-import jinja2
 from copy import copy
 
 from statik.config import StatikConfig
@@ -14,7 +13,7 @@ from statik.errors import *
 from statik.models import StatikModel
 from statik.views import StatikView
 from statik.database import StatikDatabase
-from statik import templatetags
+from statik.templating import StatikTemplateEngine
 
 import statik.filters
 import statik.tags
@@ -50,6 +49,8 @@ class StatikProject(object):
         else:
             self.config = None
 
+        self.safe_mode = kwargs.pop('safe_mode', False)
+
         self.path, self.config_file_path = get_project_config_file(path, StatikProject.CONFIG_FILE)
         if (self.path is None or self.config_file_path is None) and self.config is None:
             raise MissingProjectConfig("No configuration could be found for project")
@@ -57,19 +58,18 @@ class StatikProject(object):
         logger.info("Project path configured as: %s" % self.path)
 
         self.models = {}
-        self.template_env = None
+        self.template_engine = None
         self.views = {}
         self.db = None
         self.project_context = {}
 
-    def generate(self, output_path=None, in_memory=False, safe_mode=False):
+    def generate(self, output_path=None, in_memory=False):
         """Executes the Statik project generator.
 
         Args:
             output_path: The path to which to write output files.
             in_memory: Whether or not to generate the results in memory. If True, this will generate the output
                 result as a dictionary. If False, this will write the output to files in the output_path.
-            safe_mode: Whether or not to generate output in safe mode. Default: False.
 
         Returns:
             If in_memory is True, this returns a dictionary containing the actual generated static content. If
@@ -78,7 +78,7 @@ class StatikProject(object):
         """
         result = dict() if in_memory else 0
         try:
-            result = self._generate(output_path=output_path, in_memory=in_memory, safe_mode=safe_mode)
+            result = self._generate(output_path=output_path, in_memory=in_memory)
 
         except Exception as e:
             logger.exception("Error caught: %s" % e)
@@ -86,7 +86,7 @@ class StatikProject(object):
         # done
         return result
 
-    def _generate(self, output_path=None, in_memory=False, safe_mode=False):
+    def _generate(self, output_path=None, in_memory=False):
         """Unsafe version of the generate() function. Does not perform exception handling."""
         result = dict() if in_memory else 0
         try:
@@ -101,22 +101,16 @@ class StatikProject(object):
                 logger.info("Using encoding: %s" % self.config.encoding)
 
             self.models = self.load_models()
-            self.template_env = self.configure_templates()
+            self.template_engine = StatikTemplateEngine(self)
 
             self.views = self.load_views()
             if len(self.views) == 0:
                 raise NoViewsError("Project has no views configured")
 
-            self.template_env.statik_views = self.views
-            self.template_env.statik_base_url = self.config.base_path
-            self.template_env.statik_base_asset_url = add_url_path_component(
-                self.config.base_path,
-                self.config.assets_dest_path
-            )
             self.db = self.load_db_data(self.models)
             self.project_context = self.load_project_context()
 
-            in_memory_result = self.process_views(safe_mode=safe_mode)
+            in_memory_result = self.process_views()
 
             if in_memory:
                 result = in_memory_result
@@ -138,51 +132,6 @@ class StatikProject(object):
                 logger.exception("Unable to clean up properly: %s" % e)
 
         return result
-
-    def configure_templates(self):
-        # by default, we always look in the project's "templates" folder
-        template_paths = [os.path.join(self.path, StatikProject.TEMPLATES_DIR)]
-
-        # if we're using a specific theme
-        if self.config.theme is not None:
-            # we want the theme's template to be a fallback option
-            template_paths.append(os.path.join(
-                self.path,
-                StatikProject.THEMES_DIR,
-                self.config.theme,
-                StatikProject.TEMPLATES_DIR
-            ))
-            logger.debug("Using theme \"%s\" to get to theme path: %s" % (self.config.theme, template_paths[0]))
-
-        # make sure all paths exist
-        for path in template_paths:
-            if not os.path.exists(path) or not os.path.isdir(path):
-                raise MissingProjectFolderError(path, "Missing template folder")
-
-        templatetags_path = os.path.join(self.path, StatikProject.TEMPLATETAGS_DIR)
-        if os.path.isdir(templatetags_path):
-            # dynamically import modules; they register themselves with our template tag store
-            import_python_modules_by_path(templatetags_path)
-
-        env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(template_paths, encoding=self.config.encoding),
-            extensions=[
-                'statik.jinja2ext.StatikUrlExtension',
-                'statik.jinja2ext.StatikAssetExtension',
-                'statik.jinja2ext.StatikLoremIpsumExtension',
-                'statik.jinja2ext.StatikTemplateTagsExtension',
-                'jinja2.ext.do',
-                'jinja2.ext.loopcontrols',
-                'jinja2.ext.with_',
-                'jinja2.ext.autoescape',
-            ]
-        )
-
-        if templatetags.store.filters:
-            logger.debug("Loaded custom template tag filters: %s" % (", ".join(templatetags.store.filters), ))
-            env.filters.update(templatetags.store.filters)
-
-        return env
 
     def load_models(self):
         models_path = os.path.join(self.path, StatikProject.MODELS_DIR)
@@ -224,7 +173,7 @@ class StatikProject(object):
                 encoding=self.config.encoding,
                 name=view_name,
                 models=self.models,
-                template_env=self.template_env,
+                template_engine=self.template_engine
             )
 
         return views
@@ -256,14 +205,14 @@ class StatikProject(object):
             context[varname] = self.db.query(query)
         return context
 
-    def process_views(self, safe_mode=False):
+    def process_views(self):
         """Processes the loaded views to generate the required output data."""
         output = {}
         logger.debug("Processing %d view(s)..." % len(self.views))
         for view_name, view in iteritems(self.views):
             # first update the view's context with the project context
             view.context.update(self.project_context)
-            output = deep_merge_dict(output, view.process(self.db, safe_mode=safe_mode))
+            output = deep_merge_dict(output, view.process(self.db, safe_mode=self.safe_mode))
         return output
 
     def dump_in_memory_result(self, result, output_path):

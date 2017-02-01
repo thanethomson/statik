@@ -11,7 +11,9 @@ __all__ = [
     'DuplicateModelInstanceError',
     'InvalidModelCollectionDataError',
     'NoViewsError',
-    'SafetyViolationError'
+    'SafetyViolationError',
+    'MissingTemplateError',
+    'NoSupportedTemplateProvidersError'
 ]
 
 
@@ -50,4 +52,12 @@ class NoViewsError(Exception):
 
 
 class SafetyViolationError(Exception):
+    pass
+
+
+class MissingTemplateError(Exception):
+    pass
+
+
+class NoSupportedTemplateProvidersError(Exception):
     pass

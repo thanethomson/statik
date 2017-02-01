@@ -39,7 +39,9 @@ __all__ = [
     'dict_strip',
     'strip_str',
     'strip_el_text',
-    '_str'
+    '_str',
+    '_unicode',
+    'find_first_file_with_ext'
 ]
 
 DEFAULT_CONFIG_CONTENT = """project-name: Your project name
@@ -236,6 +238,10 @@ def _str(s):
     return s.encode("utf-8") if six.PY2 else s
 
 
+def _unicode(s):
+    return s.decode("utf-8") if six.PY2 and isinstance(s, str) else s
+
+
 def get_project_config_file(path, default_config_file_name):
     """Attempts to extract the project config file's absolute path from the given path. If the path is a
     directory, it automatically assumes a "config.yml" file will be in that directory. If the path is to
@@ -311,3 +317,27 @@ def strip_el_text(el, max_depth=0, cur_depth=0):
             el_text += " "+strip_str(el.tail)
 
     return strip_str(el_text)
+
+
+def find_first_file_with_ext(base_paths, prefix, exts):
+    """Runs through the given list of file extensions and returns the first file with the given base
+    path and extension combination that actually exists.
+
+    Args:
+        base_paths: The base paths in which to search for files.
+        prefix: The filename prefix of the file for which to search.
+        exts: An ordered list of file extensions for which to search.
+
+    Returns:
+        On success, a 2-tuple containing the base path in which the file was found, and the extension of the file.
+        On failure, returns (None, None).
+    """
+    for base_path in base_paths:
+        for ext in exts:
+            filename = os.path.join(base_path, "%s%s" % (prefix, ext))
+            if os.path.exists(filename) and os.path.isfile(filename):
+                logger.debug("Found first file with relevant extension: %s" % filename)
+                return base_path, ext
+
+    logger.debug("No files found for prefix %s, extensions %s" % (prefix, ", ".join(exts)))
+    return None, None

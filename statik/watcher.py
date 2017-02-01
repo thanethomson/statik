@@ -30,8 +30,8 @@ def watch(project_path, output_path, host='0.0.0.0', port=8000, min_reload_time=
         open_browser: Whether or not to automatically open the web browser at the served URL.
         safe_mode: Whether or not to run Statik in safe mode.
     """
-    project = StatikProject(project_path)
-    project.generate(output_path=output_path, in_memory=False, safe_mode=safe_mode)
+    project = StatikProject(project_path, safe_mode=safe_mode)
+    project.generate(output_path=output_path, in_memory=False)
 
     watch_folders = [
         StatikProject.MODELS_DIR,
@@ -59,7 +59,7 @@ def watch(project_path, output_path, host='0.0.0.0', port=8000, min_reload_time=
     httpwatcher.watch(
         output_path,
         watch_paths=watch_folders,
-        on_reload=lambda: project.generate(output_path=output_path, in_memory=False, safe_mode=safe_mode),
+        on_reload=lambda: project.generate(output_path=output_path, in_memory=False),
         host=host,
         port=port,
         server_base_path=project.config.base_path,
