@@ -15,14 +15,16 @@ rendering your *views*.
 
 Then, code up your templates using the
 `Jinja2 <http://jinja.pocoo.org/>`__ templating engine (very similar to
-the Django templating engine).
+the Django templating engine), or
+`Mustache <http://mustache.github.io/>`__ templates.
 
 Finally, define your *views* (either complex or simple) in YAML format,
 telling **Statik** how to render your data and templates to specific
 URLs for your shiny new static web site. Write queries for your views in
 SQLAlchemy's `ORM
-syntax <http://docs.sqlalchemy.org/en/rel_1_0/orm/tutorial.html>`__ to
-make your life easier.
+syntax <http://docs.sqlalchemy.org/en/rel_1_0/orm/tutorial.html>`__, or
+`MLAlchemy <https://github.com/thanethomson/MLAlchemy>`__ to make your
+life easier.
 
 See the `wiki <https://github.com/thanethomson/statik/wiki>`__ for more
 details.

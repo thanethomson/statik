@@ -14,13 +14,15 @@ into an in-memory [SQLAlchemy](http://www.sqlalchemy.org/) SQLite database
 when rendering your *views*.
 
 Then, code up your templates using the [Jinja2](http://jinja.pocoo.org/)
-templating engine (very similar to the Django templating engine).
+templating engine (very similar to the Django templating engine), or
+[Mustache](http://mustache.github.io/) templates.
 
 Finally, define your *views* (either complex or simple) in YAML format,
 telling **Statik** how to render your data and templates to specific URLs for
 your shiny new static web site. Write queries for your views in SQLAlchemy's
-[ORM syntax](http://docs.sqlalchemy.org/en/rel_1_0/orm/tutorial.html) to
-make your life easier.
+[ORM syntax](http://docs.sqlalchemy.org/en/rel_1_0/orm/tutorial.html),
+or [MLAlchemy](https://github.com/thanethomson/MLAlchemy) to make your
+life easier.
 
 See the [wiki](https://github.com/thanethomson/statik/wiki) for more details.
 
