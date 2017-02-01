@@ -4,6 +4,13 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.16.0` - 01 February 2017
+
+* Enhanced templating engine, allowing for more pluggable template
+  system support.
+* Added support for [Mustache](http://mustache.github.io/) templates.
+* Now forcing Mustache templating in safe mode.
+
 ### `v0.15.0` - 30 January 2017
 
 * Adding support for
