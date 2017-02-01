@@ -1,0 +1,12 @@
+project-name: Mustache Templating Test
+base-path: /
+templates:
+  providers:
+    - mustache
+context:
+  static:
+    site-summary: This is some information about the unit test web site.
+  dynamic:
+    all-authors:
+      from: Author
+      order-by: first-name

@@ -1,0 +1,1 @@
+This file should be copied across to the compiled assets directory.

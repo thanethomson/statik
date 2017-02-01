@@ -1,0 +1,11 @@
+path: /
+template: home
+context:
+  static:
+    page-title: Welcome to the test blog
+  dynamic:
+    posts:
+      from: Post
+      where:
+        draft: false
+      order-by: "-published"

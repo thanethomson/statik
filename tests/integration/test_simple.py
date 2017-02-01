@@ -30,11 +30,10 @@ class TestSimpleStatikIntegration(unittest.TestCase):
 
     def test_safe_mode(self):
         test_path = os.path.dirname(os.path.realpath(__file__))
-        project = StatikProject(os.path.join(test_path, 'data-simple'))
+        project = StatikProject(os.path.join(test_path, 'data-simple'), safe_mode=True)
         with self.assertRaises(SafetyViolationError):
             project._generate(
-                in_memory=True,
-                safe_mode=True
+                in_memory=True
             )
 
     def test_in_memory(self):
@@ -44,7 +43,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         # result in memory
         output_data = generate(
             os.path.join(test_path, 'data-simple'),
-            in_memory=True,
+            in_memory=True
         )
 
         # Check that the home page is there

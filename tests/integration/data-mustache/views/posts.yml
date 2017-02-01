@@ -1,0 +1,8 @@
+path:
+  template: "{{post.url}}"
+  for-each:
+    post:
+      from: Post
+      where:
+        draft: false
+template: post

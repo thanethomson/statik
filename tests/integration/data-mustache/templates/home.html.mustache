@@ -1,0 +1,22 @@
+{{> base_header}}
+
+<h1>Home page</h1>
+<div class="site-summary">
+    {{ site_summary }}
+</div>
+<ul>
+    {{#posts}}
+        <li><a href="{{url}}">{{title}}</a></li>
+    {{/posts}}
+</ul>
+
+<div class="all-authors">
+    See work by all authors:
+    <ul>
+        {{#all_authors}}
+            <li>{{first_name}} {{last_name}}</li>
+        {{/all_authors}}
+    </ul>
+</div>
+
+{{> base_footer}}

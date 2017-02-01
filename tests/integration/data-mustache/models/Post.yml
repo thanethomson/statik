@@ -1,0 +1,9 @@
+slug:      String
+title:     String
+summary:   String
+created:   DateTime
+published: DateTime
+author:    Author
+draft:     Boolean
+url:       String
+content:   Content

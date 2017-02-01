@@ -2,12 +2,14 @@
 
 from __future__ import unicode_literals
 
+import os.path
 import unittest
 import xml.etree.ElementTree as ET
 
 from statik.views import *
 from statik.utils import add_url_path_component
 from statik.filters import filter_datetime
+from statik.templating import *
 
 from jinja2 import Environment, DictLoader
 
@@ -59,33 +61,60 @@ context:
 """
 
 
-class TestStatikViews(unittest.TestCase):
+class MockStatikJinjaTemplateProvider(StatikTemplateProvider):
 
-    def configure_env(self, templates_dict=TEST_TEMPLATES, base_path='/'):
-        env = Environment(
-                loader=DictLoader(templates_dict),
-                extensions=[
-                    'statik.jinja2ext.StatikUrlExtension',
-                    'statik.jinja2ext.StatikAssetExtension'
-                ]
+    def __init__(self, templates_dict=TEST_TEMPLATES, base_path="/"):
+        self.env = Environment(
+            loader=DictLoader(templates_dict),
+            extensions=[
+                'statik.jinja2ext.StatikUrlExtension',
+                'statik.jinja2ext.StatikAssetExtension'
+            ]
         )
-        env.filters['date'] = filter_datetime
-        env.statik_base_url = base_path
-        env.statik_base_asset_url = add_url_path_component(
+        self.env.filters['date'] = filter_datetime
+        self.env.statik_base_url = base_path
+        self.env.statik_base_asset_url = add_url_path_component(
             base_path,
             'assets',
         )
-        return env
+
+    def reattach_project_views(self):
+        pass
+
+    def load_template(self, name, full_path=None):
+        return StatikJinjaTemplate(self, self.env.get_template(name))
+
+    def create_template(self, s):
+        return StatikJinjaTemplate(self, self.env.from_string(s))
+
+
+class MockStatikTemplateEngine(StatikTemplateEngine):
+
+    def __init__(self, templates_dict=TEST_TEMPLATES, base_path="/"):
+        self.provider = MockStatikJinjaTemplateProvider(templates_dict=templates_dict, base_path=base_path)
+
+    def load_template(self, name):
+        # append the default file extension
+        _, ext = os.path.splitext(name)
+        if ext is None or len(ext) == 0:
+            name += ".html"
+        return self.provider.load_template(name)
+
+    def create_template(self, s, provider_name=None):
+        return self.provider.create_template(s)
+
+
+class TestStatikJinja2Views(unittest.TestCase):
 
     def test_simple_view_processing(self):
-        env = self.configure_env()
+        engine = MockStatikTemplateEngine()
         view = StatikView(
                 from_string=TEST_SIMPLE_VIEW,
                 name='home',
                 models={},
-                template_env=env,
+                template_engine=engine
         )
-        env.statik_views = {'home': view}
+        engine.provider.env.statik_views = {'home': view}
         processed = view.process(None)
         # we should have produced a single index.html page
         self.assertIn('index.html', processed)
@@ -104,14 +133,14 @@ class TestStatikViews(unittest.TestCase):
         self.assertEqual("/assets/sitelogo.png", parsed.findall("./body/img")[0].attrib['src'])
 
     def test_non_standard_base_path(self):
-        env = self.configure_env(base_path='/some/base/path/')
+        engine = MockStatikTemplateEngine(base_path='/some/base/path/')
         view = StatikView(
                 from_string=TEST_SIMPLE_VIEW,
                 name='home',
                 models={},
-                template_env=env,
+                template_engine=engine
         )
-        env.statik_views = {'home': view}
+        engine.provider.env.statik_views = {'home': view}
         processed = view.process(None)
         # we should have produced a single index.html page
         self.assertIn('index.html', processed)
@@ -125,12 +154,12 @@ class TestStatikViews(unittest.TestCase):
         self.assertEqual("/some/base/path/assets/sitelogo.png", parsed.findall("./body/img")[0].attrib['src'])
 
     def test_xml_generation(self):
-        env = self.configure_env()
+        engine = MockStatikTemplateEngine()
         view = StatikView(
                 from_string=TEST_XML_VIEW,
                 name='rssfeed',
                 models={},
-                template_env=env,
+                template_engine=engine
         )
         processed = view.process(None)
         self.assertIn('index.xml', processed)
