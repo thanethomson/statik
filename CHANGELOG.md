@@ -4,6 +4,14 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.16.1` - 26 March 2017
+
+* Adding better system exit code handling when **Statik** raises an
+  exception. Versions up to now always returned 0, despite whether
+  or not the execution was successful. Now, when exceptions are
+  raised, a non-zero exit code is returned depending on the nature of
+  the cause.
+
 ### `v0.16.0` - 01 February 2017
 
 * Enhanced templating engine, allowing for more pluggable template
