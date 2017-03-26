@@ -32,7 +32,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         test_path = os.path.dirname(os.path.realpath(__file__))
         project = StatikProject(os.path.join(test_path, 'data-simple'), safe_mode=True)
         with self.assertRaises(SafetyViolationError):
-            project._generate(
+            project.generate(
                 in_memory=True
             )
 

@@ -5,11 +5,13 @@ from __future__ import unicode_literals
 import os
 import os.path
 import argparse
+import sys
 
 from statik.generator import generate
 from statik.utils import generate_quickstart, get_project_config_file
 from statik.watcher import watch
 from statik.project import StatikProject
+from statik.errors import StatikError
 
 import logging
 logger = logging.getLogger(__name__)
@@ -86,21 +88,33 @@ def main():
     )
     args = parser.parse_args()
 
-    _project_path = args.project if args.project is not None else os.getcwd()
-    project_path, config_file_path = get_project_config_file(_project_path, StatikProject.CONFIG_FILE)
-    output_path = args.output if args.output is not None else os.path.join(project_path, 'public')
+    try:
+        _project_path = args.project if args.project is not None else os.getcwd()
+        project_path, config_file_path = get_project_config_file(_project_path, StatikProject.CONFIG_FILE)
+        output_path = args.output if args.output is not None else os.path.join(project_path, 'public')
 
-    configure_logging(verbose=args.verbose)
-    if args.version:
-        from statik import __version__
-        logger.info('Statik v%s' % __version__)
-    elif args.watch:
-        watch(config_file_path, output_path, host=args.host, port=args.port, open_browser=(not args.no_browser),
-              safe_mode=args.safe_mode)
-    elif args.quickstart:
-        generate_quickstart(project_path)
-    else:
-        generate(config_file_path, output_path=output_path, in_memory=False, safe_mode=args.safe_mode)
+        configure_logging(verbose=args.verbose)
+        if args.version:
+            from statik import __version__
+            logger.info('Statik v%s' % __version__)
+        elif args.watch:
+            watch(config_file_path, output_path, host=args.host, port=args.port, open_browser=(not args.no_browser),
+                  safe_mode=args.safe_mode)
+        elif args.quickstart:
+            generate_quickstart(project_path)
+        else:
+            generate(config_file_path, output_path=output_path, in_memory=False, safe_mode=args.safe_mode)
+
+    except StatikError as e:
+        logger.exception("Exception caught while attempting to generate project", e)
+        sys.exit(e.exit_code)
+
+    except Exception as e:
+        logger.exception("Exception caught while attempting to generate project", e)
+        sys.exit(1)
+
+    # success
+    sys.exit(0)
 
 
 if __name__ == "__main__":

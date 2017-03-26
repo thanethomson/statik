@@ -16,6 +16,13 @@ __all__ = [
 ]
 
 
+def safe_wrap_project_generate(project, output_path):
+    try:
+        project.generate(output_path=output_path, in_memory=False)
+    except Exception as e:
+        logger.exception("Exception caught while attempting to process project", e)
+
+
 def watch(project_path, output_path, host='0.0.0.0', port=8000, min_reload_time=2.0, open_browser=True,
           safe_mode=False):
     """Watches the given project path for filesystem changes, and automatically rebuilds the project when
@@ -59,7 +66,7 @@ def watch(project_path, output_path, host='0.0.0.0', port=8000, min_reload_time=
     httpwatcher.watch(
         output_path,
         watch_paths=watch_folders,
-        on_reload=lambda: project.generate(output_path=output_path, in_memory=False),
+        on_reload=lambda: safe_wrap_project_generate(project, output_path),
         host=host,
         port=port,
         server_base_path=project.config.base_path,

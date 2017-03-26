@@ -78,18 +78,6 @@ class StatikProject(object):
         """
         result = dict() if in_memory else 0
         try:
-            result = self._generate(output_path=output_path, in_memory=in_memory)
-
-        except Exception as e:
-            logger.exception("Error caught: %s" % e)
-
-        # done
-        return result
-
-    def _generate(self, output_path=None, in_memory=False):
-        """Unsafe version of the generate() function. Does not perform exception handling."""
-        result = dict() if in_memory else 0
-        try:
             if output_path is None and not in_memory:
                 raise ValueError("If project is not to be generated in-memory, an output path must be specified")
 

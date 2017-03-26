@@ -7,6 +7,7 @@ import os.path
 import unittest
 
 from statik.config import StatikConfig
+from statik.errors import MissingParameterError
 
 
 TEST_CONFIG = """project-name: Test Project
@@ -46,7 +47,7 @@ markdown:
 class TestStatikProjectConfig(unittest.TestCase):
 
     def test_invalid_config(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(MissingParameterError):
             StatikConfig()
 
     def test_empty_config(self):
