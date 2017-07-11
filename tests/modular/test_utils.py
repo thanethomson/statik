@@ -39,6 +39,52 @@ class TestStatikUtils(unittest.TestCase):
             strip_el_text(tree, max_depth=3)
         )
 
+    def test_get_url_file_ext(self):
+        self.assertEqual(
+            get_url_file_ext('index.html'),
+            '.html'
+        )
+        self.assertEqual(
+            get_url_file_ext('/'),
+            ''
+        )
+        self.assertEqual(
+            get_url_file_ext('/path'),
+            ''
+        )
+        self.assertEqual(
+            get_url_file_ext('/longer/path'),
+            ''
+        )
+        self.assertEqual(
+            get_url_file_ext('/longer/path/trailing/slash/'),
+            ''
+        )
+        self.assertEqual(
+            get_url_file_ext('/path/to/test.html'),
+            '.html'
+        )
+        self.assertEqual(
+            get_url_file_ext('.htaccess'),
+            '.htaccess'
+        )
+        self.assertEqual(
+            get_url_file_ext('/.dot'),
+            '.dot'
+        )
+        self.assertEqual(
+            get_url_file_ext('/directory/with/leading/.dot/'),
+            ''
+        )
+        self.assertEqual(
+            get_url_file_ext('/path.htaccess'),
+            '.htaccess'
+        )
+        self.assertEqual(
+            get_url_file_ext('/multiple//slashes///slash'),
+            ''
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
