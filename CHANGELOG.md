@@ -4,6 +4,12 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.16.2` - 11 July 2017
+
+* @pztrick fixed #40 with #41. Providing support for `.htaccess` files,
+  which previously were incorrectly generated as `.htaccess/index.html`
+  output files.
+
 ### `v0.16.1` - 26 March 2017
 
 * Adding better system exit code handling when **Statik** raises an
