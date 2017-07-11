@@ -13,10 +13,16 @@ import logging
 from statik.project import StatikProject
 from statik.generator import generate
 from statik.utils import strip_el_text, _str
-from statik.errors import SafetyViolationError
+from statik.errors import MissingTemplateError, SafetyViolationError
 
 
 DEBUG = (os.environ.get('DEBUG', False) == "True")
+
+EXPECTED_HTACCESS_CONTENT = """AuthUserFile /usr/local/username/safedirectory/.htpasswd
+AuthGroupFile /dev/null
+AuthName "Please Enter Password"
+AuthType Basic
+Require valid-user""".strip()
 
 
 class TestSimpleStatikIntegration(unittest.TestCase):
@@ -31,10 +37,17 @@ class TestSimpleStatikIntegration(unittest.TestCase):
     def test_safe_mode(self):
         test_path = os.path.dirname(os.path.realpath(__file__))
         project = StatikProject(os.path.join(test_path, 'data-simple'), safe_mode=True)
-        with self.assertRaises(SafetyViolationError):
+        caught = False
+        try:
             project.generate(
                 in_memory=True
             )
+        except MissingTemplateError:
+            caught = True
+        except SafetyViolationError:
+            caught = True
+        self.assertTrue(caught, "Safe mode generation must raise an appropriate exception when attempting to "
+                                "generate content for an unsafe project.")
 
     def test_in_memory(self):
         test_path = os.path.dirname(os.path.realpath(__file__))
@@ -48,6 +61,10 @@ class TestSimpleStatikIntegration(unittest.TestCase):
 
         # Check that the home page is there
         self.assertIn('index.html', output_data)
+
+        # Check that the generated .htaccess file is in the root of the output data
+        self.assertIn('.htaccess', output_data)
+        self.assertEqual(EXPECTED_HTACCESS_CONTENT, output_data['.htaccess'].strip())
 
         # Check that the generated posts are there
         self.assert_path_exists("2016/06/12/andrew-hello-world/index.html", output_data)

@@ -1,0 +1,2 @@
+path: /.htaccess
+template: htaccess.jinja2
