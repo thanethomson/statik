@@ -186,8 +186,14 @@ def calculate_association_table_name(model1_name, model2_name):
 def get_url_file_ext(url):
     """Attempts to extract the file extension from the given URL."""
     # get the last part of the path component
-    filename = url.split('/')[-1]
-    _, ext = os.path.splitext(filename)
+
+    filename = os.path.basename(url)
+    name, ext = os.path.splitext(filename)
+
+    # handle case of files with leading dot
+    if not ext and name and name[0] == '.':
+        ext = name
+
     return ext
 
 

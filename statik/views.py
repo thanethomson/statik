@@ -166,6 +166,7 @@ class StatikView(YamlLoadable):
             path = add_url_path_component(self.path, '%s%s' % (self.default_output_filename, self.default_output_ext))
         else:
             path = self.path
+        logger.debug("Simple view %s generated path %s" % (self.name, path))
         return dict_from_path(
                 path,
                 final_value=self.template.render(self.context),
