@@ -114,7 +114,8 @@ class StatikProject(object):
             try:
                 # make sure to destroy the database engine (to provide for the possibility of database engine
                 # reloads when watching for changes)
-                self.db.shutdown()
+                if self.db is not None:
+                    self.db.shutdown()
 
             except Exception as e:
                 logger.exception("Unable to clean up properly: %s" % e)
