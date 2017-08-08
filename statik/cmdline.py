@@ -21,10 +21,13 @@ __all__ = [
 ]
 
 
-def configure_logging(verbose=False):
+def configure_logging(verbose=False, quiet=False, fail_silently=False):
     logging.basicConfig(
-        level=logging.DEBUG if verbose else logging.INFO,
-        format='%(asctime)s\t%(name)s\t%(levelname)s\t%(message)s' if verbose else "%(message)s",
+        level=logging.CRITICAL if quiet and fail_silently else
+            logging.ERROR if quiet else
+            logging.DEBUG if verbose else
+            logging.INFO,
+        format='%(asctime)s\t%(name)s\t%(levelname)s\t%(message)s' if verbose else "%(message)s"
     )
 
 
@@ -86,6 +89,20 @@ def main():
         help="Whether or not to output verbose logging information (default: false).",
         action='store_true',
     )
+    parser.add_argument(
+        '--quiet',
+        default=False,
+        help="Run Statik in quiet mode, where there will be no output except upon error.",
+        action='store_true'
+    )
+    parser.add_argument(
+        '--fail-silently',
+        default=False,
+        help="Only relevant if running Statik in quiet mode - if Statik encounters an error, the only indication "
+             "of this will be in the resulting error code returned by the process. No other output will be given "
+             "on the terminal.",
+        action='store_true'
+    )
     args = parser.parse_args()
 
     try:
@@ -93,7 +110,11 @@ def main():
         project_path, config_file_path = get_project_config_file(_project_path, StatikProject.CONFIG_FILE)
         output_path = args.output if args.output is not None else os.path.join(project_path, 'public')
 
-        configure_logging(verbose=args.verbose)
+        configure_logging(verbose=args.verbose, quiet=args.quiet, fail_silently=args.fail_silently)
+
+        if args.fail_silently and not args.quiet:
+            logger.warning("Ignoring --fail-silently switch because --quiet is not specified")
+
         if args.version:
             from statik import __version__
             logger.info('Statik v%s' % __version__)
