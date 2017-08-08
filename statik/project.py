@@ -55,7 +55,7 @@ class StatikProject(object):
         if (self.path is None or self.config_file_path is None) and self.config is None:
             raise MissingProjectConfig("No configuration could be found for project")
 
-        logger.info("Project path configured as: %s" % self.path)
+        logger.debug("Project path configured as: %s" % self.path)
 
         self.models = {}
         self.template_engine = None
@@ -84,9 +84,9 @@ class StatikProject(object):
             self.config = self.config or StatikConfig(self.config_file_path)
 
             if self.config.encoding is not None:
-                logger.info("Using encoding: %s" % self.config.encoding)
+                logger.debug("Using encoding: %s" % self.config.encoding)
             else:
-                logger.info("Using encoding: %s" % self.config.encoding)
+                logger.debug("Using encoding: %s" % self.config.encoding)
 
             self.models = self.load_models()
             self.template_engine = StatikTemplateEngine(self)
@@ -227,7 +227,7 @@ class StatikProject(object):
                     os.makedirs(output_path)
 
                 filename = os.path.join(output_path, k)
-                logger.info("Writing output file: %s" % filename)
+                logger.debug("Writing output file: %s" % filename)
                 # dump the contents of the file
                 with open(filename, 'wt', encoding=self.config.encoding) as f:
                     f.write(v)
@@ -267,8 +267,7 @@ class StatikProject(object):
                 if not os.path.isabs(dest_path):
                     dest_path = os.path.join(output_path, dest_path)
 
-                logger.info("Copying assets from %s to %s..." % (src_path, dest_path))
                 asset_count = copy_tree(src_path, dest_path)
-                logger.info("Copied %s asset(s)" % asset_count)
+                logger.info("Copied %s asset(s) from %s to %s" % (asset_count, src_path, dest_path))
             else:
                 logger.info("Missing assets source path - skipping copying of assets: %s" % src_path)
