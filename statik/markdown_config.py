@@ -25,6 +25,22 @@ class MarkdownConfig(object):
         self.permalink_class = permalinks_config.get('class', None)
         self.permalink_title = permalinks_config.get('title', None)
 
+        # Required lsit of Markdown extensions
+        self.extensions = [
+            'markdown.extensions.fenced_code',
+            'markdown.extensions.tables',
+            'markdown.extensions.toc',
+            'markdown.extensions.footnotes'
+        ]
+
+        # Configuration for the markdown extensions
+        self.extension_config = {}
+
+        # Try to load in entensions requested by config
+        for extention, config in markdown_params.get('extensions', dict()).items():
+            self.extensions.append(extention)
+            self.extension_config[extention] = config
+
     def __repr__(self):
         return ("<MarkdownConfig enable_permalinks=%s\n" +
                 "                permalink_text=%s\n" +

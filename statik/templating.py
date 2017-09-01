@@ -225,18 +225,23 @@ class StatikJinjaTemplateProvider(StatikTemplateProvider):
             # dynamically import modules; they register themselves with our template tag store
             import_python_modules_by_path(self.templatetags_path)
 
+        extensions = [
+            'statik.jinja2ext.StatikUrlExtension',
+            'statik.jinja2ext.StatikAssetExtension',
+            'statik.jinja2ext.StatikLoremIpsumExtension',
+            'statik.jinja2ext.StatikTemplateTagsExtension',
+            'jinja2.ext.do',
+            'jinja2.ext.loopcontrols',
+            'jinja2.ext.with_',
+            'jinja2.ext.autoescape',
+        ]
+
+        jinja2_config = project.config.vars.get('jinja2', dict())
+        extensions.extend(jinja2_config.get('extensions', list()))
+
         self.env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(engine.template_paths, encoding=project.config.encoding),
-            extensions=[
-                'statik.jinja2ext.StatikUrlExtension',
-                'statik.jinja2ext.StatikAssetExtension',
-                'statik.jinja2ext.StatikLoremIpsumExtension',
-                'statik.jinja2ext.StatikTemplateTagsExtension',
-                'jinja2.ext.do',
-                'jinja2.ext.loopcontrols',
-                'jinja2.ext.with_',
-                'jinja2.ext.autoescape',
-            ]
+            extensions=extensions
         )
 
         if templatetags.store.filters:

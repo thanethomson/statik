@@ -122,13 +122,9 @@ class ContentLoadable(object):
                             permalink_title=self.markdown_config.permalink_title,
                         )
                     )
-                markdown_ext.extend([
-                    'markdown.extensions.fenced_code',
-                    'markdown.extensions.tables',
-                    'markdown.extensions.toc',
-                    'markdown.extensions.footnotes'
-                ])
-                md = Markdown(extensions=markdown_ext)
+                markdown_ext.extend(self.markdown_config.extensions)
+
+                md = Markdown(extensions=markdown_ext, extension_configs=self.markdown_config.extension_config)
                 self.content = md.convert(self.file_content)
                 self.vars = md.meta
 
