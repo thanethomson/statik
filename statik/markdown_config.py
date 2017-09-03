@@ -38,8 +38,14 @@ class MarkdownConfig(object):
 
         # Try to load in entensions requested by config
         for extention, config in markdown_params.get('extensions', dict()).items():
-            self.extensions.append(extention)
-            self.extension_config[extention] = config
+            if extention not in self.extensions:
+                self.extensions.append(extention)
+
+            if config is not None: 
+                if extention in self.extension_config:
+                    self.extension_config[extention].update(config)
+                else:
+                    self.extension_config[extention] = config
 
     def __repr__(self):
         return ("<MarkdownConfig enable_permalinks=%s\n" +
