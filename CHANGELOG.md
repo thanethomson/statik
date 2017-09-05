@@ -4,6 +4,12 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.18.0` - 05 September 2017
+
+* Merged #46: Now allows for one to specify custom Markdown extensions
+  through the Statik project configuration file.
+* Added unit testing for #46.
+
 ### `v0.17.0` - 08 August 2017
 
 * Enabling a "quiet" mode of operation, as per #45.
