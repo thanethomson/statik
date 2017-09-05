@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import unicode_literals
+from six import iteritems
+from copy import copy
 
 __all__ = [
     'MarkdownConfig'
@@ -8,6 +10,13 @@ __all__ = [
 
 
 class MarkdownConfig(object):
+
+    DEFAULT_MARKDOWN_EXTENSIONS = [
+        'markdown.extensions.fenced_code',
+        'markdown.extensions.tables',
+        'markdown.extensions.toc',
+        'markdown.extensions.footnotes'
+    ]
 
     def __init__(self, markdown_params=dict()):
         if not isinstance(markdown_params, dict):
@@ -25,35 +34,46 @@ class MarkdownConfig(object):
         self.permalink_class = permalinks_config.get('class', None)
         self.permalink_title = permalinks_config.get('title', None)
 
-        # Required lsit of Markdown extensions
-        self.extensions = [
-            'markdown.extensions.fenced_code',
-            'markdown.extensions.tables',
-            'markdown.extensions.toc',
-            'markdown.extensions.footnotes'
-        ]
+        # Required list of Markdown extensions
+        self.extensions = copy(MarkdownConfig.DEFAULT_MARKDOWN_EXTENSIONS)
 
         # Configuration for the markdown extensions
         self.extension_config = {}
+        extension_list = markdown_params.get('extensions', [])
 
-        # Try to load in entensions requested by config
-        for extention, config in markdown_params.get('extensions', dict()).items():
-            if extention not in self.extensions:
-                self.extensions.append(extention)
+        # if it's a dictionary, first convert it to our list notation
+        if isinstance(extension_list, dict):
+            extension_list = []
+            for ext_package, config in iteritems(markdown_params['extensions']):
+                extension_list.append({ext_package: config})
+
+        # Try to load extensions as requested by config
+        for extension in extension_list:
+            if isinstance(extension, dict):
+                ext_package, config = next(iter(extension.keys())), next(iter(extension.values()))
+            else:
+                ext_package, config = extension, None
+
+            if ext_package not in self.extensions:
+                self.extensions.append(ext_package)
 
             if config is not None: 
-                if extention in self.extension_config:
-                    self.extension_config[extention].update(config)
+                if ext_package in self.extension_config:
+                    self.extension_config[ext_package].update(config)
                 else:
-                    self.extension_config[extention] = config
+                    self.extension_config[ext_package] = config
 
     def __repr__(self):
         return ("<MarkdownConfig enable_permalinks=%s\n" +
                 "                permalink_text=%s\n" +
                 "                permalink_class=%s\n" +
-                "                permalink_title=%s>") % (
+                "                permalink_title=%s\n"
+                "                extensions=%s\n"
+                "                extension_config=%s>") % (
             self.enable_permalinks,
             self.permalink_text,
             self.permalink_class,
-            self.permalink_title
+            self.permalink_title,
+            self.extensions,
+            self.extension_config
         )

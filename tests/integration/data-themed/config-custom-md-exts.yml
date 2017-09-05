@@ -1,0 +1,6 @@
+project-name: Custom Markdown Extensions Test Case
+base-path: /
+theme: theme1
+markdown:
+  extensions:
+    - markdown.extensions.codehilite

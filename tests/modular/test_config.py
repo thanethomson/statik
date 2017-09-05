@@ -5,9 +5,11 @@ from __future__ import unicode_literals
 import os
 import os.path
 import unittest
+from copy import copy
 
 from statik.config import StatikConfig
 from statik.errors import MissingParameterError
+from statik.markdown_config import MarkdownConfig
 
 
 TEST_CONFIG = """project-name: Test Project
@@ -41,6 +43,15 @@ markdown:
         enabled: true
         class: permalink
         title: Permalink to this heading
+"""
+
+TEST_MARKDOWN_EXTENSIONS_CONFIG = """project-name: Test Project
+base-path: /
+markdown:
+    extensions:
+        - markdown.extensions.toc:
+            permalink: true
+        - markdown.extensions.codehilite
 """
 
 
@@ -98,6 +109,18 @@ class TestStatikProjectConfig(unittest.TestCase):
         self.assertTrue(config.markdown_config.enable_permalinks)
         self.assertEqual("permalink", config.markdown_config.permalink_class)
         self.assertEqual("Permalink to this heading", config.markdown_config.permalink_title)
+        # check the default markdown extensions
+        self.assertEqual(MarkdownConfig.DEFAULT_MARKDOWN_EXTENSIONS, config.markdown_config.extensions)
+
+    def test_markdown_extension_config(self):
+        config = StatikConfig(from_string=TEST_MARKDOWN_EXTENSIONS_CONFIG)
+        self.assertEqual("Test Project", config.project_name)
+        self.assertEqual("/", config.base_path)
+        # check for our custom markdown extension config
+        expected_extensions = copy(MarkdownConfig.DEFAULT_MARKDOWN_EXTENSIONS)
+        expected_extensions.append("markdown.extensions.codehilite")
+        self.assertEqual(expected_extensions, config.markdown_config.extensions)
+        self.assertEqual({"markdown.extensions.toc": {"permalink": True}}, config.markdown_config.extension_config)
 
 
 if __name__ == "__main__":
