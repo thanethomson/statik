@@ -6,6 +6,7 @@ import os
 import os.path
 import xml.etree.ElementTree as ET
 import unittest
+import json
 
 import lipsum
 import logging
@@ -211,6 +212,8 @@ class TestSimpleStatikIntegration(unittest.TestCase):
 
         self.assert_mlalchemy_complex_path_view_compiles(output_data)
         self.assert_homepage_compiles(self.assert_path_exists("mlalchemy/posts/index.html", output_data))
+        self.assert_json_data_compiles(output_data)
+        self.assert_generated_js_compiles(output_data)
 
     def assert_homepage_compiles(self, page_content):
         # Parse the home page's XHTML content
@@ -380,6 +383,46 @@ class TestSimpleStatikIntegration(unittest.TestCase):
             self.assertIn(part, cur_dict)
             cur_dict = cur_dict[part]
         return cur_dict
+
+    def assert_json_data_compiles(self, output_data):
+        self.assertIn('data', output_data)
+        self.assertIn('authors', output_data['data'])
+        self.assertIn('andrew.json', output_data['data']['authors'])
+        self.assertIn('michael.json', output_data['data']['authors'])
+        self.check_author_json(
+            json.loads(output_data['data']['authors']['andrew.json']),
+            'Andrew',
+            'Michaels',
+            'amichaels@somewhere.com'
+        )
+        self.check_author_json(
+            json.loads(output_data['data']['authors']['michael.json']),
+            'Michael',
+            'Anderson',
+            'manderson@somewhere.com'
+        )
+
+    def check_author_json(self, author_json, first_name, last_name, email):
+        self.assertIn('firstName', author_json)
+        self.assertIn('lastName', author_json)
+        self.assertIn('email', author_json)
+        self.assertEqual(first_name, author_json['firstName'])
+        self.assertEqual(last_name, author_json['lastName'])
+        self.assertEqual(email, author_json['email'])
+
+    def assert_generated_js_compiles(self, output_data):
+        self.assertIn('scripts', output_data)
+        self.assertIn('generated.js', output_data['scripts'])
+        lines = output_data['scripts']['generated.js'].split('\n')
+        last_line = None
+        counter = len(lines) - 1
+        self.assertGreater(counter, 3)
+        while counter >= 0 and last_line is None:
+            if lines[counter] and len(lines[counter]) > 0:
+                last_line = lines[counter]
+            counter -= 1
+        # check that the JavaScript was properly generated
+        self.assertEqual("window.alert('Hello world! This is Unit Test Project');", last_line)
 
 
 if __name__ == "__main__":

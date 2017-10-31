@@ -1,5 +1,5 @@
 path:
-  template: /mlalchemy/{{ post.slug }}
+  template: /mlalchemy/{{ post.slug }}/
   for-each:
     post:
       from: Post

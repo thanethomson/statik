@@ -4,8 +4,6 @@ from __future__ import unicode_literals
 from future.utils import iteritems
 from past.builtins import basestring
 
-import os.path
-
 from copy import deepcopy
 
 from statik.common import YamlLoadable
@@ -140,7 +138,7 @@ class StatikView(YamlLoadable):
             if inst_path_ext is None or len(inst_path_ext) == 0:
                 inst_path = add_url_path_component(
                         inst_path,
-                        '%s%s' % (self.default_output_filename, self.default_output_ext)
+                        '/%s%s' % (self.default_output_filename, self.default_output_ext)
                 )
 
             # update the context with the current path variable instance
@@ -163,7 +161,7 @@ class StatikView(YamlLoadable):
     def process_simple(self, db):
         inst_path_ext = get_url_file_ext(self.path)
         if inst_path_ext is None or len(inst_path_ext) == 0:
-            path = add_url_path_component(self.path, '%s%s' % (self.default_output_filename, self.default_output_ext))
+            path = add_url_path_component(self.path, '/%s%s' % (self.default_output_filename, self.default_output_ext))
         else:
             path = self.path
         logger.debug("Simple view %s generated path %s" % (self.name, path))
@@ -186,4 +184,4 @@ class StatikView(YamlLoadable):
                 {self.path_variable: inst}
         ) if self.complex else self.path
 
-        return result if result.endswith('/') else ('%s/' % result)
+        return result

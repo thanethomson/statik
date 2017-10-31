@@ -1,0 +1,5 @@
+path:
+  template: /data/authors/{{ author.pk }}.json
+  for-each:
+    author: session.query(Author).all()
+template: author.json.jinja2
