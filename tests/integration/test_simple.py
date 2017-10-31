@@ -271,6 +271,11 @@ class TestSimpleStatikIntegration(unittest.TestCase):
             lipsum.count_words(homepage.findall("./body/div[@class='lorem-ipsum']/p")[2].text.strip()) > 1
         )
 
+        # check the generated script URL - that it has no trailing slash (issue #48)
+        script = homepage.find('body/script')
+        self.assertIsNotNone(script)
+        self.assertEqual('/scripts/generated.js', script.attrib['src'])
+
     def assert_my_first_post_compiles(self, content):
         post = ET.fromstring(content)
         self.assertEqual('html', post.findall('.')[0].tag)
