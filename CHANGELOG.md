@@ -4,6 +4,12 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.18.1` - 31 October 2017
+
+* Fixed #47 - now allows for output of general non-HTML content,
+  depending on view path. Also related to #48.
+* Added unit tests to verify #48 definitely works.
+
 ### `v0.18.0` - 05 September 2017
 
 * Merged #46: Now allows for one to specify custom Markdown extensions
