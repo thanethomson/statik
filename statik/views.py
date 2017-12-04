@@ -184,4 +184,4 @@ class StatikView(YamlLoadable):
                 {self.path_variable: inst}
         ) if self.complex else self.path
 
-        return result
+        return result if result.endswith('/') or result[-3:] == ".js" else ('%s/' % result)
