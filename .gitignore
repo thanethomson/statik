@@ -96,6 +96,9 @@ pip-selfcheck.json
 *.iml
 /.idea/
 
+# VSCode files
+/.vscode/
+
 # Generated folders
 public/
 
