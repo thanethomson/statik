@@ -20,7 +20,7 @@ def safe_wrap_project_generate(project, output_path):
     try:
         project.generate(output_path=output_path, in_memory=False)
     except Exception as e:
-        logger.exception("Exception caught while attempting to process project", e)
+        logger.exception("Exception caught while attempting to process project")
 
 
 def watch(project_path, output_path, host='0.0.0.0', port=8000, min_reload_time=2.0, open_browser=True,
