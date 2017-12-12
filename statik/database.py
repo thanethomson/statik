@@ -214,7 +214,7 @@ class StatikDatabase(object):
         logger.debug("Loading %d instance(s) for model: %s" % (len(entry_files), model.name))
         for entry_file in entry_files:
             entry = StatikDatabaseInstance(
-                os.path.join(path, entry_file),
+                filename=os.path.join(path, entry_file),
                 model=model,
                 session=self.session,
                 encoding=self.encoding,
@@ -280,15 +280,15 @@ class StatikDatabase(object):
 
 class StatikDatabaseInstance(ContentLoadable):
 
-    def __init__(self, *args, **kwargs):
-        super(StatikDatabaseInstance, self).__init__(*args, **kwargs)
-        if 'model' not in kwargs:
+    def __init__(self, model=None, session=None, **kwargs):
+        super(StatikDatabaseInstance, self).__init__(**kwargs)
+        if model is None:
             raise MissingParameterError("Missing parameter \"model\" for database instance constructor")
-        self.model = kwargs['model']
+        self.model = model
 
-        if 'session' not in kwargs:
+        if session is None:
             raise MissingParameterError("Missing parameter \"session\" for database instance constructor")
-        self.session = kwargs['session']
+        self.session = session
 
         # convert the vars to their underscored representation
         self.field_values = underscore_var_names(self.vars)

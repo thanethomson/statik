@@ -22,21 +22,20 @@ class YamlLoadable(object):
     """Base class for objects that can be loaded from a YAML file or a
     YAML string, passed through to the constructor."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, filename=None, from_string=None, encoding='utf-8'):
         # default to UTF-8
-        self.encoding = "utf-8"
-        if len(args) > 0:
-            self.filename = args[0]
+        self.encoding = encoding
+        self.file_content = None
 
-            if 'encoding' in kwargs:
-                self.encoding = kwargs['encoding']
+        if filename is not None:
+            self.filename = filename
 
             with open(self.filename, mode='rt', encoding=self.encoding) as f:
                 self.file_content = f.read()
 
-        elif 'from_string' in kwargs:
+        elif from_string is not None:
             self.filename = None
-            self.file_content = kwargs['from_string']
+            self.file_content = from_string
 
         else:
             raise MissingParameterError("One or more missing arguments for constructor")
@@ -54,23 +53,21 @@ class ContentLoadable(object):
     """Can provide functionality like the YamlLoadable class, but also supports
     loading content and metadata from a Markdown file.
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, filename=None, file_type=None, from_string=None, from_dict=None,
+            name=None, markdown_config=None, encoding='utf-8'):
         self.vars = None
         self.content = None
         self.file_content = None
-        self.file_type = kwargs.get('file_type', None)
+        self.file_type = file_type
         if self.file_type is not None:
             if self.file_type not in ['yaml', 'markdown']:
                 raise ValueError("Invalid file type for content loadable: %s" % self.file_type)
 
-        self.markdown_config = kwargs.get('markdown_config', None)
-        self.encoding = "utf-8"
+        self.markdown_config = markdown_config
+        self.encoding = encoding
 
-        if len(args) > 0:
-            self.filename = args[0]
-
-            if 'encoding' in kwargs:
-                self.encoding = kwargs['encoding']
+        if filename is not None:
+            self.filename = filename
 
             if self.file_type is None:
                 ext = list(os.path.splitext(self.filename))[1].lstrip('.')
@@ -81,19 +78,19 @@ class ContentLoadable(object):
             with open(self.filename, mode='rt', encoding=self.encoding) as f:
                 self.file_content = f.read()
 
-        elif 'from_string' in kwargs:
+        elif from_string is not None:
             self.filename = None
-            self.file_content = kwargs['from_string']
+            self.file_content = from_string
 
-        elif 'from_dict' in kwargs:
+        elif from_dict is not None:
             self.filename = None
-            self.vars = kwargs['from_dict']
+            self.vars = from_dict
 
         else:
             raise MissingParameterError("One or more missing arguments for constructor")
 
-        if 'name' in kwargs:
-            self.name = kwargs['name']
+        if name is not None:
+            self.name = name
         elif self.filename is not None:
             self.name = extract_filename(self.filename)
         else:

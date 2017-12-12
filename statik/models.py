@@ -19,21 +19,21 @@ __all__ = [
 class StatikModel(YamlLoadable):
     """Represents a single model in our Statik project."""
 
-    def __init__(self, *args, **kwargs):
-        super(StatikModel, self).__init__(*args, **kwargs)
+    def __init__(self, name=None, model_names=None, **kwargs):
+        super(StatikModel, self).__init__(**kwargs)
         # if we're explicitly overriding a model name
-        if 'name' in kwargs:
-            self.name = kwargs['name']
+        if name is not None:
+            self.name = name
         elif self.filename is not None:
             # extract the model name from its filename
             self.name = extract_filename(self.filename)
         else:
             raise MissingParameterError("Missing model name in model constructor")
 
-        if 'model_names' not in kwargs:
+        if model_names is None:
             raise MissingParameterError("Missing list of model names in model constructor")
+        self.model_names = model_names
 
-        self.model_names = kwargs['model_names']
         # our model's fields
         self.fields = dict()
         self.field_names = []

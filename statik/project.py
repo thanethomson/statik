@@ -136,7 +136,7 @@ class StatikProject(object):
         for model_file in model_files:
             model_name = extract_filename(model_file)
             models[model_name] = StatikModel(
-                os.path.join(models_path, model_file),
+                filename=os.path.join(models_path, model_file),
                 encoding=self.config.encoding,
                 name=model_name,
                 model_names=model_names
@@ -158,7 +158,7 @@ class StatikProject(object):
         for view_file in view_files:
             view_name = extract_filename(view_file)
             views[view_name] = StatikView(
-                os.path.join(view_path, view_file),
+                filename=os.path.join(view_path, view_file),
                 encoding=self.config.encoding,
                 name=view_name,
                 models=self.models,

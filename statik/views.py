@@ -20,43 +20,44 @@ __all__ = [
 
 
 class StatikView(YamlLoadable):
-    def __init__(self, *args, **kwargs):
-        super(StatikView, self).__init__(*args, **kwargs)
+    def __init__(self, name=None, models=None, template_engine=None, **kwargs):
+        self.template = kwargs.pop('template', None)
+        self.context = kwargs.pop('initial_context', dict())
+        self.default_output_ext = kwargs.pop('default_output_ext', '.html')
+        self.default_output_filename = kwargs.pop('default_output_filename', 'index')
+
+        super(StatikView, self).__init__(**kwargs)
 
         # defaults
         self.complex = False
         self.path = None
-        self.template = kwargs.get('template', None)
         self.path_template = None
         self.path_variable = None
         self.path_query = None
-        self.context = kwargs.get('initial_context', dict())
         self.context_static = dict()
         self.context_dynamic = dict()
         self.context_for_each = dict()
-        self.default_output_ext = kwargs.get('default_output_ext', '.html')
-        self.default_output_filename = kwargs.get('default_output_filename', 'index')
 
         # coerce to UTF-8 if no encoding is specified
         if self.encoding is None:
             self.encoding = "utf-8"
 
-        if 'name' in kwargs:
-            self.name = kwargs['name']
+        if name is not None:
+            self.name = name
         elif self.filename is not None:
             self.name = extract_filename(self.filename)
         else:
             raise MissingParameterError("Missing parameter \"name\" in view constructor")
 
-        if 'models' not in kwargs:
+        if models is None:
             raise MissingParameterError("Missing parameter \"models\" in view constructor")
         # keep a reference to the models
-        self.models = kwargs['models']
+        self.models = models
 
         # if no template was explicitly supplied, we need a template engine with which to load templates
-        if 'template_engine' not in kwargs and self.template is None:
+        if template_engine is None and self.template is None:
             raise MissingParameterError("Missing parameter \"template_engine\" in view constructor")
-        self.template_engine = kwargs.get('template_engine', None)
+        self.template_engine = template_engine
 
         self.configure()
         logger.debug('%s' % self)
