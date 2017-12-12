@@ -20,15 +20,16 @@ __all__ = [
 
 
 class StatikView(YamlLoadable):
-    def __init__(self, name=None, models=None, template_engine=None, **kwargs):
-        self.template = kwargs.pop('template', None)
-        self.context = kwargs.pop('initial_context', dict())
-        self.default_output_ext = kwargs.pop('default_output_ext', '.html')
-        self.default_output_filename = kwargs.pop('default_output_filename', 'index')
-
+    def __init__(self, name=None, models=None, template_engine=None, template=None,
+            initial_context=None, default_output_ext='.html', default_output_filename='index',
+            **kwargs):
         super(StatikView, self).__init__(**kwargs)
 
         # defaults
+        self.template = template
+        self.context = initial_context or dict()
+        self.default_output_ext = default_output_ext
+        self.default_output_filename = default_output_filename
         self.complex = False
         self.path = None
         self.path_template = None
