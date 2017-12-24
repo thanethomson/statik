@@ -97,6 +97,11 @@ def dict_from_path(path, final_value=dict()):
 
 def deep_merge_dict(a, b):
     """Deep merges dictionary b into dictionary a."""
+    if not isinstance(a, dict):
+        raise TypeError("a must be a dict, but found %s" % a.__class__.__name__)
+    if not isinstance(b, dict):
+        raise TypeError("b must be a dict, but found %s" % b.__class__.__name__)
+
     _a = copy(a)
     _b = copy(b)
 
@@ -186,8 +191,7 @@ def calculate_association_table_name(model1_name, model2_name):
 def get_url_file_ext(url):
     """Attempts to extract the file extension from the given URL."""
     # get the last part of the path component
-
-    filename = os.path.basename(url)
+    filename = url.split('/')[-1]
     name, ext = os.path.splitext(filename)
 
     # handle case of files with leading dot

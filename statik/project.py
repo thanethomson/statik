@@ -14,6 +14,7 @@ from statik.models import StatikModel
 from statik.views import StatikView
 from statik.database import StatikDatabase
 from statik.templating import StatikTemplateEngine
+from statik.context import StatikContext
 
 import statik.filters
 import statik.tags
@@ -61,38 +62,41 @@ class StatikProject(object):
         self.template_engine = None
         self.views = {}
         self.db = None
-        self.project_context = {}
+        self.project_context = None
 
     def generate(self, output_path=None, in_memory=False):
         """Executes the Statik project generator.
 
         Args:
             output_path: The path to which to write output files.
-            in_memory: Whether or not to generate the results in memory. If True, this will generate the output
-                result as a dictionary. If False, this will write the output to files in the output_path.
+            in_memory: Whether or not to generate the results in memory. If True, this will
+                generate the output result as a dictionary. If False, this will write the output
+                to files in the output_path.
 
         Returns:
-            If in_memory is True, this returns a dictionary containing the actual generated static content. If
-            in_memory is False, this returns an integer indicating the number of files generated in the
-            output path.
+            If in_memory is True, this returns a dictionary containing the actual generated static
+            content. If in_memory is False, this returns an integer indicating the number of files
+            generated in the output path.
         """
         result = dict() if in_memory else 0
         try:
             if output_path is None and not in_memory:
-                raise ValueError("If project is not to be generated in-memory, an output path must be specified")
+                raise ValueError(
+                    "If project is not to be generated in-memory, an output path must be specified"
+                )
 
             self.config = self.config or StatikConfig(self.config_file_path)
 
             if self.config.encoding is not None:
-                logger.debug("Using encoding: %s" % self.config.encoding)
+                logger.debug("Using encoding: %s", self.config.encoding)
             else:
-                logger.debug("Using encoding: %s" % self.config.encoding)
+                logger.debug("Using encoding: %s", self.config.encoding)
 
             self.models = self.load_models()
             self.template_engine = StatikTemplateEngine(self)
 
             self.views = self.load_views()
-            if len(self.views) == 0:
+            if not self.views:
                 raise NoViewsError("Project has no views configured")
 
             self.db = self.load_db_data(self.models)
@@ -105,31 +109,34 @@ class StatikProject(object):
             else:
                 # dump the in-memory output to files
                 file_count = self.dump_in_memory_result(in_memory_result, output_path)
-                logger.info('Wrote %d output file(s) to folder: %s' % (file_count, output_path))
+                logger.info('Wrote %d output file(s) to folder: %s', file_count, output_path)
                 # copy any assets across, recursively
                 self.copy_assets(output_path)
                 result = file_count
 
         finally:
             try:
-                # make sure to destroy the database engine (to provide for the possibility of database engine
-                # reloads when watching for changes)
+                # make sure to destroy the database engine (to provide for the possibility of
+                # database engine reloads when watching for changes)
                 if self.db is not None:
                     self.db.shutdown()
 
             except Exception as e:
-                logger.exception("Unable to clean up properly: %s" % e)
+                logger.exception("Unable to clean up properly: %s", e)
 
         return result
 
     def load_models(self):
         models_path = os.path.join(self.path, StatikProject.MODELS_DIR)
-        logger.debug("Loading models from: %s" % models_path)
+        logger.debug("Loading models from: %s", models_path)
         if not os.path.isdir(models_path):
-            raise MissingProjectFolderError(StatikProject.MODELS_DIR, "Project is missing its models folder")
+            raise MissingProjectFolderError(
+                StatikProject.MODELS_DIR,
+                "Project is missing its models folder"
+            )
 
         model_files = list_files(models_path, ['yml', 'yaml'])
-        logger.debug("Found %d model(s) in project" % len(model_files))
+        logger.debug("Found %d model(s) in project", len(model_files))
         # get all of the models' names
         model_names = [extract_filename(model_file) for model_file in model_files]
         models = {}
@@ -148,12 +155,15 @@ class StatikProject(object):
         """Loads the views for this project from the project directory
         structure."""
         view_path = os.path.join(self.path, StatikProject.VIEWS_DIR)
-        logger.debug("Loading views from: %s" % view_path)
+        logger.debug("Loading views from: %s", view_path)
         if not os.path.isdir(view_path):
-            raise MissingProjectFolderError(StatikProject.VIEWS_DIR, "Project is missing its views folder")
+            raise MissingProjectFolderError(
+                StatikProject.VIEWS_DIR,
+                "Project is missing its views folder"
+            )
 
         view_files = list_files(view_path, ['yml', 'yaml'])
-        logger.debug("Found %d view(s) in project" % len(view_files))
+        logger.debug("Found %d view(s) in project", len(view_files))
         views = {}
         for view_file in view_files:
             view_name = extract_filename(view_file)
@@ -169,39 +179,47 @@ class StatikProject(object):
 
     def load_db_data(self, models):
         data_path = os.path.join(self.path, StatikProject.DATA_DIR)
-        logger.debug("Loading data from: %s" % data_path)
+        logger.debug("Loading data from: %s", data_path)
         if not os.path.isdir(data_path):
-            raise MissingProjectFolderError(StatikProject.DATA_DIR, "Project is missing its data folder")
-
-        return StatikDatabase(data_path, models, self.config.encoding, markdown_config=self.config.markdown_config)
+            raise MissingProjectFolderError(
+                StatikProject.DATA_DIR,
+                "Project is missing its data folder"
+            )
+        return StatikDatabase(
+            data_path,
+            models,
+            self.config.encoding,
+            markdown_config=self.config.markdown_config
+        )
 
     def load_project_context(self):
-        """Loads the project context (static and dynamic) from the database/models for common use amongst
-        the project's views."""
+        """Loads the project context (static and dynamic) from the database/models for common use
+        amongst the project's views."""
         # just make a copy of the project context
-        context = copy(self.config.context_static)
-        context['project_name'] = self.config.project_name
-        context['base_path'] = self.config.base_path
-
-        # now load the dynamic context
-        context.update(self.load_project_dynamic_context())
-        return context
-
-    def load_project_dynamic_context(self):
-        """Loads the dynamic context for this project, if any."""
-        context = {}
-        for varname, query in iteritems(self.config.context_dynamic):
-            context[varname] = self.db.query(query)
-        return context
+        context = StatikContext(
+            initial={
+                "project_name": self.config.project_name,
+                "base_path": self.config.base_path
+            },
+            static=self.config.context_static,
+            dynamic=self.config.context_dynamic
+        )
+        logger.debug("Built project context: %s", context)
+        return context.build(db=self.db, safe_mode=self.safe_mode)
 
     def process_views(self):
         """Processes the loaded views to generate the required output data."""
         output = {}
-        logger.debug("Processing %d view(s)..." % len(self.views))
+        logger.debug("Processing %d view(s)...", len(self.views))
         for view_name, view in iteritems(self.views):
-            # first update the view's context with the project context
-            view.context.update(self.project_context)
-            output = deep_merge_dict(output, view.process(self.db, safe_mode=self.safe_mode))
+            output = deep_merge_dict(
+                output,
+                view.process(
+                    self.db,
+                    safe_mode=self.safe_mode,
+                    extra_context=self.project_context
+                )
+            )
         return output
 
     def dump_in_memory_result(self, result, output_path):
@@ -216,7 +234,7 @@ class StatikProject(object):
             The number of files generated (integer).
         """
         file_count = 0
-        logger.debug("Dumping in-memory processing results to output folder: %s" % output_path)
+        logger.debug("Dumping in-memory processing results to output folder: %s", output_path)
         for k, v in iteritems(result):
             cur_output_path = os.path.join(output_path, k)
 
@@ -227,7 +245,7 @@ class StatikProject(object):
                     os.makedirs(output_path)
 
                 filename = os.path.join(output_path, k)
-                logger.debug("Writing output file: %s" % filename)
+                logger.debug("Writing output file: %s", filename)
                 # dump the contents of the file
                 with open(filename, 'wt', encoding=self.config.encoding) as f:
                     f.write(v)
@@ -251,9 +269,10 @@ class StatikProject(object):
                 self.config.theme,
                 StatikProject.ASSETS_DIR
             ))
-            # NOTE: Adding the theme's assets directory *before* the project's internal assets directory
-            #       always ensures that the project's own assets are copied *after* the theme's, thereby ensuring
-            #       that the project's assets folder takes precedence over the theme's.
+            # NOTE: Adding the theme's assets directory *before* the project's internal assets
+            #       directory always ensures that the project's own assets are copied *after* the
+            #       theme's, thereby ensuring that the project's assets folder takes precedence
+            #       over the theme's.
 
         # always attempt to copy from our base assets folder
         if os.path.isabs(self.config.assets_src_path):
@@ -268,6 +287,9 @@ class StatikProject(object):
                     dest_path = os.path.join(output_path, dest_path)
 
                 asset_count = copy_tree(src_path, dest_path)
-                logger.info("Copied %s asset(s) from %s to %s" % (asset_count, src_path, dest_path))
+                logger.info("Copied %s asset(s) from %s to %s", asset_count, src_path, dest_path)
             else:
-                logger.info("Missing assets source path - skipping copying of assets: %s" % src_path)
+                logger.info(
+                    "Missing assets source path - skipping copying of assets: %s",
+                    src_path
+                )

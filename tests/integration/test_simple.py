@@ -17,7 +17,9 @@ from statik.utils import strip_el_text, _str
 from statik.errors import MissingTemplateError, SafetyViolationError
 
 
-DEBUG = (os.environ.get('DEBUG', False) == "True")
+logger = logging.getLogger(__name__)
+DEBUG = (os.environ.get('DEBUG', "false") in ["true", "1"])
+LOGGERS = os.environ.get('LOGGERS', "statik").split(",")
 
 EXPECTED_HTACCESS_CONTENT = """AuthUserFile /usr/local/username/safedirectory/.htpasswd
 AuthGroupFile /dev/null
@@ -31,9 +33,16 @@ class TestSimpleStatikIntegration(unittest.TestCase):
     def setUp(self):
         if DEBUG:
             logging.basicConfig(
-                level=logging.DEBUG,
+                level=logging.WARNING,
                 format='%(asctime)s\t%(name)s\t%(levelname)s\t%(message)s',
             )
+            for logger_name in LOGGERS:
+                logger_pkg = logging.getLogger(logger_name)
+                logger_pkg.setLevel(logging.DEBUG)
+
+            logger.debug("")
+            logger.debug("----------- TEST START -----------")
+            logger.debug("")
 
     def test_safe_mode(self):
         test_path = os.path.dirname(os.path.realpath(__file__))

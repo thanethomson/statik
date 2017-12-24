@@ -67,15 +67,9 @@ class StatikConfig(YamlLoadable):
         logging.debug("%s" % self)
 
     def __repr__(self):
-        return ("<StatikConfig project_name=%s\n" +
-                "              base_path=%s\n" +
-                "              encoding=%s\n" +
-                "              theme=%s\n" +
-                "              template_providers=%s\n" +
-                "              assets_src_path=%s\n" +
-                "              assets_dest_path=%s\n" +
-                "              context_static=%s\n" +
-                "              context_dynamic=%s>") % (
+        return ("StatikConfig(project_name=%s, base_path=%s, encoding=%s, theme=%s, " +
+                "template_providers=%s, assets_src_path=%s, assets_dest_path=%s, " +
+                "context_static=%s, context_dynamic=%s)") % (
                     self.project_name,
                     self.base_path,
                     self.encoding,

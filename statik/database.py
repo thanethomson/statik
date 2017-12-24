@@ -236,16 +236,16 @@ class StatikDatabase(object):
 
         Args:
             query: The SQLAlchemy ORM query (or Python code) to be executed.
-            additional_locals: Any additional local variables to inject into the execution context when executing
-                the query.
-            safe_mode: Boolean value indicating whether or not to execute queries in safe mode only. If True,
-                this only allows MLAlchemy-style queries. If False, this allows both exec() and MLAlchemy-style
-                queries. Default: False.
+            additional_locals: Any additional local variables to inject into the execution context
+                when executing the query.
+            safe_mode: Boolean value indicating whether or not to execute queries in safe mode
+                only. If True, this only allows MLAlchemy-style queries. If False, this allows
+                both exec() and MLAlchemy-style queries. Default: False.
 
         Returns:
             The result of executing the query.
         """
-        logger.debug("Attempting to execute database query: %s" % query)
+        logger.debug("Attempting to execute database query: %s", query)
 
         if safe_mode and not isinstance(query, dict):
             raise SafetyViolationError("Queries in safe mode must be MLAlchemy-style queries")
@@ -325,41 +325,44 @@ class StatikDatabaseInstance(ContentLoadable):
         if self.model.content_field is not None:
             self.field_values[self.model.content_field] = self.content
 
-        logger.debug('%s' % self)
+        logger.debug('%s', self)
 
     def __repr__(self):
-        result_lines = ["<StatikDatabaseInstance model=%s" % self.model.name]
+        result = ["StatikDatabaseInstance(model=%s" % self.model.name]
         for field_name, field_value in iteritems(self.field_values):
             model_field = self.model.fields.get(field_name, None)
             if isinstance(model_field, StatikContentField) or isinstance(model_field, StatikTextField):
-                result_lines.append("                        %s=<...>" % field_name)
+                result.append("%s=<...>" % field_name)
             else:
-                result_lines.append("                        %s=%s" % (field_name, field_value))
-        result_lines[-1] += '>'
-        return '\n'.join(result_lines)
+                result.append("%s=%s" % (field_name, field_value))
+        result[-1] += ')'
+        return ', '.join(result)
+
+    def __str__(self):
+        return repr(self)
 
 
 def db_model_factory(Base, model, all_models):
 
     def get_or_create_association_table(model1_name, model2_name):
         _association_table_name = calculate_association_table_name(model1_name, model2_name)
-        logger.debug("Creating/getting ManyToMany relationship table: %s" % _association_table_name)
+        logger.debug("Creating/getting ManyToMany relationship table: %s", _association_table_name)
         if _association_table_name in globals():
             return globals()[_association_table_name]
 
         # create an association table
         _association_table = Table(
-                _association_table_name,
-                Base.metadata,
-                Column('%s_pk' % model1_name.lower(), String, ForeignKey('%s.pk' % model1_name)),
-                Column('%s_pk' % model2_name.lower(), String, ForeignKey('%s.pk' % model2_name))
+            _association_table_name,
+            Base.metadata,
+            Column('%s_pk' % model1_name.lower(), String, ForeignKey('%s.pk' % model1_name)),
+            Column('%s_pk' % model2_name.lower(), String, ForeignKey('%s.pk' % model2_name))
         )
         # track it in our globals
         set_global(_association_table_name, _association_table)
         return _association_table
 
     logger.debug('-----')
-    logger.debug("Generating model: %s" % model.name)
+    logger.debug("Generating model: %s", model.name)
     model_fields = {
         '__tablename__': model.name,
         'pk': Column(String, primary_key=True)

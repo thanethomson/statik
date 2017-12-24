@@ -281,6 +281,12 @@ class StatikJinjaTemplate(StatikTemplate):
         self.provider = provider
         self.template = template
 
+    def __repr__(self):
+        return "StatikJinjaTemplate(template=%s)" % self.template
+
+    def __str__(self):
+        return repr(self)
+
     def render(self, context):
         # make sure we lazily reattach our provider's environment to the project's views
         self.provider.reattach_project_views()
@@ -343,6 +349,12 @@ class StatikMustacheTemplate(StatikTemplate):
     def __init__(self, parsed_template, renderer):
         self.parsed_template = parsed_template
         self.renderer = renderer
+
+    def __repr__(self):
+        return "StatikMustacheTemplate(parsed_template=%s)" % self.parsed_template
+
+    def __str__(self):
+        return repr(self)
 
     def render(self, context):
         return self.renderer.render(self.parsed_template, context)
