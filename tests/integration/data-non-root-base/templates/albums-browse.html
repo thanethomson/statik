@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}Browse Albums{% endblock %}
+
+{% block content %}
+    <ul>
+        {% for album in albums %}
+            <li><a href="{% url "albums", album %}">{{ album.title }}</a></li>
+        {% endfor %}
+    </ul>
+{% endblock %}

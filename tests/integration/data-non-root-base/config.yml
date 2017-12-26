@@ -1,0 +1,5 @@
+project-name: Test project with non-root base
+base-path: /non/standard/
+context:
+  static:
+    site-summary: Here's something a little different, with a non-root base.

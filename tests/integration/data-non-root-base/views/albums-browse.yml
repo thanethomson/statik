@@ -1,0 +1,5 @@
+path: /albums/browse
+template: albums-browse
+context:
+  dynamic:
+    albums: session.query(Album).order_by(Album.created.desc())

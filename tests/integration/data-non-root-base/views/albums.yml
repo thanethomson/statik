@@ -1,0 +1,5 @@
+path:
+  template: /albums/{{ album.pk }}
+  for-each:
+    album: session.query(Album).all()
+template: album
