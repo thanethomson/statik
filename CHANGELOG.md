@@ -4,6 +4,18 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.18.2` - 26 December 2017
+
+* Fixed #49 - the `httpwatcher` library, up to v0.5.0, introduced a bug that, when using
+  the internal watcher server and accessing a URL path without a trailing slash, would redirect
+  the user to an incorrect URL (by incorrectly injecting additional path segments). This version
+  of Statik fixes this by ensuring that at least v0.5.1 of `httpwatcher` is installed.
+* Full refactor of Statik's view system. This was to make the view processing system more
+  modular and easier to debug.
+* Regression test for #51. Due to the fact that this could actually be a common use case for
+  Statik, a regression test was created to ensure that the case brought up in #51 was possible
+  to implement using Statik.
+
 ### `v0.18.1` - 31 October 2017
 
 * Fixed #47 - now allows for output of general non-HTML content,
