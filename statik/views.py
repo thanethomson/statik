@@ -17,6 +17,12 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     'StatikView',
+    'StatikViewPath',
+    'StatikViewSimplePath',
+    'StatikViewComplexPath',
+    'StatikViewRenderer',
+    'StatikSimpleViewRenderer',
+    'StatikComplexViewRenderer'
 ]
 
 
