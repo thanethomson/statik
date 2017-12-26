@@ -3,3 +3,5 @@ base-path: /non/standard/
 context:
   static:
     site-summary: Here's something a little different, with a non-root base.
+  dynamic:
+    static-pages: dict([(page.pk, page) for page in session.query(Page).all()])

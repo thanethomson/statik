@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+    <!-- For demonstrating static pages lookup, per issue #51 -->
+    <div class="menu">
+        <ul>
+            <li>
+                <a href="{% url "static-page", static_pages.about %}">
+                    About
+                </a>
+            </li>
+            <li>
+                <a href="{% url "static-page", static_pages.contact %}">
+                    Contact
+                </a>
+            </li>
+        </ul>
+    </div>
+{% endblock %}

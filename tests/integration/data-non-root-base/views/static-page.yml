@@ -1,0 +1,5 @@
+path:
+  template: /{{ page.pk }}/
+  for-each:
+    page: session.query(Page).all()
+template: static-page
