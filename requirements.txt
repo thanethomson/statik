@@ -6,6 +6,6 @@ markdown>=2.6.6
 python-slugify>=1.2.1
 six>=1.10.0
 lipsum>=0.1.1
-httpwatcher>=0.5.0
+httpwatcher>=0.5.1
 mlalchemy>=0.2.1
 pystache>=0.5.4
