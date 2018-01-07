@@ -4,6 +4,10 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.19.1` - 07 January 2018
+
+* More minor improvements to the error logging, especially from the database interface.
+
 ### `v0.19.0` - 07 January 2018
 
 * Started refactoring the error handling system (in an attempt to help with #56). The error
