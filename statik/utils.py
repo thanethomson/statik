@@ -41,7 +41,8 @@ __all__ = [
     'strip_el_text',
     '_str',
     '_unicode',
-    'find_first_file_with_ext'
+    'find_first_file_with_ext',
+    'uncapitalize'
 ]
 
 DEFAULT_CONFIG_CONTENT = """project-name: Your project name
@@ -217,7 +218,7 @@ def generate_quickstart(project_path):
 
 def ensure_path_exists(path):
     if not os.path.isdir(path):
-        logger.info('Creating path: %s' % path)
+        logger.info('Creating path: %s', path)
         os.makedirs(path)
 
 
@@ -263,11 +264,11 @@ def get_project_config_file(path, default_config_file_name):
         _path = path
         # use the default config file
         _config_file_path = os.path.join(_path, default_config_file_name)
-        logger.debug("Using default project configuration file path: %s" % _config_file_path)
+        logger.debug("Using default project configuration file path: %s", _config_file_path)
     elif path.endswith(".yml"):
         _path = os.path.dirname(path)
         _config_file_path = path
-        logger.debug("Using custom project configuration file path: %s" % _config_file_path)
+        logger.debug("Using custom project configuration file path: %s", _config_file_path)
 
     return _path, _config_file_path
 
@@ -346,8 +347,13 @@ def find_first_file_with_ext(base_paths, prefix, exts):
         for ext in exts:
             filename = os.path.join(base_path, "%s%s" % (prefix, ext))
             if os.path.exists(filename) and os.path.isfile(filename):
-                logger.debug("Found first file with relevant extension: %s" % filename)
+                logger.debug("Found first file with relevant extension: %s", filename)
                 return base_path, ext
 
-    logger.debug("No files found for prefix %s, extensions %s" % (prefix, ", ".join(exts)))
+    logger.debug("No files found for prefix %s, extensions %s", prefix, ", ".join(exts))
     return None, None
+
+
+def uncapitalize(s):
+    """If the given string begins with a capital letter, it converts it to lowercase."""
+    return (s[:1].lower() + s[1:]) if s else ""

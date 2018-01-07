@@ -60,20 +60,24 @@ def clear_tracked_globals():
 
 class StatikDatabase(object):
 
-    def __init__(self, data_path, models, encoding=None, markdown_config=None):
+    def __init__(self, data_path, models, encoding=None, markdown_config=None,
+            error_context=None):
         """Constructor.
 
         Args:
             data_path: The full path to where the database files can be found.
             models: Loaded model/field data.
             encoding: The encoding to load files as ('utf-8', etc). If 'None', will
-                      default to the system-preferred default encoding
+                      default to the system-preferred default encoding.
+            error_context: An optional StatikErrorContext instance for keeping track of
+                the files to which any exceptions are relevant.
         """
         self.encoding = encoding
         self.tables = dict()
         self.data_path = data_path
         self.models = models
         self.markdown_config = markdown_config
+        self.error_context = error_context or StatikErrorContext()
         self.engine = create_engine('sqlite:///:memory:')
         self.Base = declarative_base()
         self.session = sessionmaker(bind=self.engine)()
@@ -83,16 +87,21 @@ class StatikDatabase(object):
 
     def find_backrefs(self):
         for model_name, model in iteritems(self.models):
-            logger.debug('Attempting to find backrefs for model: %s' % model_name)
+            logger.debug('Attempting to find backrefs for model: %s', model_name)
             model.find_additional_rels(self.models)
 
     def create_db(self, models):
         """Creates the in-memory SQLite database from the model
         configuration."""
         # first create the table definitions
-        self.tables = dict([(model_name, self.create_model_table(model)) for model_name, model in iteritems(models)])
+        self.tables = dict(
+            [
+                (model_name, self.create_model_table(model))
+                for model_name, model in iteritems(models)
+            ]
+        )
         # now create the tables in memory
-        logger.debug("Creating %d database table(s)..." % len(self.tables))
+        logger.debug("Creating %d database table(s)...", len(self.tables))
         self.Base.metadata.create_all(self.engine)
         self.load_all_model_data(models)
 
@@ -102,13 +111,13 @@ class StatikDatabase(object):
         for model_name in self.sort_models():
             # we won't be loading data for many-to-many relationships
             if model_name in models:
-                logger.debug("Loading data for model: %s" % model_name)
+                logger.debug("Loading data for model: %s", model_name)
                 model = models[model_name]
                 model_data_path = os.path.join(self.data_path, model_name)
                 if os.path.isdir(model_data_path):
                     self.load_model_data(model_data_path, model)
             else:
-                logger.debug("Skipping loading data models for table: %s" % model_name)
+                logger.debug("Skipping loading data models for table: %s", model_name)
 
     def sort_models(self):
         """Sorts the database models appropriately based on their relationships so that we load our data
@@ -117,15 +126,17 @@ class StatikDatabase(object):
         Returns:
             A sorted list containing the names of the models.
         """
-        model_names = [table.name for table in self.Base.metadata.sorted_tables if table.name in self.models]
-        logger.debug("Unsorted models: %s" % model_names)
+        model_names = [
+            table.name for table in self.Base.metadata.sorted_tables if table.name in self.models
+        ]
+        logger.debug("Unsorted models: %s", model_names)
         model_count = len(model_names)
 
         swapped = True
         sort_round = 0
         while swapped:
             sort_round += 1
-            logger.debug('Sorting round: %d (%s)' % (sort_round, model_names))
+            logger.debug('Sorting round: %d (%s)', sort_round, model_names)
 
             sorted_models = []
             for i in range(model_count):
@@ -144,7 +155,7 @@ class StatikDatabase(object):
 
             model_names = sorted_models
 
-        logger.debug("Sorted models: %s (%d rounds)" % (model_names, sort_round))
+        logger.debug("Sorted models: %s (%d rounds)", model_names, sort_round)
         return model_names
 
     def create_model_table(self, model):
@@ -171,22 +182,27 @@ class StatikDatabase(object):
             self.session.commit()
 
     def load_model_data_collection(self, path, model):
+        full_filename = os.path.join(path, '_all.yml')
+        self.error_context.update(filename=full_filename)
+
         db_model = globals()[model.name]
         # load the collection data from the collection file
-        with open(os.path.join(path, '_all.yml'), mode='rt', encoding=self.encoding) as f:
+        with open(full_filename, mode='rt', encoding=self.encoding) as f:
             collection = yaml.load(f.read())
 
         if not isinstance(collection, list):
-            raise InvalidModelCollectionDataError("Model %s collection _all.yml file must be a list of instances" % (
-                model.name
-            ))
+            raise InvalidModelCollectionDataError(
+                model.name,
+                context=self.error_context
+            )
         seen_entries = set()
-        logger.debug("Loading %d instance(s) for model: %s" % (len(collection), model.name))
+        logger.debug("Loading %d instance(s) for model: %s", len(collection), model.name)
         for item in collection:
             if not isinstance(item, dict) or 'pk' not in item:
-                raise InvalidModelCollectionDataError("Model %s collection _all.yml contains invalid item(s)" % (
-                    model.name
-                ))
+                raise InvalidModelCollectionDataError(
+                    model.name,
+                    context=self.error_context
+                )
 
             entry = StatikDatabaseInstance(
                 name=item['pk'],
@@ -198,33 +214,40 @@ class StatikDatabase(object):
             )
             # duplicate primary key!
             if entry.field_values['pk'] in seen_entries:
-                raise DuplicateModelInstanceError("More than one entry with the name \"%s\" exists for model %s" % (
-                    entry.field_values['pk'], model.name
-                ))
+                raise DuplicateModelInstanceError(
+                    model.name,
+                    pk=entry.field_values['pk'],
+                    context=self.error_context
+                )
             else:
                 seen_entries.add(entry.field_values['pk'])
 
             db_entry = db_model(**entry.field_values)
             self.session.add(db_entry)
+        
+        self.error_context.clear()
 
     def load_model_data_from_files(self, path, model):
         db_model = globals()[model.name]
         entry_files = list_files(path, ['yml', 'yaml', 'md'])
         seen_entries = set()
-        logger.debug("Loading %d instance(s) for model: %s" % (len(entry_files), model.name))
+        logger.debug("Loading %d instance(s) for model: %s", len(entry_files), model.name)
         for entry_file in entry_files:
             entry = StatikDatabaseInstance(
                 filename=os.path.join(path, entry_file),
                 model=model,
                 session=self.session,
                 encoding=self.encoding,
-                markdown_config=self.markdown_config
+                markdown_config=self.markdown_config,
+                error_context=self.error_context
             )
             # duplicate primary key!
             if entry.field_values['pk'] in seen_entries:
-                raise DuplicateModelInstanceError("More than one entry with the name \"%s\" exists for model %s" % (
-                    entry.field_values['pk'], model.name
-                ))
+                raise DuplicateModelInstanceError(
+                    model.name,
+                    pk=entry.field_values['pk'],
+                    context=self.error_context
+                )
             else:
                 seen_entries.add(entry.field_values['pk'])
 
@@ -248,7 +271,9 @@ class StatikDatabase(object):
         logger.debug("Attempting to execute database query: %s", query)
 
         if safe_mode and not isinstance(query, dict):
-            raise SafetyViolationError("Queries in safe mode must be MLAlchemy-style queries")
+            raise SafetyViolationError(
+                context=self.error_context
+            )
 
         if isinstance(query, dict):
             logger.debug("Executing query in safe mode (MLAlchemy)")
@@ -283,11 +308,11 @@ class StatikDatabaseInstance(ContentLoadable):
     def __init__(self, model=None, session=None, **kwargs):
         super(StatikDatabaseInstance, self).__init__(**kwargs)
         if model is None:
-            raise MissingParameterError("Missing parameter \"model\" for database instance constructor")
+            raise MissingParameterError("model", context=self.error_context)
         self.model = model
 
         if session is None:
-            raise MissingParameterError("Missing parameter \"session\" for database instance constructor")
+            raise MissingParameterError("session", context=self.error_context)
         self.session = session
 
         # convert the vars to their underscored representation
@@ -306,12 +331,17 @@ class StatikDatabaseInstance(ContentLoadable):
 
             elif isinstance(field, StatikManyToManyField):
                 if not isinstance(self.field_values[field_name], list):
-                    raise InvalidFieldTypeError("ManyToMany field values are expected to be lists (see %s.%s)" % (
-                        self.model.name, field_name
-                    ))
+                    raise InvalidFieldTypeError(
+                        self.model.name,
+                        field_name,
+                        "a list",
+                        context=self.error_context
+                    )
 
-                logger.debug("Attempting to look up primary keys for ManyToMany " +
-                             "field relationship: %s" % self.field_values[field_name])
+                logger.debug(
+                    "Attempting to look up primary keys for ManyToMany " +
+                    "field relationship: %s", self.field_values[field_name]
+                )
                 # convert the list of field values to a query to look up the
                 # primary keys of the corresponding table
                 other_model = globals()[field.field_type]

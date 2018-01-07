@@ -28,10 +28,10 @@ class StatikModel(YamlLoadable):
             # extract the model name from its filename
             self.name = extract_filename(self.filename)
         else:
-            raise MissingParameterError("Missing model name in model constructor")
+            raise MissingParameterError("name", context=self.error_context)
 
         if model_names is None:
-            raise MissingParameterError("Missing list of model names in model constructor")
+            raise MissingParameterError("model_names", context=self.error_context)
         self.model_names = model_names
 
         # our model's fields
@@ -48,14 +48,25 @@ class StatikModel(YamlLoadable):
         for field_name, field_type in iteritems(self.vars):
             if field_type == 'Content':
                 if self.content_field is not None:
-                    raise ValueError("Only one \"Content\" field is allowed per model (%s)" % self.name)
+                    raise ModelError(
+                        self.name,
+                        message="Only one \"Content\" field is allowed per model.",
+                        context=self.error_context
+                    )
                 self.content_field = field_name
 
             new_field_name = field_name.replace('-', '_')
             self.field_names.append(new_field_name)
-            new_field = construct_field(new_field_name, field_type, self.model_names)
+            new_field = construct_field(
+                self.name,
+                new_field_name,
+                field_type,
+                self.model_names,
+                error_context=self.error_context
+            )
             self.fields[new_field_name] = new_field
-            if isinstance(new_field, StatikForeignKeyField) or isinstance(new_field, StatikManyToManyField):
+            if isinstance(new_field, StatikForeignKeyField) or \
+                    isinstance(new_field, StatikManyToManyField):
                 self.foreign_models.add(new_field.field_type)
 
     def find_additional_rels(self, all_models):
@@ -72,12 +83,13 @@ class StatikModel(YamlLoadable):
                         self.additional_rels[field.back_populates] = {
                             'to_model': model_name,
                             'back_populates': field_name,
-                            'secondary':
-                                (model_name, field.field_type) if isinstance(field, StatikManyToManyField) else None
+                            'secondary': (model_name, field.field_type)
+                                if isinstance(field, StatikManyToManyField) else None
                         }
-                        logger.debug('Additional relationship %s.%s -> %s (%s)' % (
+                        logger.debug(
+                            'Additional relationship %s.%s -> %s (%s)',
                             self.name,
                             field.back_populates,
                             model_name,
                             self.additional_rels[field.back_populates]
-                        ))
+                        )

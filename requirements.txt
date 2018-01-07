@@ -9,3 +9,4 @@ lipsum>=0.1.1
 httpwatcher>=0.5.1
 mlalchemy>=0.2.1
 pystache>=0.5.4
+colorlog>=3.1.0

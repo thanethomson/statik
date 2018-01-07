@@ -7,7 +7,7 @@ from past.builtins import basestring
 from copy import deepcopy, copy
 
 from statik.common import YamlLoadable
-from statik.errors import MissingParameterError
+from statik.errors import *
 from statik.utils import *
 from statik.context import StatikContext
 
@@ -35,13 +35,15 @@ class StatikViewPath(object):
             output_own_subfolder=True,
             output_filename='index',
             output_ext='.html',
-            view_name=None
+            view_name=None,
+            error_context=None,
         ):
         self.path = path
         self.output_own_subfolder = output_own_subfolder
         self.output_filename = output_filename
         self.output_ext = output_ext
         self.view_name = view_name
+        self.error_context = error_context or StatikErrorContext()
         logger.debug(
             "Configured path for view \"%s\": %s",
             self.view_name,
@@ -130,31 +132,42 @@ class StatikViewComplexPath(StatikViewPath):
     supplied."""
 
     def __init__(self, path, template_engine, **kwargs):
+        error_context = kwargs.pop('error_context', StatikErrorContext())
         if not isinstance(path, dict):
-            raise TypeError(
-                "Path for complex views must be a dictionary%s" %
-                ((" (in view %s)" % self.view_name) if self.view_name else "")
+            raise InvalidViewFieldTypeError(
+                "path",
+                "a dictionary/map",
+                view_name=self.view_name,
+                context=error_context
             )
         if 'template' not in path:
-            raise MissingParameterError(
-                "Complex views must include a \"template\" parameter%s" %
-                ((" (in view %s)" % self.view_name) if self.view_name else "")
+            raise MissingViewFieldError(
+                "template",
+                view_name=self.view_name,
+                context=error_context
             )
         if 'for-each' not in path:
-            raise MissingParameterError(
-                "Complex views must include a \"for-each\" parameter%s" %
-                ((" (in view %s)" % self.view_name) if self.view_name else "")
+            raise MissingViewFieldError(
+                "for-each",
+                view_name=self.view_name,
+                context=error_context
             )
         if not isinstance(path['for-each'], dict) or len(path['for-each']) != 1:
-            raise ValueError(
-                "Complex views' \"for-each\" parameter must consist of a single key/value pair%s" %
-                ((" (in view %s)" % self.view_name) if self.view_name else "")
+            raise InvalidViewFieldTypeError(
+                "for-each",
+                "a single key/value pair",
+                view_name=self.view_name,
+                context=self.error_context
             )
         self.raw_template = path['template']
         self.template = template_engine.create_template(self.raw_template)
         self.variable, self.query = list(iteritems(path['for-each']))[0]
 
-        super(StatikViewComplexPath, self).__init__(path, **kwargs)
+        super(StatikViewComplexPath, self).__init__(
+            path,
+            error_context=error_context,
+            **kwargs
+        )
 
     def __repr__(self):
         return "StatikViewComplexPath(template=%s, variable=%s, query=%s)" % (
@@ -185,10 +198,11 @@ class StatikViewComplexPath(StatikViewPath):
 class StatikViewRenderer(object):
     """Base class for the different kinds of Statik view renderers."""
 
-    def __init__(self, path, template, view_name=None):
+    def __init__(self, path, template, view_name=None, error_context=None):
         self.path = path
         self.template = template
         self.view_name = view_name
+        self.error_context = error_context or StatikErrorContext()
         logger.debug(
             "Configured Statik view renderer for view \"%s\": %s",
             view_name,
@@ -216,12 +230,17 @@ class StatikViewRenderer(object):
 class StatikSimpleViewRenderer(StatikViewRenderer):
     """Renderer for simple Statik views (only a single output file)."""
 
-    def __init__(self, path, template, view_name=None):
+    def __init__(self, path, template, view_name=None, error_context=None):
         if not isinstance(path, StatikViewSimplePath):
             raise TypeError(
                 "Simple Statik view renderers only accept simple paths (in view %s)" % view_name
             )
-        super(StatikSimpleViewRenderer, self).__init__(path, template, view_name=view_name)
+        super(StatikSimpleViewRenderer, self).__init__(
+            path,
+            template,
+            view_name=view_name,
+            error_context=error_context
+        )
 
     def __repr__(self):
         return "StatikSimpleViewRenderer(path=%s)" % self.path
@@ -242,12 +261,17 @@ class StatikComplexViewRenderer(StatikViewRenderer):
     """Renderer for complex Statik views (multiple output files from a single view, dependent on
     the results of a database query)."""
 
-    def __init__(self, path, template, view_name=None):
+    def __init__(self, path, template, view_name=None, error_context=None):
         if not isinstance(path, StatikViewComplexPath):
             raise TypeError(
                 "Complex Statik view renderers only accept complex paths (in view %s)" % view_name
             )
-        super(StatikComplexViewRenderer, self).__init__(path, template, view_name=view_name)
+        super(StatikComplexViewRenderer, self).__init__(
+            path,
+            template,
+            view_name=view_name,
+            error_context=error_context
+        )
 
     def __repr__(self):
         return "StatikComplexViewRenderer(path=%s)" % self.path
@@ -259,7 +283,10 @@ class StatikComplexViewRenderer(StatikViewRenderer):
         """Renders the given context using the specified database, returning a dictionary
         containing path segments and rendered view contents."""
         if not db:
-            raise MissingParameterError("Statik complex views require a StatikDatabase instance")
+            raise MissingParameterError(
+                "db",
+                context=self.error_context
+            )
         rendered_views = dict()
         path_instances = db.query(self.path.query, safe_mode=safe_mode)
         extra_ctx = copy(extra_context) if extra_context else dict()
@@ -299,11 +326,13 @@ class StatikView(YamlLoadable):
         super(StatikView, self).__init__(**kwargs)
 
         # defaults
-        self.name = name or extract_filename("Missing parameter \"name\" in view constructor")
+        self.name = name or (
+            extract_filename(self.filename) if self.filename else None
+        )
         if not self.name:
-            raise MissingParameterError("Missing parameter \"name\" in view constructor")
+            raise MissingParameterError("name", context=self.error_context)
         if 'path' not in self.vars or not self.vars['path']:
-            raise MissingParameterError("Missing variable \"path\" in view: %s" % self.name)
+            raise MissingParameterError("path", context=self.error_context)
         self.path = StatikViewPath.create(
             self.vars['path'],
             template_engine=template_engine,
@@ -320,7 +349,7 @@ class StatikView(YamlLoadable):
         )
 
         if models is None:
-            raise MissingParameterError("Missing parameter \"models\" in view constructor")
+            raise MissingParameterError("models", context=self.error_context)
         # keep a reference to the models
         self.models = models
 
@@ -330,12 +359,13 @@ class StatikView(YamlLoadable):
         if not template:
             if not template_engine:
                 raise MissingParameterError(
-                    "Either \"template_engine\" or \"template\" must be supplied for view " +
-                    "constructor for view: %s" % self.name
+                    "template_engine", "template",
+                    context=self.error_context
                 )
             if 'template' not in self.vars:
                 raise MissingParameterError(
-                    "Missing variable \"template\" in view: %s" % self.name
+                    "template",
+                    context=self.error_context
                 )
             self.template = template_engine.load_template(
                 self.vars['template']

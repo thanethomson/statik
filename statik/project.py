@@ -44,6 +44,9 @@ class StatikProject(object):
         Args:
             path: The full filesystem path to the base of the project.
         """
+        self.error_context = kwargs.pop('error_context', None)
+        self.error_context = self.error_context or StatikErrorContext()
+
         if 'config' in kwargs and isinstance(kwargs['config'], dict):
             logger.debug("Loading project configuration from constructor arguments")
             self.config = kwargs['config']
@@ -54,9 +57,9 @@ class StatikProject(object):
 
         self.path, self.config_file_path = get_project_config_file(path, StatikProject.CONFIG_FILE)
         if (self.path is None or self.config_file_path is None) and self.config is None:
-            raise MissingProjectConfig("No configuration could be found for project")
+            raise MissingProjectConfig(context=self.error_context)
 
-        logger.debug("Project path configured as: %s" % self.path)
+        logger.debug("Project path configured as: %s", self.path)
 
         self.models = {}
         self.template_engine = None
@@ -79,25 +82,28 @@ class StatikProject(object):
             generated in the output path.
         """
         result = dict() if in_memory else 0
+        logger.info("Generating Statik build...")
         try:
             if output_path is None and not in_memory:
-                raise ValueError(
+                raise InternalError(
                     "If project is not to be generated in-memory, an output path must be specified"
                 )
 
+            self.error_context.update(filename=self.config_file_path)
             self.config = self.config or StatikConfig(self.config_file_path)
 
             if self.config.encoding is not None:
                 logger.debug("Using encoding: %s", self.config.encoding)
             else:
                 logger.debug("Using encoding: %s", self.config.encoding)
+            self.error_context.clear()
 
             self.models = self.load_models()
             self.template_engine = StatikTemplateEngine(self)
 
             self.views = self.load_views()
             if not self.views:
-                raise NoViewsError("Project has no views configured")
+                raise NoViewsError()
 
             self.db = self.load_db_data(self.models)
             self.project_context = self.load_project_context()
@@ -113,6 +119,13 @@ class StatikProject(object):
                 # copy any assets across, recursively
                 self.copy_assets(output_path)
                 result = file_count
+            
+            logger.info("Success!")
+
+        except StatikError as exc:
+            logger.error(exc.render())
+            # re-raise the error to stop execution
+            raise exc
 
         finally:
             try:
@@ -130,10 +143,7 @@ class StatikProject(object):
         models_path = os.path.join(self.path, StatikProject.MODELS_DIR)
         logger.debug("Loading models from: %s", models_path)
         if not os.path.isdir(models_path):
-            raise MissingProjectFolderError(
-                StatikProject.MODELS_DIR,
-                "Project is missing its models folder"
-            )
+            raise MissingProjectFolderError(StatikProject.MODELS_DIR)
 
         model_files = list_files(models_path, ['yml', 'yaml'])
         logger.debug("Found %d model(s) in project", len(model_files))
@@ -146,7 +156,8 @@ class StatikProject(object):
                 filename=os.path.join(models_path, model_file),
                 encoding=self.config.encoding,
                 name=model_name,
-                model_names=model_names
+                model_names=model_names,
+                error_context=self.error_context
             )
 
         return models
@@ -157,10 +168,7 @@ class StatikProject(object):
         view_path = os.path.join(self.path, StatikProject.VIEWS_DIR)
         logger.debug("Loading views from: %s", view_path)
         if not os.path.isdir(view_path):
-            raise MissingProjectFolderError(
-                StatikProject.VIEWS_DIR,
-                "Project is missing its views folder"
-            )
+            raise MissingProjectFolderError(StatikProject.VIEWS_DIR)
 
         view_files = list_files(view_path, ['yml', 'yaml'])
         logger.debug("Found %d view(s) in project", len(view_files))
@@ -172,7 +180,8 @@ class StatikProject(object):
                 encoding=self.config.encoding,
                 name=view_name,
                 models=self.models,
-                template_engine=self.template_engine
+                template_engine=self.template_engine,
+                error_context=self.error_context
             )
 
         return views
@@ -181,10 +190,7 @@ class StatikProject(object):
         data_path = os.path.join(self.path, StatikProject.DATA_DIR)
         logger.debug("Loading data from: %s", data_path)
         if not os.path.isdir(data_path):
-            raise MissingProjectFolderError(
-                StatikProject.DATA_DIR,
-                "Project is missing its data folder"
-            )
+            raise MissingProjectFolderError(StatikProject.DATA_DIR)
         return StatikDatabase(
             data_path,
             models,

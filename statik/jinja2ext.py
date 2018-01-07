@@ -144,7 +144,7 @@ class StatikTemplateTagsExtension(Extension):
     def __init__(self, environment):
         super(StatikTemplateTagsExtension, self).__init__(environment)
         self.active_tag = None
-        logger.debug("Loaded custom template tags: %s" % (", ".join(self.tags), ))
+        logger.debug("Loaded custom template tags: %s", ", ".join(self.tags))
 
     def _invoke_tag(self, context, *args, **kwargs):
         return templatetags.store.invoke_tag(self.active_tag, context, *args, **kwargs)

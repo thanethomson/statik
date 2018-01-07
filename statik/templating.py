@@ -50,17 +50,38 @@ def get_template_provider_class(provider):
     return provider_classes[provider]
 
 
+def template_exception_handler(fn, error_context, filename=None):
+    """Calls the given function, attempting to catch any template-related errors, and
+    converts the error to a Statik TemplateError instance. Returns the result returned
+    by the function itself."""
+    error_message = None
+    if filename:
+        error_context.update(filename=filename)
+    try:
+        return fn()
+    except jinja2.TemplateSyntaxError as exc:
+        error_context.update(filename=exc.filename, line_no=exc.lineno)
+        error_message = exc.message
+    except jinja2.TemplateError as exc:
+        error_message = exc.message
+    except Exception as exc:
+        error_message = "%s" % exc
+
+    raise TemplateError(message=error_message, context=error_context)        
+
+
 class StatikTemplateEngine(object):
     """Provides a common interface to different underlying template engines. At present,
     Jinja2 and Mustache templates are supported."""
 
-    def __init__(self, project):
+    def __init__(self, project, error_context=None):
         """Constructor.
 
         Args:
             project: The project to which this template engine relates.
         """
         self.project = project
+        self.error_context = error_context or StatikErrorContext()
         self.supported_providers = project.config.template_providers
         if project.safe_mode:
             self.supported_providers = [provider for provider in self.supported_providers \
@@ -68,10 +89,8 @@ class StatikTemplateEngine(object):
 
         if len(self.supported_providers) == 0:
             raise NoSupportedTemplateProvidersError(
-                "No supported template providers in project configuration. "
-                "Available template providers: %s (safe mode=%s)" % (", ".join(
-                    SAFER_TEMPLATE_PROVIDERS if project.safe_mode else DEFAULT_TEMPLATE_PROVIDERS
-                ), project.safe_mode)
+                SAFER_TEMPLATE_PROVIDERS if project.safe_mode else DEFAULT_TEMPLATE_PROVIDERS,
+                project.safe_mode
             )
 
         self.provider_classes = dict()
@@ -100,16 +119,20 @@ class StatikTemplateEngine(object):
                 project.TEMPLATES_DIR
             ))
 
-        logger.debug("Looking in the following path(s) (in the following order) for templates:\n%s" % (
+        logger.debug(
+            "Looking in the following path(s) (in the following order) for templates:\n%s",
             "\n".join(self.template_paths)
-        ))
+        )
 
         # now make sure that all of the relevant template paths actually exist
         for path in self.template_paths:
             if not os.path.exists(path) or not os.path.isdir(path):
-                raise MissingProjectFolderError(path, "Missing template folder: %s" % path)
+                raise MissingProjectFolderError(path)
 
-        logger.debug("Configured the following template providers: %s" % ", ".join(self.supported_providers))
+        logger.debug(
+            "Configured the following template providers: %s",
+            ", ".join(self.supported_providers)
+        )
 
     def get_provider(self, name):
         """Allows for lazy instantiation of providers (Jinja2 templating is heavy, so only instantiate it if
@@ -131,7 +154,7 @@ class StatikTemplateEngine(object):
         if found_ext is None:
             base_path, found_ext = find_first_file_with_ext(self.template_paths, name, self.exts)
             if base_path is None or found_ext is None:
-                raise MissingTemplateError("Cannot find template by name: %s" % name)
+                raise MissingTemplateError(name=name)
             name_with_ext = "%s%s" % (name, found_ext)
 
         return name_with_ext, self.providers_by_ext[found_ext], base_path
@@ -147,10 +170,10 @@ class StatikTemplateEngine(object):
         """
         # hopefully speeds up loading of templates a little, especially when loaded multiple times
         if name in self.cached_templates:
-            logger.debug("Using cached template: %s" % name)
+            logger.debug("Using cached template: %s", name)
             return self.cached_templates[name]
 
-        logger.debug("Attempting to find template by name: %s" % name)
+        logger.debug("Attempting to find template by name: %s", name)
         name_with_ext, provider_name, base_path = self.find_template_details(name)
 
         full_path = None
@@ -158,7 +181,14 @@ class StatikTemplateEngine(object):
             full_path = os.path.join(base_path, name_with_ext)
 
         # load it with the relevant provider
-        template = self.get_provider(provider_name).load_template(name_with_ext, full_path=full_path)
+        template = template_exception_handler(
+            lambda: self.get_provider(provider_name).load_template(
+                name_with_ext,
+                full_path=full_path
+            ),
+            self.error_context,
+            filename=full_path
+        )
 
         # cache it for potential later use
         self.cached_templates[name] = template
@@ -174,13 +204,27 @@ class StatikTemplateEngine(object):
         """
         if provider_name is None:
             provider_name = self.supported_providers[0]
-        return self.get_provider(provider_name).create_template(s)
+        return template_exception_handler(
+            lambda: self.get_provider(provider_name).create_template(s),
+            self.error_context
+        )
 
 
 class StatikTemplate(object):
     """Abstract class to act as an interface to the underlying templating engine's templates."""
 
+    def __init__(self, filename, error_context=None):
+        self.filename = filename
+        self.error_context = error_context or StatikErrorContext()
+
     def render(self, context):
+        return template_exception_handler(
+            lambda: self.do_render(context),
+            self.error_context,
+            filename=self.filename
+        )
+
+    def do_render(self, context):
         """Renders this template using the given context data."""
         raise NotImplementedError("Must be implemented in subclasses")
 
@@ -188,11 +232,14 @@ class StatikTemplate(object):
 class StatikTemplateProvider(object):
     """Abstract base class for all template providers."""
 
-    def __init__(self, engine):
+    def __init__(self, engine, error_context=None):
         """Constructor."""
         if not isinstance(engine, StatikTemplateEngine):
-            raise TypeError("Expecting a StatikTemplateEngine instance to initialise template provider")
+            raise TypeError(
+                "Expecting a StatikTemplateEngine instance to initialise template provider"
+            )
         self.engine = engine
+        self.error_context = error_context or StatikErrorContext()
 
     def load_template(self, name, full_path=None):
         """Loads the template with the given name/filename."""
@@ -240,12 +287,18 @@ class StatikJinjaTemplateProvider(StatikTemplateProvider):
         extensions.extend(jinja2_config.get('extensions', list()))
 
         self.env = jinja2.Environment(
-            loader=jinja2.FileSystemLoader(engine.template_paths, encoding=project.config.encoding),
+            loader=jinja2.FileSystemLoader(
+                engine.template_paths,
+                encoding=project.config.encoding
+            ),
             extensions=extensions
         )
 
         if templatetags.store.filters:
-            logger.debug("Loaded custom template tag filters: %s" % (", ".join(templatetags.store.filters), ))
+            logger.debug(
+                "Loaded custom template tag filters: %s",
+                ", ".join(templatetags.store.filters)
+            )
             self.env.filters.update(templatetags.store.filters)
 
         # configure views for the Jinja2 templating environment
@@ -261,7 +314,7 @@ class StatikJinjaTemplateProvider(StatikTemplateProvider):
             self.env.statik_views = self.engine.project.views
 
     def load_template(self, name, full_path=None):
-        logger.debug("Attempting to load Jinja2 template: %s" % name)
+        logger.debug("Attempting to load Jinja2 template: %s", name)
         return StatikJinjaTemplate(self, self.env.get_template(name))
 
     def create_template(self, s):
@@ -271,13 +324,14 @@ class StatikJinjaTemplateProvider(StatikTemplateProvider):
 class StatikJinjaTemplate(StatikTemplate):
     """Wraps a simple Jinja2 template."""
 
-    def __init__(self, provider, template):
+    def __init__(self, provider, template, **kwargs):
         """Constructor.
 
         Args:
             provider: The provider that created this template.
             template: The Jinja2 template to wrap.
         """
+        super(StatikJinjaTemplate, self).__init__(template.filename, **kwargs)
         self.provider = provider
         self.template = template
 
@@ -287,7 +341,7 @@ class StatikJinjaTemplate(StatikTemplate):
     def __str__(self):
         return repr(self)
 
-    def render(self, context):
+    def do_render(self, context):
         # make sure we lazily reattach our provider's environment to the project's views
         self.provider.reattach_project_views()
         return self.template.render(**context)
@@ -303,7 +357,7 @@ class StatikMustachePartialGetter(object):
         if partial_name in self.cache:
             return self.cache[partial_name]
 
-        logger.debug("Attempting to load Mustache partial: %s" % partial_name)
+        logger.debug("Attempting to load Mustache partial: %s", partial_name)
         content = self.provider.load_template_content(partial_name)
         self.cache[partial_name] = content
         return content
@@ -314,21 +368,33 @@ class StatikMustacheTemplateProvider(StatikTemplateProvider):
 
     expected_template_exts = TEMPLATE_PROVIDER_EXTS["mustache"]
 
-    def __init__(self, engine):
-        super(StatikMustacheTemplateProvider, self).__init__(engine)
+    def __init__(self, engine, **kwargs):
+        super(StatikMustacheTemplateProvider, self).__init__(engine, **kwargs)
         logger.debug("Instantiating Mustache template provider")
         self.renderer = pystache.Renderer(partials=StatikMustachePartialGetter(self))
 
     def load_template_content(self, name, full_path=None):
-        logger.debug("Attempting to load Mustache template: %s" % name)
+        logger.debug("Attempting to load Mustache template: %s", name)
         if full_path is None:
-            base_path, ext = find_first_file_with_ext(self.engine.template_paths, name, self.expected_template_exts)
+            base_path, ext = find_first_file_with_ext(
+                self.engine.template_paths,
+                name,
+                self.expected_template_exts
+            )
             if base_path is None or ext is None:
-                raise MissingTemplateError("Cannot find Mustache template with name: %s" % name)
+                raise MissingTemplateError(
+                    name=name,
+                    kind="Mustache",
+                    context=self.error_context
+                )
             full_path = os.path.join(base_path, "%s%s" % (name, ext))
 
         if not os.path.exists(full_path) or not os.path.isfile(full_path):
-            raise MissingTemplateError("Cannot find Mustache template with path: %s" % full_path)
+            raise MissingTemplateError(
+                path=full_path,
+                kind="Mustache",
+                context=self.error_context
+            )
 
         # read the template's content from the file
         with open(full_path, encoding=self.engine.project.config.encoding) as f:
@@ -337,16 +403,27 @@ class StatikMustacheTemplateProvider(StatikTemplateProvider):
         return template_content
 
     def load_template(self, name, full_path=None):
-        return self.create_template(self.load_template_content(name, full_path=full_path))
+        return self.create_template(
+            self.load_template_content(name, full_path=full_path),
+            filename=full_path
+        )
 
-    def create_template(self, s):
-        return StatikMustacheTemplate(pystache.parse(_unicode(s)), self.renderer)
+    def create_template(self, s, filename=None):
+        return StatikMustacheTemplate(
+            pystache.parse(_unicode(s)),
+            self.renderer,
+            filename=filename
+        )
 
 
 class StatikMustacheTemplate(StatikTemplate):
     """Wraps a simple Mustache template."""
 
-    def __init__(self, parsed_template, renderer):
+    def __init__(self, parsed_template, renderer, filename=None, error_context=None):
+        super(StatikMustacheTemplate, self).__init__(
+            filename,
+            error_context=error_context
+        )
         self.parsed_template = parsed_template
         self.renderer = renderer
 
@@ -356,5 +433,5 @@ class StatikMustacheTemplate(StatikTemplate):
     def __str__(self):
         return repr(self)
 
-    def render(self, context):
+    def do_render(self, context):
         return self.renderer.render(self.parsed_template, context)

@@ -4,6 +4,8 @@ from __future__ import unicode_literals
 from six import iteritems
 from copy import copy
 
+from statik.errors import *
+
 __all__ = [
     'MarkdownConfig'
 ]
@@ -18,9 +20,14 @@ class MarkdownConfig(object):
         'markdown.extensions.footnotes'
     ]
 
-    def __init__(self, markdown_params=dict()):
+    def __init__(self, markdown_params=None, error_context=None):
+        self.error_context = error_context or StatikErrorContext()
+        markdown_params = markdown_params or dict()
         if not isinstance(markdown_params, dict):
-            raise ValueError("Markdown configuration parameters must be a dictionary")
+            raise ProjectConfigurationError(
+                message="Markdown configuration parameters must be a dictionary.",
+                context=error_context
+            )
 
         permalinks_config = markdown_params.get('permalinks', dict())
 
@@ -64,12 +71,8 @@ class MarkdownConfig(object):
                     self.extension_config[ext_package] = config
 
     def __repr__(self):
-        return ("<MarkdownConfig enable_permalinks=%s\n" +
-                "                permalink_text=%s\n" +
-                "                permalink_class=%s\n" +
-                "                permalink_title=%s\n"
-                "                extensions=%s\n"
-                "                extension_config=%s>") % (
+        return ("MarkdownConfig(enable_permalinks=%s, permalink_text=%s, permalink_class=%s, " +
+                "permalink_title=%s, extensions=%s, extension_config=%s)") % (
             self.enable_permalinks,
             self.permalink_text,
             self.permalink_class,

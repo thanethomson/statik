@@ -43,6 +43,8 @@ class TestSimpleStatikIntegration(unittest.TestCase):
             logger.debug("")
             logger.debug("----------- TEST START -----------")
             logger.debug("")
+        else:
+            logging.basicConfig(level=logging.CRITICAL)
 
     def test_safe_mode(self):
         test_path = os.path.dirname(os.path.realpath(__file__))

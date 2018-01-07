@@ -51,20 +51,25 @@ class StatikConfig(YamlLoadable):
         # work out our template engine precedence
         if 'templates' in self.vars and 'providers' in self.vars:
             if not isinstance(self.vars['templates']['providers'], list):
-                raise TypeError("Template providers in project configuration must be a list")
+                raise ProjectConfigurationError(
+                    message="Template providers in project configuration must be a list.",
+                    context=self.error_context
+                )
             # validate our template providers
-            self.template_providers = [provider for provider in self.vars['templates']['providers'] \
-                                       if provider in DEFAULT_TEMPLATE_PROVIDERS]
+            self.template_providers = [
+                provider for provider in self.vars['templates']['providers'] \
+                if provider in DEFAULT_TEMPLATE_PROVIDERS
+            ]
         else:
             self.template_providers = copy(DEFAULT_TEMPLATE_PROVIDERS)
 
-        if len(self.template_providers) == 0:
+        if not self.template_providers:
             raise NoSupportedTemplateProvidersError(
-                "No supported template providers in project configuration. "
-                "Available template providers: %s" % ", ".join(DEFAULT_TEMPLATE_PROVIDERS)
+                DEFAULT_TEMPLATE_PROVIDERS,
+                context=self.error_context
             )
 
-        logging.debug("%s" % self)
+        logging.debug("%s", self)
 
     def __repr__(self):
         return ("StatikConfig(project_name=%s, base_path=%s, encoding=%s, theme=%s, " +

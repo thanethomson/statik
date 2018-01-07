@@ -11,6 +11,7 @@ from markdown.extensions import Extension
 from markdown.treeprocessors import Treeprocessor
 from markdown.util import etree
 
+from statik.errors import *
 from statik.utils import strip_el_text
 
 import lipsum
@@ -58,10 +59,14 @@ class MarkdownPermalinkExtension(Extension):
 
 class MarkdownLoremIpsumExtension(Extension):
 
+    def __init__(self, *args, **kwargs):
+        self.error_context = kwargs.pop('error_context', StatikErrorContext())
+        super(MarkdownLoremIpsumExtension, self).__init__(*args, **kwargs)
+
     def extendMarkdown(self, md, md_globals):
         md.preprocessors.add(
             "lipsum",
-            MarkdownLoremIpsumProcessor(md),
+            MarkdownLoremIpsumProcessor(md, error_context=self.error_context),
             ">yaml-meta"
         )
 
@@ -162,6 +167,10 @@ class MarkdownLoremIpsumProcessor(Preprocessor):
         "paragraph": (lipsum.generate_paragraphs, 1),
         "paragraphs": (lipsum.generate_paragraphs, None)
     }
+
+    def __init__(self, *args, **kwargs):
+        self.error_context = kwargs.pop('error_context', StatikErrorContext())
+        super(MarkdownLoremIpsumProcessor, self).__init__(*args, **kwargs)
 
     def run(self, lines):
         new_lines = []

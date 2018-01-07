@@ -7,11 +7,13 @@ import os.path
 import argparse
 import sys
 
+import colorlog
+
 from statik.generator import generate
 from statik.utils import generate_quickstart, get_project_config_file
 from statik.watcher import watch
 from statik.project import StatikProject
-from statik.errors import StatikError
+from statik.errors import StatikError, StatikErrorContext
 
 import logging
 logger = logging.getLogger(__name__)
@@ -21,14 +23,29 @@ __all__ = [
 ]
 
 
-def configure_logging(verbose=False, quiet=False, fail_silently=False):
-    logging.basicConfig(
-        level=logging.CRITICAL if quiet and fail_silently else
-            logging.ERROR if quiet else
-            logging.DEBUG if verbose else
-            logging.INFO,
-        format='%(asctime)s\t%(name)s\t%(levelname)s\t%(message)s' if verbose else "%(message)s"
+def configure_logging(verbose=False, quiet=False, fail_silently=False, colourise=True):
+    handler = colorlog.StreamHandler() if colourise else logging.StreamHandler()
+    formatter = colorlog.ColoredFormatter(
+        '%(log_color)s' + (
+            '%(asctime)s\t%(name)s\t%(levelname)s\t%(message)s' if verbose else '%(message)s'
+        )
+    ) if colourise else logging.Formatter(
+        '%(asctime)s\t%(name)s\t%(levelname)s\t%(message)s' if verbose else '%(message)s'
     )
+    handler.setFormatter(formatter)
+    root_logger = logging.getLogger("")
+    root_logger.addHandler(handler)
+    root_logger.setLevel(
+        logging.CRITICAL if quiet and fail_silently else
+        logging.ERROR if quiet else
+        logging.DEBUG if verbose else
+        logging.INFO
+    )
+
+
+def show_version():
+    from statik import __version__
+    logger.info('Statik v%s', __version__)
 
 
 def main():
@@ -103,35 +120,62 @@ def main():
              "on the terminal.",
         action='store_true'
     )
+    parser.add_argument(
+        '--no-colorlog',
+        action='store_true',
+        help="By default, Statik outputs logging data in colour. By specifying this switch, " +
+             "coloured logging will be turned off."
+    )
     args = parser.parse_args()
 
+    error_context = StatikErrorContext()
     try:
         _project_path = args.project if args.project is not None else os.getcwd()
-        project_path, config_file_path = get_project_config_file(_project_path, StatikProject.CONFIG_FILE)
-        output_path = args.output if args.output is not None else os.path.join(project_path, 'public')
+        project_path, config_file_path = get_project_config_file(
+            _project_path,
+            StatikProject.CONFIG_FILE
+        )
+        output_path = args.output if args.output is not None else \
+            os.path.join(project_path, 'public')
 
-        configure_logging(verbose=args.verbose, quiet=args.quiet, fail_silently=args.fail_silently)
+        configure_logging(
+            verbose=args.verbose,
+            quiet=args.quiet,
+            fail_silently=args.fail_silently,
+            colourise=not args.no_colorlog
+        )
 
         if args.fail_silently and not args.quiet:
             logger.warning("Ignoring --fail-silently switch because --quiet is not specified")
 
         if args.version:
-            from statik import __version__
-            logger.info('Statik v%s' % __version__)
+            show_version()
         elif args.watch:
-            watch(config_file_path, output_path, host=args.host, port=args.port, open_browser=(not args.no_browser),
-                  safe_mode=args.safe_mode)
+            watch(
+                config_file_path,
+                output_path,
+                host=args.host,
+                port=args.port,
+                open_browser=(not args.no_browser),
+                safe_mode=args.safe_mode,
+                error_context=error_context
+            )
         elif args.quickstart:
             generate_quickstart(project_path)
         else:
-            generate(config_file_path, output_path=output_path, in_memory=False, safe_mode=args.safe_mode)
+            generate(
+                config_file_path,
+                output_path=output_path,
+                in_memory=False,
+                safe_mode=args.safe_mode,
+                error_context=error_context
+            )
 
     except StatikError as e:
-        logger.exception("Exception caught while attempting to generate project", e)
         sys.exit(e.exit_code)
 
     except Exception as e:
-        logger.exception("Exception caught while attempting to generate project", e)
+        logger.exception("Exception caught while attempting to generate project")
         sys.exit(1)
 
     # success

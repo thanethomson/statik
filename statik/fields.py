@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 
 from copy import copy
 
-from statik.errors import InvalidFieldTypeError
+from statik.errors import *
 
 __all__ = [
     'StatikModelField',
@@ -30,11 +30,9 @@ class StatikModelField(object):
         self.params = kwargs
 
     def __repr__(self):
-        return ("<StatikModelField name=%s\n" +
-                "                  field_type=%s\n" +
-                "                  params=%s>") % (
-                    self.name, self.field_type, self.params,
-                )
+        return "StatikModelField(name=%s, field_type=%s, params=%s)" % (
+            self.name, self.field_type, self.params
+        )
 
 
 class StatikDateTimeField(StatikModelField):
@@ -89,12 +87,13 @@ FIELD_TYPES = {
 }
 
 
-def construct_field(name, field_type, all_models, **kwargs):
+def construct_field(model_name, field_name, field_type, all_models, **kwargs):
     """Helper function to build a field from the given field name and
     type.
 
     Args:
-        name: The name of the field to build.
+        model_name: The name of the model for which we're building this field.
+        field_name: The name of the field to build.
         field_type: A string indicator as to which field type must be built.
         all_models: A list containing the names of all of the models, which
             will help us when building foreign key lookups.
@@ -102,16 +101,21 @@ def construct_field(name, field_type, all_models, **kwargs):
     field_type_parts = field_type.split('->')
     _field_type = field_type_parts[0].strip().split('[]')[0].strip()
     back_populates = field_type_parts[1].strip() if len(field_type_parts) > 1 else None
+    error_context = kwargs.pop('error_context', StatikErrorContext())
     _kwargs = copy(kwargs)
     _kwargs['back_populates'] = back_populates
 
     if _field_type not in FIELD_TYPES and _field_type not in all_models:
-        raise InvalidFieldTypeError("Invalid field type: %s" % _field_type)
+        raise InvalidFieldTypeError(
+            model_name,
+            field_name,
+            context=error_context
+        )
 
     if _field_type in FIELD_TYPES:
-        return FIELD_TYPES[_field_type](name, **_kwargs)
+        return FIELD_TYPES[_field_type](field_name, **_kwargs)
 
     if field_type_parts[0].strip().endswith('[]'):
-        return StatikManyToManyField(name, _field_type, **_kwargs)
+        return StatikManyToManyField(field_name, _field_type, **_kwargs)
 
-    return StatikForeignKeyField(name, _field_type, **_kwargs)
+    return StatikForeignKeyField(field_name, _field_type, **_kwargs)
