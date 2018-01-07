@@ -4,6 +4,16 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.19.0` - 07 January 2018
+
+* Started refactoring the error handling system (in an attempt to help with #56). The error
+  system is now more appropriately hierarchical, and Statik has more control over how error
+  messages are displayed. There is, however, still more work to be done to make the
+  console/logging output more user-friendly.
+* [python-colorlog](https://github.com/borntyping/python-colorlog) has now also been included
+  to aid in differentiating between error and informational messages (especially during
+  watching of project changes).
+
 ### `v0.18.2` - 26 December 2017
 
 * Fixed #49 - the `httpwatcher` library, up to v0.5.0, introduced a bug that, when using
