@@ -63,16 +63,22 @@ class StatikError(Exception):
         "debug output for more details."
     exit_code = 1
 
-    def __init__(self, message=None, context=None):
+    def __init__(self, message=None, orig_exc=None, context=None):
         """Constructor.
 
         Args:
             message: An optional message to override the predefined error message.
+            orig_exc: The original exception from which this error was generated.
             context: An optional ErrorContext instance to provide additional information during
                 error rendering.
         """
+        self.orig_exc = orig_exc
         if message is not None:
             self.error_message = message
+        elif orig_exc is not None:
+            # derive the error message from the original exception
+            self.error_message = "%s" % orig_exc
+
         self.context = context or StatikErrorContext()
         if not isinstance(self.context, StatikErrorContext):
             raise TypeError("Statik error context must be of type StatikErrorContext")
@@ -81,10 +87,11 @@ class StatikError(Exception):
         """Renders the error message, optionally using the given context (which, if specified,
         will override the internal context)."""
         ctx = context.render() if context else self.get_error_context().render()
-        return "%s: %s%s" % (
+        return "%s: %s%s%s" % (
             self.get_error_kind(),
             self.get_error_message(),
-            (" (%s)" % ctx) if ctx else ""
+            (" (%s)." % ctx) if ctx else "",
+            self.get_additional_error_detail()
         )
 
     def __str__(self):
@@ -102,6 +109,9 @@ class StatikError(Exception):
     def get_error_context(self):
         return self.context
 
+    def get_additional_error_detail(self):
+        return (" Additional error detail: %s" % self.orig_exc) if self.orig_exc else ""
+
 
 class ProjectConfigurationError(StatikError):
     """For generic project configuration-related errors."""
@@ -118,7 +128,10 @@ class ModelError(StatikError):
         self.model_name = model_name
 
     def get_error_message(self):
-        return "For model \"%s\", %s." % (self.model_name, self.error_message)
+        return "For model \"%s\", %s" % (
+            self.model_name,
+            self.error_message
+        )
 
 
 class DataError(StatikError):
@@ -168,7 +181,7 @@ class ReservedFieldNameError(ModelError):
     def __init__(self, model_name, field_name, **kwargs):
         super(ReservedFieldNameError, self).__init__(model_name, **kwargs)
         self.field_name = field_name
-        self.error_message = "the field name \"%s\" is reserved" % self.field_name
+        self.error_message = "the field name \"%s\" is reserved." % self.field_name
 
 
 class InvalidFieldTypeError(ModelError):
@@ -176,10 +189,11 @@ class InvalidFieldTypeError(ModelError):
         super(InvalidFieldTypeError, self).__init__(model_name, **kwargs)
         self.field_name = field_name
         self.expected_field_type = expected_field_type
-        self.error_message = "field \"%s\" should be %s" % (
+        self.error_message = "field \"%s\" should be %s." % (
             self.field_name,
             self.expected_field_type
-        ) if self.expected_field_type else "field \"%s\" is of an unrecognised type"
+        ) if self.expected_field_type else \
+        ("field \"%s\" is of an unrecognised type." % field_name)
 
 
 class MissingProjectFolderError(ProjectConfigurationError):

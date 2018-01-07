@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 from future.utils import iteritems
 from io import open
 
+import traceback
 import os.path
 from copy import copy
 
@@ -123,9 +124,21 @@ class StatikProject(object):
             logger.info("Success!")
 
         except StatikError as exc:
+            logger.debug(traceback.format_exc())
             logger.error(exc.render())
             # re-raise the error to stop execution
             raise exc
+        
+        except Exception as exc:
+            logger.debug(traceback.format_exc())
+            _exc = StatikError(
+                message="Failed to build project. Run Statik in verbose mode (-v) to see " +
+                    "additional traceback information about this error.",
+                orig_exc=exc,
+                context=self.error_context
+            )
+            logger.error(_exc.render())
+            raise _exc
 
         finally:
             try:
@@ -195,37 +208,60 @@ class StatikProject(object):
             data_path,
             models,
             self.config.encoding,
-            markdown_config=self.config.markdown_config
+            markdown_config=self.config.markdown_config,
+            error_context=self.error_context
         )
 
     def load_project_context(self):
         """Loads the project context (static and dynamic) from the database/models for common use
         amongst the project's views."""
-        # just make a copy of the project context
-        context = StatikContext(
-            initial={
-                "project_name": self.config.project_name,
-                "base_path": self.config.base_path
-            },
-            static=self.config.context_static,
-            dynamic=self.config.context_dynamic
-        )
-        logger.debug("Built project context: %s", context)
-        return context.build(db=self.db, safe_mode=self.safe_mode)
+        try:
+            # just make a copy of the project context
+            context = StatikContext(
+                initial={
+                    "project_name": self.config.project_name,
+                    "base_path": self.config.base_path
+                },
+                static=self.config.context_static,
+                dynamic=self.config.context_dynamic
+            )
+            logger.debug("Built project context: %s", context)
+            return context.build(db=self.db, safe_mode=self.safe_mode)
+
+        except StatikError as exc:
+            raise exc
+        
+        except Exception as exc:
+            raise ProjectConfigurationError(
+                message="Failed to build context data from project configuration file.",
+                orig_exc=exc
+            )
 
     def process_views(self):
         """Processes the loaded views to generate the required output data."""
         output = {}
         logger.debug("Processing %d view(s)...", len(self.views))
         for view_name, view in iteritems(self.views):
-            output = deep_merge_dict(
-                output,
-                view.process(
-                    self.db,
-                    safe_mode=self.safe_mode,
-                    extra_context=self.project_context
+            try:
+                output = deep_merge_dict(
+                    output,
+                    view.process(
+                        self.db,
+                        safe_mode=self.safe_mode,
+                        extra_context=self.project_context
+                    )
                 )
-            )
+            except StatikError as exc:
+                # just re-raise it
+                raise exc
+
+            except Exception as exc:
+                # for unhandled view-related exceptions, raise our own exception
+                raise ViewError(
+                    message="Failed to render view \"%s\"." % view_name,
+                    orig_exc=exc
+                )
+
         return output
 
     def dump_in_memory_result(self, result, output_path):

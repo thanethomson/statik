@@ -88,7 +88,15 @@ class StatikDatabase(object):
     def find_backrefs(self):
         for model_name, model in iteritems(self.models):
             logger.debug('Attempting to find backrefs for model: %s', model_name)
-            model.find_additional_rels(self.models)
+            try:
+                model.find_additional_rels(self.models)
+            except Exception as exc:
+                raise ModelError(
+                    model_name,
+                    message="failed to accurately determine model cross-referencing.",
+                    orig_exc=exc,
+                    context=self.error_context
+                )
 
     def create_db(self, models):
         """Creates the in-memory SQLite database from the model
@@ -102,7 +110,13 @@ class StatikDatabase(object):
         )
         # now create the tables in memory
         logger.debug("Creating %d database table(s)...", len(self.tables))
-        self.Base.metadata.create_all(self.engine)
+        try:
+            self.Base.metadata.create_all(self.engine)
+        except Exception as exc:
+            raise StatikError(
+                message="Failed to create in-memory data model.",
+                orig_exc=exc
+            )
         self.load_all_model_data(models)
 
     def load_all_model_data(self, models):
@@ -168,7 +182,15 @@ class StatikDatabase(object):
             A SQLAlchemy model instance for the table corresponding to this
             particular model.
         """
-        return db_model_factory(self.Base, model, self.models)
+        try:
+            return db_model_factory(self.Base, model, self.models)
+        except Exception as exc:
+            raise ModelError(
+                model.name,
+                message="failed to create in-memory table.",
+                orig_exc=exc,
+                context=self.error_context
+            )
 
     def load_model_data(self, path, model):
         """Loads the data for the specified model from the given path.
@@ -222,8 +244,17 @@ class StatikDatabase(object):
             else:
                 seen_entries.add(entry.field_values['pk'])
 
-            db_entry = db_model(**entry.field_values)
-            self.session.add(db_entry)
+            try:
+                db_entry = db_model(**entry.field_values)
+                self.session.add(db_entry)
+            except Exception as exc:
+                raise DataError(
+                    model.name,
+                    pk=entry.field_values['pk'],
+                    message="failed to insert entry into in-memory database.",
+                    orig_exc=exc,
+                    context=self.error_context
+                )
         
         self.error_context.clear()
 
@@ -251,8 +282,19 @@ class StatikDatabase(object):
             else:
                 seen_entries.add(entry.field_values['pk'])
 
-            db_entry = db_model(**entry.field_values)
-            self.session.add(db_entry)
+            try:
+                db_entry = db_model(**entry.field_values)
+                self.session.add(db_entry)
+            except Exception as exc:
+                raise DataError(
+                    model.name,
+                    pk=entry.field_values['pk'],
+                    message="failed to insert entry into in-memory database.",
+                    orig_exc=exc,
+                    context=self.error_context
+                )
+
+        self.error_context.clear()
 
     def query(self, query, additional_locals=None, safe_mode=False):
         """Executes the given SQLAlchemy query string.
@@ -405,9 +447,13 @@ def db_model_factory(Base, model, all_models):
             kwargs['back_populates'] = rel['back_populates']
         if rel.get('secondary', None) is not None:
             kwargs['secondary'] = get_or_create_association_table(*rel['secondary'])
-        logger.debug('Creating additional relationship %s.%s -> %s (%s)' % (
-            model.name, field_name, rel['to_model'], kwargs
-        ))
+        logger.debug(
+            'Creating additional relationship %s.%s -> %s (%s)',
+            model.name,
+            field_name,
+            rel['to_model'],
+            kwargs
+        )
         model_fields[field_name] = relationship(rel['to_model'], **kwargs)
 
     # now populate all of the standard fields
@@ -430,13 +476,13 @@ def db_model_factory(Base, model, all_models):
                 kwargs = {}
                 if field.back_populates is not None:
                     kwargs['back_populates'] = field.back_populates
-                    logger.debug('Field %s.%s has back-populates field name: %s' % (
+                    logger.debug('Field %s.%s has back-populates field name: %s',
                         model.name, field_name, field.back_populates
-                    ))
+                    )
                 else:
-                    logger.debug('No back-populates field name for %s.%s' % (
+                    logger.debug('No back-populates field name for %s.%s',
                         model.name, field_name
-                    ))
+                    )
 
                 model_fields[field.name] = relationship(
                     field.field_type,
@@ -450,16 +496,19 @@ def db_model_factory(Base, model, all_models):
                 if field.back_populates is not None:
                     kwargs['back_populates'] = field.back_populates
 
-                logger.debug("Creating model ManyToMany field %s.%s -> %s (%s)" % (
+                logger.debug("Creating model ManyToMany field %s.%s -> %s (%s)",
                     model.name, field.name, field.field_type, kwargs
-                ))
+                )
                 model_fields[field.name] = relationship(
                     field.field_type,
                     **kwargs
                 )
 
         else:
-            raise InvalidFieldTypeError("Unsupported database field type: %s" % field.field_type)
+            raise InvalidFieldTypeError(
+                model.name,
+                field.name
+            )
 
     Model = type(
         str(model.name),
@@ -467,7 +516,7 @@ def db_model_factory(Base, model, all_models):
         model_fields
     )
 
-    logger.debug("Model %s fields = %s" % (model.name, model_fields))
+    logger.debug("Model %s fields = %s", model.name, model_fields)
 
     # add the model class reference to the global scope
     set_global(model.name, Model)
