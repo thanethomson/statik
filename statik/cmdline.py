@@ -6,6 +6,7 @@ import os
 import os.path
 import argparse
 import sys
+import shutil
 
 import colorlog
 
@@ -126,6 +127,12 @@ def main():
         help="By default, Statik outputs logging data in colour. By specifying this switch, " +
              "coloured logging will be turned off."
     )
+    parser.add_argument(
+        '--clear-output',
+        action='store_true',
+        help="Clears the output folder first prior to building the project. If watching " +
+            "is initiated, this will only clear the output folder once-off."
+    )
     args = parser.parse_args()
 
     error_context = StatikErrorContext()
@@ -150,7 +157,13 @@ def main():
 
         if args.version:
             show_version()
-        elif args.watch:
+            sys.exit(0)
+
+        if args.clear_output:
+            shutil.rmtree(output_path, ignore_errors=True)
+            logger.info("Cleared output path: %s", output_path)
+
+        if args.watch:
             watch(
                 config_file_path,
                 output_path,
