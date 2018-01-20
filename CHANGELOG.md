@@ -4,6 +4,11 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.21.1` - 20 January 2018
+
+* Further fixing issue #59, where the previous fix (erroneously) caused all DateTime fields
+  to be compulsory. This version makes them optional again.
+
 ### `v0.21.0` - 20 January 2018
 
 * Fixing issue #59 - now using [python-dateutil](https://dateutil.readthedocs.io/en/stable/)
