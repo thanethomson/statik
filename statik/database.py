@@ -2,6 +2,7 @@
 
 from __future__ import unicode_literals
 from future.utils import iteritems
+from past.builtins import basestring
 from io import open
 
 import os.path
@@ -13,6 +14,8 @@ from sqlalchemy.orm import sessionmaker, relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
 
 import mlalchemy
+
+from dateutil.parser import parse as dateutil_parse
 
 from statik.common import ContentLoadable
 from statik.fields import *
@@ -364,8 +367,12 @@ class StatikDatabaseInstance(ContentLoadable):
         # run through the foreign key fields to check their assignment
         for field_name in self.model.field_names:
             field = self.model.fields[field_name]
+            if isinstance(field, StatikDateTimeField) and \
+                    isinstance(self.field_values[field_name], basestring):
+                # attempt to perform an intelligent date/time parse operation
+                self.field_values[field_name] = dateutil_parse(self.field_values[field_name])
             # if it's a foreign key
-            if isinstance(field, StatikForeignKeyField):
+            elif isinstance(field, StatikForeignKeyField):
                 # if we've got a pk value for a foreign key field
                 if field_name in self.field_values:
                     self.field_values['%s_id' % field_name] = self.field_values[field_name]

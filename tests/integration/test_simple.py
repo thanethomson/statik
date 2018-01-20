@@ -79,6 +79,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         self.assertEqual(EXPECTED_HTACCESS_CONTENT, output_data['.htaccess'].strip())
 
         # Check that the generated posts are there
+        self.assert_path_exists("2018/01/20/test-datetime-format/index.html", output_data)
         self.assert_path_exists("2016/06/12/andrew-hello-world/index.html", output_data)
         self.assert_path_exists("2016/06/18/second-post/index.html", output_data)
         self.assert_path_exists("2016/06/25/andrew-second-post/index.html", output_data)
@@ -166,15 +167,15 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         pp_link_titles = [el.text.strip() for el in pp_els]
         self.assertEqual(
             [
-                '/2016/06/30/tables-test/',
-                '/2016/06/25/andrew-second-post/'
+                '/2018/01/20/test-datetime-format/',
+                '/2016/06/30/tables-test/'
             ],
             pp_links,
         )
         self.assertEqual(
             [
-                'Testing Markdown tables',
-                'Andrew\'s Second Post'
+                'Testing DateTime format (as per issue #59)',
+                'Testing Markdown tables'
             ],
             pp_link_titles,
         )
@@ -188,15 +189,15 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         pp_link_titles = [el.text.strip() for el in pp_els]
         self.assertEqual(
             [
-                '/2016/06/18/second-post/',
-                '/2016/06/15/my-first-post/'
+                '/2016/06/25/andrew-second-post/',
+                '/2016/06/18/second-post/'
             ],
             pp_links,
         )
         self.assertEqual(
             [
-                'Second post',
-                'My first post'
+                'Andrew\'s Second Post',
+                'Second post'
             ],
             pp_link_titles,
         )
@@ -210,12 +211,14 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         pp_link_titles = [el.text.strip() for el in pp_els]
         self.assertEqual(
             [
-                '/2016/06/12/andrew-hello-world/'
+                '/2016/06/15/my-first-post/',
+                '/2016/06/12/andrew-hello-world/',
             ],
             pp_links,
         )
         self.assertEqual(
             [
+                'My first post',
                 'Andrew says Hello World'
             ],
             pp_link_titles,
@@ -244,6 +247,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         homepage_link_titles = [el.text.strip() for el in homepage_link_els]
         self.assertEqual(
             [
+                '/2018/01/20/test-datetime-format/',
                 '/2016/06/30/tables-test/',
                 '/2016/06/25/andrew-second-post/',
                 '/2016/06/18/second-post/',
@@ -254,6 +258,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         )
         self.assertEqual(
             [
+                'Testing DateTime format (as per issue #59)',
                 'Testing Markdown tables',
                 'Andrew\'s Second Post',
                 'Second post',
@@ -342,6 +347,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         link_titles_by_author = [el.text.strip() for el in links_by_author_els]
         self.assertEqual(
             [
+                '/2018/01/20/test-datetime-format/',
                 '/2016/06/30/tables-test/',
                 '/2016/06/25/andrew-second-post/',
                 '/2016/06/12/andrew-hello-world/'
@@ -350,6 +356,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         )
         self.assertEqual(
             [
+                'Testing DateTime format (as per issue #59)',
                 'Testing Markdown tables',
                 'Andrew\'s Second Post',
                 'Andrew says Hello World'
