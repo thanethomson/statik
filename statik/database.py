@@ -9,7 +9,7 @@ import yaml
 
 from sqlalchemy import String, Integer, Column, Table, ForeignKey, \
     Boolean, DateTime, Text, create_engine
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import sessionmaker, relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
 
 import mlalchemy
@@ -473,21 +473,29 @@ def db_model_factory(Base, model, all_models):
                     '%s_id' % field.name,
                     ForeignKey('%s.pk' % field.field_type)
                 )
-                kwargs = {}
-                if field.back_populates is not None:
-                    kwargs['back_populates'] = field.back_populates
-                    logger.debug('Field %s.%s has back-populates field name: %s',
-                        model.name, field_name, field.back_populates
+                # if it's a self-referencing foreign key
+                if field.field_type == model.name:
+                    back_populates = field.back_populates or 'children'
+                    model_fields[back_populates] = relationship(
+                        field.field_type,
+                        backref=backref(field_name, remote_side=[model_fields['pk']])
                     )
                 else:
-                    logger.debug('No back-populates field name for %s.%s',
-                        model.name, field_name
-                    )
+                    kwargs = {}
+                    if field.back_populates is not None:
+                        kwargs['back_populates'] = field.back_populates
+                        logger.debug('Field %s.%s has back-populates field name: %s',
+                            model.name, field_name, field.back_populates
+                        )
+                    else:
+                        logger.debug('No back-populates field name for %s.%s',
+                            model.name, field_name
+                        )
 
-                model_fields[field.name] = relationship(
-                    field.field_type,
-                    **kwargs
-                )
+                    model_fields[field.name] = relationship(
+                        field.field_type,
+                        **kwargs
+                    )
 
             elif isinstance(field, StatikManyToManyField):
                 association_table = get_or_create_association_table(model.name, field.field_type)

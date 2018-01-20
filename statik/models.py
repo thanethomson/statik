@@ -68,6 +68,7 @@ class StatikModel(YamlLoadable):
             if isinstance(new_field, StatikForeignKeyField) or \
                     isinstance(new_field, StatikManyToManyField):
                 self.foreign_models.add(new_field.field_type)
+            logger.debug("Built field: %s.%s of type %s", self.name, field_name, new_field)
 
     def find_additional_rels(self, all_models):
         """Attempts to scan for additional relationship fields for this model based on all of the other models'

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Self-Referencing Models Test</title>
+</head>
+<body>
+    <h1>Categories</h1>
+    <ul>
+        {% for category in categories %}
+            <li>
+                {{ category.name }}
+                <ul>
+                    {% for subcategory in category.children %}
+                        <li>
+                            {{ subcategory.name }}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

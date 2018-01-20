@@ -1,0 +1,10 @@
+path: /
+template: home.html.jinja2
+context:
+  dynamic:
+    categories:
+      from: Category
+      where:
+        parent: null
+      order-by:
+        - name

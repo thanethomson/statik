@@ -30,8 +30,8 @@ class StatikModelField(object):
         self.params = kwargs
 
     def __repr__(self):
-        return "StatikModelField(name=%s, field_type=%s, params=%s)" % (
-            self.name, self.field_type, self.params
+        return "%s(name=%s, field_type=%s, params=%s)" % (
+            self.__class__.__name__, self.name, self.field_type, self.params
         )
 
 
