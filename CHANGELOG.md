@@ -4,6 +4,12 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.21.0` - 20 January 2018
+
+* Fixing issue #59 - now using [python-dateutil](https://dateutil.readthedocs.io/en/stable/)
+  to parse date/time fields that cannot automatically be parsed during data loading.
+* Fixing issue #60 - adding new feature to support self-referencing models.
+
 ### `v0.19.1` - 07 January 2018
 
 * More minor improvements to the error logging, especially from the database interface.
