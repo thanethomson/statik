@@ -368,7 +368,7 @@ class StatikDatabaseInstance(ContentLoadable):
         for field_name in self.model.field_names:
             field = self.model.fields[field_name]
             if isinstance(field, StatikDateTimeField) and \
-                    isinstance(self.field_values[field_name], basestring):
+                    isinstance(self.field_values.get(field_name), basestring):
                 # attempt to perform an intelligent date/time parse operation
                 self.field_values[field_name] = dateutil_parse(self.field_values[field_name])
             # if it's a foreign key
