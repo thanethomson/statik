@@ -93,11 +93,11 @@ class MarkdownYamlMetaPreprocessor(Preprocessor):
                     else:
                         yaml_lines.append(line)
                 else:
-                    result.append(line.encode("ascii", "xmlcharrefreplace").decode("utf-8"))
+                    result.append(line)
 
             if len(yaml_lines) > 0:
-                self.markdown.meta = yaml.load(
-                    '\n'.join(yaml_lines).encode("ascii", "xmlcharrefreplace").decode("utf-8")
+                self.markdown.meta = yaml.safe_load(
+                    '\n'.join(yaml_lines)
                 )
 
         return result

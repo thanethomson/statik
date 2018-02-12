@@ -25,11 +25,11 @@ class TestNonAsciiChars(unittest.TestCase):
             markdown_config=MarkdownConfig()
         )
         self.assertEqual(
-            "This is a &#8220;title&#8221; with some non-standard characters",
+            "This is a “title” with some non-standard characters",
             parsed.vars['title'],
         )
         self.assertEqual(
-            "<p>This is the &#8220;Markdown&#8221; body with some other non-standard characters.</p>",
+            "<p>This is the “Markdown” body with some other non-standard characters.</p>",
             parsed.content
         )
 

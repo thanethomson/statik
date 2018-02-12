@@ -7,6 +7,7 @@ import os.path
 import xml.etree.ElementTree as ET
 import unittest
 import json
+import re
 
 import lipsum
 import logging
@@ -79,6 +80,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         self.assertEqual(EXPECTED_HTACCESS_CONTENT, output_data['.htaccess'].strip())
 
         # Check that the generated posts are there
+        self.assert_path_exists("2018/02/12/unicode-in-markdown-test/index.html", output_data)
         self.assert_path_exists("2018/01/20/test-datetime-format/index.html", output_data)
         self.assert_path_exists("2016/06/12/andrew-hello-world/index.html", output_data)
         self.assert_path_exists("2016/06/18/second-post/index.html", output_data)
@@ -95,6 +97,10 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         self.assert_path_exists("paged-posts/1/index.html", output_data)
         self.assert_path_exists("paged-posts/2/index.html", output_data)
         self.assert_path_exists("paged-posts/3/index.html", output_data)
+        self.assert_path_exists("paged-posts/4/index.html", output_data)
+
+        # Check that the Unicode support for Markdown works as intended
+        self.assert_unicode_content_compiles(output_data)
 
         # Check that the homepage compiles properly
         self.assert_homepage_compiles(output_data['index.html'])
@@ -111,14 +117,14 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         self.assert_by_author_michael_compiles(self.assert_path_exists("by-author/michael/index.html", output_data))
 
         # Test the custom template tags/filters functionality
-        tt = ET.fromstring(output_data['tag-testing']['index.html'])
+        tt = ET.fromstring(_str(output_data['tag-testing']['index.html']))
         self.assertEqual('html', tt.findall('.')[0].tag)
         para_tags = tt.findall('./body/p')
         self.assertEqual('Hello world!', para_tags[0].text.strip())
         self.assertEqual('an uppercase string', para_tags[1].text.strip())
 
         # Check the contents of the overlapping simple/complex views
-        ov = ET.fromstring(output_data['overlap']['index.html'])
+        ov = ET.fromstring(_str(output_data['overlap']['index.html']))
         self.assertEqual('html', ov.findall('.')[0].tag)
         self.assertEqual('Overlap Test', ov.findall('./head/title')[0].text.strip())
         self.assertEqual('Overlap Test', ov.findall('./body/h1')[0].text.strip())
@@ -158,67 +164,87 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         )
 
         # Now test for the pagination
-        pp = ET.fromstring(output_data['paged-posts']['1']['index.html'])
+        pp = ET.fromstring(_str(output_data['paged-posts']['1']['index.html']))
         self.assertEqual('html', pp.findall('.')[0].tag)
-        self.assertEqual('Page 1 of 3', pp.findall('./head/title')[0].text.strip())
-        self.assertEqual('Page 1 of 3', pp.findall('./body/h1')[0].text.strip())
+        self.assertEqual('Page 1 of 4', pp.findall('./head/title')[0].text.strip())
+        self.assertEqual('Page 1 of 4', pp.findall('./body/h1')[0].text.strip())
         pp_els = pp.findall('./body/ul/li/a')
         pp_links = [el.attrib['href'] for el in pp_els]
         pp_link_titles = [el.text.strip() for el in pp_els]
         self.assertEqual(
             [
-                '/2018/01/20/test-datetime-format/',
-                '/2016/06/30/tables-test/'
+                '/2018/02/12/unicode-in-markdown-test/',
+                '/2018/01/20/test-datetime-format/'
             ],
             pp_links,
         )
         self.assertEqual(
             [
-                'Testing DateTime format (as per issue #59)',
-                'Testing Markdown tables'
+                'Testing Unicode θ in Markdown content (issues #50 and #63)',
+                'Testing DateTime format (as per issue #59)'
             ],
             pp_link_titles,
         )
 
-        pp = ET.fromstring(output_data['paged-posts']['2']['index.html'])
+        pp = ET.fromstring(_str(output_data['paged-posts']['2']['index.html']))
         self.assertEqual('html', pp.findall('.')[0].tag)
-        self.assertEqual('Page 2 of 3', pp.findall('./head/title')[0].text.strip())
-        self.assertEqual('Page 2 of 3', pp.findall('./body/h1')[0].text.strip())
+        self.assertEqual('Page 2 of 4', pp.findall('./head/title')[0].text.strip())
+        self.assertEqual('Page 2 of 4', pp.findall('./body/h1')[0].text.strip())
         pp_els = pp.findall('./body/ul/li/a')
         pp_links = [el.attrib['href'] for el in pp_els]
         pp_link_titles = [el.text.strip() for el in pp_els]
         self.assertEqual(
             [
-                '/2016/06/25/andrew-second-post/',
-                '/2016/06/18/second-post/'
+                '/2016/06/30/tables-test/',
+                '/2016/06/25/andrew-second-post/'
             ],
             pp_links,
         )
         self.assertEqual(
             [
-                'Andrew\'s Second Post',
-                'Second post'
+                'Testing Markdown tables',
+                'Andrew\'s Second Post'
             ],
             pp_link_titles,
         )
 
-        pp = ET.fromstring(output_data['paged-posts']['3']['index.html'])
+        pp = ET.fromstring(_str(output_data['paged-posts']['3']['index.html']))
         self.assertEqual('html', pp.findall('.')[0].tag)
-        self.assertEqual('Page 3 of 3', pp.findall('./head/title')[0].text.strip())
-        self.assertEqual('Page 3 of 3', pp.findall('./body/h1')[0].text.strip())
+        self.assertEqual('Page 3 of 4', pp.findall('./head/title')[0].text.strip())
+        self.assertEqual('Page 3 of 4', pp.findall('./body/h1')[0].text.strip())
         pp_els = pp.findall('./body/ul/li/a')
         pp_links = [el.attrib['href'] for el in pp_els]
         pp_link_titles = [el.text.strip() for el in pp_els]
         self.assertEqual(
             [
-                '/2016/06/15/my-first-post/',
-                '/2016/06/12/andrew-hello-world/',
+                '/2016/06/18/second-post/',
+                '/2016/06/15/my-first-post/'
             ],
             pp_links,
         )
         self.assertEqual(
             [
-                'My first post',
+                'Second post',
+                'My first post'
+            ],
+            pp_link_titles,
+        )
+
+        pp = ET.fromstring(_str(output_data['paged-posts']['4']['index.html']))
+        self.assertEqual('html', pp.findall('.')[0].tag)
+        self.assertEqual('Page 4 of 4', pp.findall('./head/title')[0].text.strip())
+        self.assertEqual('Page 4 of 4', pp.findall('./body/h1')[0].text.strip())
+        pp_els = pp.findall('./body/ul/li/a')
+        pp_links = [el.attrib['href'] for el in pp_els]
+        pp_link_titles = [el.text.strip() for el in pp_els]
+        self.assertEqual(
+            [
+                '/2016/06/12/andrew-hello-world/'
+            ],
+            pp_links,
+        )
+        self.assertEqual(
+            [
                 'Andrew says Hello World'
             ],
             pp_link_titles,
@@ -247,6 +273,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         homepage_link_titles = [el.text.strip() for el in homepage_link_els]
         self.assertEqual(
             [
+                '/2018/02/12/unicode-in-markdown-test/',
                 '/2018/01/20/test-datetime-format/',
                 '/2016/06/30/tables-test/',
                 '/2016/06/25/andrew-second-post/',
@@ -258,6 +285,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         )
         self.assertEqual(
             [
+                'Testing Unicode θ in Markdown content (issues #50 and #63)',
                 'Testing DateTime format (as per issue #59)',
                 'Testing Markdown tables',
                 'Andrew\'s Second Post',
@@ -270,7 +298,8 @@ class TestSimpleStatikIntegration(unittest.TestCase):
 
         # Test the project-wide dynamic context variables
         self.assertEqual("Andrew Michaels", homepage.findall("./body/div[@class='all-authors']/ul/li")[0].text.strip())
-        self.assertEqual("Michael Anderson", homepage.findall("./body/div[@class='all-authors']/ul/li")[1].text.strip())
+        self.assertEqual("John Johnson", homepage.findall("./body/div[@class='all-authors']/ul/li")[1].text.strip())
+        self.assertEqual("Michael Anderson", homepage.findall("./body/div[@class='all-authors']/ul/li")[2].text.strip())
         # Test the new {% asset %} tag
         self.assertEqual("/assets/testfile.txt", homepage.findall("./body/div[@class='download']/a")[0].attrib['href'])
 
@@ -293,7 +322,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         self.assertEqual('/scripts/generated.js', script.attrib['src'])
 
     def assert_my_first_post_compiles(self, content):
-        post = ET.fromstring(content)
+        post = ET.fromstring(_str(content))
         self.assertEqual('html', post.findall('.')[0].tag)
         self.assertEqual('My first post', post.findall('./head/title')[0].text.strip())
         self.assertEqual('2016-06-15', post.findall(".//div[@class='published']")[0].text.strip())
@@ -313,7 +342,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         )
 
     def assert_michael_bio_compiles(self, content):
-        bio = ET.fromstring(content)
+        bio = ET.fromstring(_str(content))
         self.assertEqual('html', bio.findall('.')[0].tag)
         self.assertEqual('Michael Anderson', bio.findall('./head/title')[0].text.strip())
         self.assertEqual('mailto:manderson@somewhere.com', bio.findall(".//div[@class='meta']/a")[0].attrib['href'])
@@ -326,7 +355,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         self.assertEqual("This is Michael's bio, in Markdown format.", bio_content_text)
 
     def assert_andrew_bio_compiles(self, content):
-        bio = ET.fromstring(content)
+        bio = ET.fromstring(_str(content))
         self.assertEqual('html', bio.findall('.')[0].tag)
         self.assertEqual('Andrew Michaels', bio.findall('./head/title')[0].text.strip())
         self.assertEqual('mailto:amichaels@somewhere.com', bio.findall(".//div[@class='meta']/a")[0].attrib['href'])
@@ -338,7 +367,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         self.assertEqual("Here's Andrew's bio!", bio_content_text)
 
     def assert_by_author_andrew_compiles(self, content):
-        posts_by_author = ET.fromstring(content)
+        posts_by_author = ET.fromstring(_str(content))
         self.assertEqual('html', posts_by_author.findall('.')[0].tag)
         self.assertEqual('Posts by Andrew', posts_by_author.findall('./head/title')[0].text.strip())
         self.assertEqual('Posts by Andrew', posts_by_author.findall('./body/h1')[0].text.strip())
@@ -365,7 +394,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         )
 
     def assert_by_author_michael_compiles(self, content):
-        posts_by_author = ET.fromstring(content)
+        posts_by_author = ET.fromstring(_str(content))
         self.assertEqual('html', posts_by_author.findall('.')[0].tag)
         self.assertEqual('Posts by Michael', posts_by_author.findall('./head/title')[0].text.strip())
         self.assertEqual('Posts by Michael', posts_by_author.findall('./body/h1')[0].text.strip())
@@ -446,6 +475,22 @@ class TestSimpleStatikIntegration(unittest.TestCase):
             counter -= 1
         # check that the JavaScript was properly generated
         self.assertEqual("window.alert('Hello world! This is Unit Test Project');", last_line)
+
+    def assert_unicode_content_compiles(self, output_data):
+        src = output_data['2018']['02']['12']['unicode-in-markdown-test']['index.html']
+        title = re.search(r'<title>(.+)</title>', src).group(1)
+        self.assertEqual(
+            "Testing Unicode θ in Markdown content (issues #50 and #63)",
+            title
+        )
+        body = re.search(
+            r'<div class="content">(.+)<p>(.+)</p>(.+)</div>',
+            src.replace('\n', ' ')
+        ).group(2)
+        self.assertEqual(
+            "Here's some Markdown with some θ more special characters, and even some emojis 😆.",
+            body
+        )
 
 
 if __name__ == "__main__":
