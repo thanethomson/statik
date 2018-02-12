@@ -4,6 +4,12 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.21.2` - 12 February 2018
+
+* Attempting to fix issues #50 and #63 - automatic translation of special Unicode characters
+  has now been turned off under the assumption that HTML output should be able to contain
+  the raw Unicode characters.
+
 ### `v0.21.1` - 20 January 2018
 
 * Further fixing issue #59, where the previous fix (erroneously) caused all DateTime fields
