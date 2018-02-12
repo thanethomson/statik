@@ -9,4 +9,4 @@ draft:     false
 ---
 
 Here's some Markdown with some θ more special characters, and even
-some emojis 😆.
+some emojis 😆. Here we also have a special character in `θ` code.

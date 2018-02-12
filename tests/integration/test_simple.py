@@ -488,7 +488,8 @@ class TestSimpleStatikIntegration(unittest.TestCase):
             src.replace('\n', ' ')
         ).group(2)
         self.assertEqual(
-            "Here's some Markdown with some θ more special characters, and even some emojis 😆.",
+            "Here's some Markdown with some θ more special characters, and even some " +
+            "emojis 😆. Here we also have a special character in <code>θ</code> code.",
             body
         )
 
