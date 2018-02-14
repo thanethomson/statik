@@ -146,8 +146,8 @@ class StatikTemplateTagsExtension(Extension):
         self.active_tag = None
         logger.debug("Loaded custom template tags: %s", ", ".join(self.tags))
 
-    def _invoke_tag(self, context, *args, **kwargs):
-        return templatetags.store.invoke_tag(self.active_tag, context, *args, **kwargs)
+    def _invoke_tag(self, tag_name, context, *args, **kwargs):
+        return templatetags.store.invoke_tag(tag_name, context, *args, **kwargs)
 
     def parse(self, parser):
         lineno = next(parser.stream).lineno
@@ -165,6 +165,7 @@ class StatikTemplateTagsExtension(Extension):
 
         # get the tag_name for use in looking up callable
         self.active_tag = parser._tag_stack[-1]
+        args.insert(0, nodes.Const(self.active_tag))
 
         # create the node
         node = self.call_method('_invoke_tag', args=args, lineno=lineno)
