@@ -4,6 +4,10 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.21.3` - 15 February 2018
+
+* Merging #65 to fix #64.
+
 ### `v0.21.2` - 12 February 2018
 
 * Attempting to fix issues #50 and #63 - automatic translation of special Unicode characters
