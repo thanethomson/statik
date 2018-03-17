@@ -202,8 +202,7 @@ class StatikDatabase(object):
             # try find a model data collection
             if os.path.isfile(os.path.join(path, '_all.yml')):
                 self.load_model_data_collection(path, model)
-            else:
-                self.load_model_data_from_files(path, model)
+            self.load_model_data_from_files(path, model)
             self.session.commit()
 
     def load_model_data_collection(self, path, model):
@@ -264,6 +263,7 @@ class StatikDatabase(object):
     def load_model_data_from_files(self, path, model):
         db_model = globals()[model.name]
         entry_files = list_files(path, ['yml', 'yaml', 'md'])
+        entry_files = [f for f in entry_files if not(f.endswith("_all.yml"))]
         seen_entries = set()
         logger.debug("Loading %d instance(s) for model: %s", len(entry_files), model.name)
         for entry_file in entry_files:
