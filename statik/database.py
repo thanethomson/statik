@@ -351,7 +351,8 @@ class StatikDatabase(object):
 class StatikDatabaseInstance(ContentLoadable):
 
     def __init__(self, model=None, session=None, **kwargs):
-        super(StatikDatabaseInstance, self).__init__(**kwargs)
+        super(StatikDatabaseInstance, self).__init__(content_field = model.content_field,
+                                                     **kwargs)
         if model is None:
             raise MissingParameterError("model", context=self.error_context)
         self.model = model
@@ -362,7 +363,7 @@ class StatikDatabaseInstance(ContentLoadable):
 
         # convert the vars to their underscored representation
         self.field_values = underscore_var_names(self.vars)
-        self.field_values['pk'] = self.name
+        self.field_values['pk'] = self.name          
 
         # run through the foreign key fields to check their assignment
         for field_name in self.model.field_names:

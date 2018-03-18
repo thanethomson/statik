@@ -56,7 +56,8 @@ class ContentLoadable(object):
     loading content and metadata from a Markdown file.
     """
     def __init__(self, filename=None, file_type=None, from_string=None, from_dict=None,
-            name=None, markdown_config=None, encoding='utf-8', error_context=None):
+            name=None, markdown_config=None, encoding='utf-8', error_context=None,
+            content_field = None):
         self.vars = None
         self.content = None
         self.file_content = None
@@ -102,7 +103,6 @@ class ContentLoadable(object):
                 "filename", "from_string", "from_dict",
                 context=self.error_context
             )
-
         if name is not None:
             self.name = name
         elif self.filename is not None:
@@ -112,7 +112,23 @@ class ContentLoadable(object):
                 "name", "filename",
                 context=self.error_context
             )
-
+        markdown_ext = [
+                MarkdownYamlMetaExtension(),
+                MarkdownLoremIpsumExtension(error_context=self.error_context)
+            ]
+        if self.markdown_config.enable_permalinks:
+            markdown_ext.append(
+                MarkdownPermalinkExtension(
+                    permalink_text=self.markdown_config.permalink_text,
+                    permalink_class=self.markdown_config.permalink_class,
+                    permalink_title=self.markdown_config.permalink_title,
+                )
+            )
+        markdown_ext.extend(self.markdown_config.extensions)
+        md = Markdown(
+            extensions=markdown_ext,
+            extension_configs=self.markdown_config.extension_config
+            )
         # if it wasn't loaded from a dictionary
         if self.vars is None:
             if self.file_type is None:
@@ -127,26 +143,11 @@ class ContentLoadable(object):
                 if not isinstance(self.vars, dict):
                     self.vars = {}
             else:
-                markdown_ext = [
-                    MarkdownYamlMetaExtension(),
-                    MarkdownLoremIpsumExtension(error_context=self.error_context)
-                ]
-                if self.markdown_config.enable_permalinks:
-                    markdown_ext.append(
-                        MarkdownPermalinkExtension(
-                            permalink_text=self.markdown_config.permalink_text,
-                            permalink_class=self.markdown_config.permalink_class,
-                            permalink_title=self.markdown_config.permalink_title,
-                        )
-                    )
-                markdown_ext.extend(self.markdown_config.extensions)
-
-                md = Markdown(
-                    extensions=markdown_ext,
-                    extension_configs=self.markdown_config.extension_config
-                )
                 self.content = md.convert(self.file_content)
                 self.vars = md.meta
+        else:
+            if (content_field is not None) and (content_field in self.vars):
+                self.content = md.convert(self.vars[content_field])
 
         if isinstance(self.vars, dict):
             self.vars = dict_strip(self.vars)
