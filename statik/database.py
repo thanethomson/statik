@@ -378,7 +378,7 @@ class StatikDatabaseInstance(ContentLoadable):
                     self.field_values['%s_id' % field_name] = self.field_values[field_name]
                     del self.field_values[field_name]
 
-            elif isinstance(field, StatikManyToManyField):
+            elif isinstance(field, StatikManyToManyField) and (field_name in self.field_values):
                 if not isinstance(self.field_values[field_name], list):
                     raise InvalidFieldTypeError(
                         self.model.name,
@@ -386,7 +386,6 @@ class StatikDatabaseInstance(ContentLoadable):
                         "a list",
                         context=self.error_context
                     )
-
                 logger.debug(
                     "Attempting to look up primary keys for ManyToMany " +
                     "field relationship: %s", self.field_values[field_name]
