@@ -15,6 +15,7 @@ from statik.utils import generate_quickstart, get_project_config_file
 from statik.watcher import watch
 from statik.project import StatikProject
 from statik.errors import StatikError, StatikErrorContext
+from statik.upload import upload_sftp
 
 import logging
 logger = logging.getLogger(__name__)
@@ -103,6 +104,11 @@ def main():
         help="Run Statik in safe mode (which disallows unsafe query execution)"
     )
     parser.add_argument(
+        '-u', '--upload',
+        action='store',
+        help="Upload project to remote location (supported: SFTP)"
+    )
+    parser.add_argument(
         '-v', '--verbose',
         help="Whether or not to output verbose logging information (default: false).",
         action='store_true',
@@ -183,6 +189,12 @@ def main():
                 safe_mode=args.safe_mode,
                 error_context=error_context
             )
+
+        if args.upload and args.upload == 'SFTP':
+                upload_sftp(
+                    config_file_path,
+                    output_path
+                )
 
     except StatikError as e:
         sys.exit(e.exit_code)
