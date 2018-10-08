@@ -28,11 +28,11 @@ __all__ = [
 
 class MarkdownYamlMetaExtension(Extension):
 
-    def extendMarkdown(self, md, md_globals):
-        md.preprocessors.add(
-            'yaml-meta',
+    def extendMarkdown(self, md):
+        md.preprocessors.register(
             MarkdownYamlMetaPreprocessor(md),
-            ">normalize_whitespace",
+            'yaml-meta',
+            40
         )
 
 
@@ -44,16 +44,16 @@ class MarkdownPermalinkExtension(Extension):
         self.permalink_title = kwargs.pop('permalink_title', None)
         super(MarkdownPermalinkExtension, self).__init__(*args, **kwargs)
 
-    def extendMarkdown(self, md, md_globals):
-        md.treeprocessors.add(
-            'permalink',
+    def extendMarkdown(self, md):
+        md.treeprocessors.register(
             MarkdownPermalinkProcessor(
                 md,
                 permalink_text=self.permalink_text,
                 permalink_class=self.permalink_class,
                 permalink_title=self.permalink_title
             ),
-            '<prettify'
+            'permalink',
+            0
         )
 
 
@@ -63,11 +63,11 @@ class MarkdownLoremIpsumExtension(Extension):
         self.error_context = kwargs.pop('error_context', StatikErrorContext())
         super(MarkdownLoremIpsumExtension, self).__init__(*args, **kwargs)
 
-    def extendMarkdown(self, md, md_globals):
-        md.preprocessors.add(
-            "lipsum",
+    def extendMarkdown(self, md):
+        md.preprocessors.register(
             MarkdownLoremIpsumProcessor(md, error_context=self.error_context),
-            ">yaml-meta"
+            "lipsum",
+            50
         )
 
 
@@ -75,7 +75,7 @@ class MarkdownYamlMetaPreprocessor(Preprocessor):
 
     def run(self, lines):
         result = []
-        self.markdown.meta = {}
+        self.md.meta = {}
 
         if len(lines) > 1:
             yaml_lines = []
@@ -96,7 +96,7 @@ class MarkdownYamlMetaPreprocessor(Preprocessor):
                     result.append(line)
 
             if len(yaml_lines) > 0:
-                self.markdown.meta = yaml.safe_load(
+                self.md.meta = yaml.safe_load(
                     '\n'.join(yaml_lines)
                 )
 
