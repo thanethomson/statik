@@ -4,6 +4,13 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.22.0` - 8 October 2018
+
+* Merges #68
+* Merges #73 to add SFTP upload functionality
+* Updates dependency versions in `requirements.txt`
+* Updates Markdown package integration to use new API
+
 ### `v0.21.3` - 15 February 2018
 
 * Merging #65 to fix #64.
