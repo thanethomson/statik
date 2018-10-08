@@ -103,6 +103,21 @@ Themes for **Statik** will slowly start appearing in the
 [Statik Themes](https://github.com/thanethomson/statik-themes)
 repository. Watch that space!
 
+## Remote upload
+
+To publish your website on a server via SFTP, you can use the remote upload command 
+line option. The connection parameters must be added to your project's `config.yml`.
+ 
+```
+remote:
+    sftp:
+        server: 'hostname or IP'
+        dir-base: '/base/directory/'
+        dir-root: 'relative/to/base/directory'  
+        username: 'SSH username'
+        password: 'SSH password'
+```
+
 ## License
 **The MIT License (MIT)**
 
