@@ -8,7 +8,6 @@ Markdown==3.0.1
 MarkupSafe==1.0
 mlalchemy==0.2.2
 pathtools==0.1.2
-pkg-resources==0.0.0
 pystache==0.5.4
 python-dateutil==2.7.3
 python-slugify==1.2.6
