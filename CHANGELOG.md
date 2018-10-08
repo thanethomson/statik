@@ -4,6 +4,10 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.22.1` - 8 October 2018
+
+* Minor fix to add missing `paramiko` dependency
+
 ### `v0.22.0` - 8 October 2018
 
 * Merges #68
