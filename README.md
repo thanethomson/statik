@@ -108,7 +108,7 @@ repository. Watch that space!
 To publish your website on a server via SFTP, you can use the remote upload command 
 line option. The connection parameters must be added to your project's `config.yml`.
  
-``
+```
 remote:
     sftp:
         server: 'hostname or IP'
