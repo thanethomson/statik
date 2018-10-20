@@ -1,9 +1,22 @@
 language: python
-python:
-  - "2.7"
-  - "3.5"
-  - "3.6"
-  - "3.7"
+
+# Takes inspiration from https://github.com/tornadoweb/tornado/blob/master/.travis.yml
+.mixins:
+- &xenial-mixin
+  dist: xenial
+  sudo: true
+  addons:
+    apt:
+      packages:
+        - libgnutls-dev
+jobs:
+  include:
+    - python: 2.7
+    - python: 3.5
+    - python: 3.6
+    - <<: *xenial-mixin
+      python: 3.7
+
 install:
   - "pip install -r requirements.txt"
 script:
