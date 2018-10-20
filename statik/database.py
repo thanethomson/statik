@@ -11,6 +11,8 @@ import yaml
 from sqlalchemy import String, Integer, Column, Table, ForeignKey, \
     Boolean, DateTime, Text, create_engine
 from sqlalchemy.orm import sessionmaker, relationship, backref
+from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.query import Query
 from sqlalchemy.ext.declarative import declarative_base
 
 import mlalchemy
@@ -210,7 +212,6 @@ class StatikDatabase(object):
         full_filename = os.path.join(path, '_all.yml')
         self.error_context.update(filename=full_filename)
 
-        db_model = globals()[model.name]
         # load the collection data from the collection file
         with open(full_filename, mode='rt', encoding=self.encoding) as f:
             collection = yaml.load(f.read())
@@ -223,43 +224,62 @@ class StatikDatabase(object):
         seen_entries = set()
         logger.debug("Loading %d instance(s) for model: %s", len(collection), model.name)
         for item in collection:
-            if not isinstance(item, dict) or 'pk' not in item:
-                raise InvalidModelCollectionDataError(
-                    model.name,
-                    context=self.error_context
-                )
+            self.load_model_data_item(item, model, seen_entries)
 
-            entry = StatikDatabaseInstance(
-                name=item['pk'],
-                from_dict=item,
-                model=model,
-                session=self.session,
-                encoding=self.encoding,
-                markdown_config=self.markdown_config
-            )
-            # duplicate primary key!
-            if entry.field_values['pk'] in seen_entries:
-                raise DuplicateModelInstanceError(
-                    model.name,
-                    pk=entry.field_values['pk'],
-                    context=self.error_context
-                )
-            else:
-                seen_entries.add(entry.field_values['pk'])
-
-            try:
-                db_entry = db_model(**entry.field_values)
-                self.session.add(db_entry)
-            except Exception as exc:
-                raise DataError(
-                    model.name,
-                    pk=entry.field_values['pk'],
-                    message="failed to insert entry into in-memory database.",
-                    orig_exc=exc,
-                    context=self.error_context
-                )
-        
         self.error_context.clear()
+
+    def load_model_data_item(self, item, model, seen_entries=None):
+        if not seen_entries:
+            seen_entries = set()
+
+        if not isinstance(item, dict) or 'pk' not in item:
+            raise InvalidModelCollectionDataError(
+                model.name,
+                context=self.error_context
+            )
+
+        entry = StatikDatabaseInstance(
+            name=item['pk'],
+            from_dict=item,
+            model=model,
+            session=self.session,
+            encoding=self.encoding,
+            markdown_config=self.markdown_config
+        )
+        # duplicate primary key!
+        if entry.field_values['pk'] in seen_entries:
+            raise DuplicateModelInstanceError(
+                model.name,
+                pk=entry.field_values['pk'],
+                context=self.error_context
+            )
+        else:
+            seen_entries.add(entry.field_values['pk'])
+
+        self.load_model_implicit_data(entry)
+
+        for key, item in entry.field_values.items():
+            if isinstance(item, Query):
+                entry.field_values[key] = item.all()
+
+        db_model = globals()[model.name]
+        try:
+            db_entry = db_model(**entry.field_values)
+            self.session.add(db_entry)
+        except Exception as exc:
+            raise DataError(
+                model.name,
+                pk=entry.field_values['pk'],
+                message="failed to insert entry into in-memory database.",
+                orig_exc=exc,
+                context=self.error_context
+            )
+
+    def load_model_implicit_data(self, instance):
+        for model_name, items in instance.implicit_data_items:
+            model = self.models[model_name]
+            for item in items:
+                self.load_model_data_item(item, model)
 
     def load_model_data_from_files(self, path, model):
         db_model = globals()[model.name]
@@ -284,6 +304,12 @@ class StatikDatabase(object):
                 )
             else:
                 seen_entries.add(entry.field_values['pk'])
+
+            self.load_model_implicit_data(entry)
+
+            for key, item in entry.field_values.items():
+                if isinstance(item, Query):
+                    entry.field_values[key] = item.all()
 
             try:
                 db_entry = db_model(**entry.field_values)
@@ -356,6 +382,8 @@ class StatikDatabaseInstance(ContentLoadable):
             raise MissingParameterError("model", context=self.error_context)
         self.model = model
 
+        self.implicit_data_items = []
+
         if session is None:
             raise MissingParameterError("session", context=self.error_context)
         self.session = session
@@ -393,11 +421,36 @@ class StatikDatabaseInstance(ContentLoadable):
                 # convert the list of field values to a query to look up the
                 # primary keys of the corresponding table
                 other_model = globals()[field.field_type]
+
+                missing_items = []
+
+                for item in self.field_values[field_name]:
+                    try:
+                        self.session.query(
+                            other_model
+                        ).filter(
+                            other_model.pk == item
+                        ).one()
+                    except NoResultFound:
+                        # Only allow implicit tables if the model
+                        # has no fields other than 'pk'
+                        if len(other_model.__table__._columns) == 1:
+                            missing_items.append({'pk': item})
+                        else:
+                            logger.warning('%s not found in %s' %
+                                           (item, other_model))
+                    else:
+                        logger.debug('%s found', item)
+
+                self.implicit_data_items.append(
+                    (field.field_type, missing_items)
+                )
+
                 self.field_values[field_name] = self.session.query(
                     other_model
                 ).filter(
                     other_model.pk.in_(self.field_values[field_name])
-                ).all()
+                )
 
         # populate any Content field for this model
         if self.model.content_field is not None:
