@@ -247,14 +247,14 @@ class StatikDatabase(object):
             markdown_config=self.markdown_config
         )
         # duplicate primary key!
-        if entry.field_values['pk'] in seen_entries:
+        if entry.field_values['_pk'] in seen_entries:
             raise DuplicateModelInstanceError(
                 model.name,
-                pk=entry.field_values['pk'],
+                pk=entry.field_values['_pk'],
                 context=self.error_context
             )
         else:
-            seen_entries.add(entry.field_values['pk'])
+            seen_entries.add(entry.field_values['_pk'])
 
         self.load_model_implicit_data(entry)
 
@@ -269,7 +269,7 @@ class StatikDatabase(object):
         except Exception as exc:
             raise DataError(
                 model.name,
-                pk=entry.field_values['pk'],
+                pk=entry.field_values['_pk'],
                 message="failed to insert entry into in-memory database.",
                 orig_exc=exc,
                 context=self.error_context
@@ -296,14 +296,14 @@ class StatikDatabase(object):
                 error_context=self.error_context
             )
             # duplicate primary key!
-            if entry.field_values['pk'] in seen_entries:
+            if entry.field_values['_pk'] in seen_entries:
                 raise DuplicateModelInstanceError(
                     model.name,
-                    pk=entry.field_values['pk'],
+                    pk=entry.field_values['_pk'],
                     context=self.error_context
                 )
             else:
-                seen_entries.add(entry.field_values['pk'])
+                seen_entries.add(entry.field_values['_pk'])
 
             self.load_model_implicit_data(entry)
 
@@ -317,7 +317,7 @@ class StatikDatabase(object):
             except Exception as exc:
                 raise DataError(
                     model.name,
-                    pk=entry.field_values['pk'],
+                    pk=entry.field_values['_pk'],
                     message="failed to insert entry into in-memory database.",
                     orig_exc=exc,
                     context=self.error_context
@@ -390,7 +390,7 @@ class StatikDatabaseInstance(ContentLoadable):
 
         # convert the vars to their underscored representation
         self.field_values = underscore_var_names(self.vars)
-        self.field_values['pk'] = self.name
+        self.field_values['_pk'] = self.name
 
         # run through the foreign key fields to check their assignment
         for field_name in self.model.field_names:
