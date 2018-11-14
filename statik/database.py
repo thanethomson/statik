@@ -418,6 +418,16 @@ class StatikDatabaseInstance(ContentLoadable):
                     "Attempting to look up primary keys for ManyToMany " +
                     "field relationship: %s", self.field_values[field_name]
                 )
+
+                duplicates_in_array = find_duplicates_in_array(self.field_values[field_name])
+
+                if duplicates_in_array:
+                    logger.warning("Duplicates found in %s: %s (field: %s)",
+                                   self.filename,
+                                   duplicates_in_array,
+                                   field_name)
+                    self.field_values[field_name] = list(set(self.field_values[field_name]))
+
                 # convert the list of field values to a query to look up the
                 # primary keys of the corresponding table
                 other_model = globals()[field.field_type]

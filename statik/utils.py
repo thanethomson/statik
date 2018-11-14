@@ -42,7 +42,8 @@ __all__ = [
     '_str',
     '_unicode',
     'find_first_file_with_ext',
-    'uncapitalize'
+    'uncapitalize',
+    'find_duplicates_in_array',
 ]
 
 DEFAULT_CONFIG_CONTENT = """project-name: Your project name
@@ -357,3 +358,27 @@ def find_first_file_with_ext(base_paths, prefix, exts):
 def uncapitalize(s):
     """If the given string begins with a capital letter, it converts it to lowercase."""
     return (s[:1].lower() + s[1:]) if s else ""
+
+
+def find_duplicates_in_array(array):
+    """Runs through the array and returns the elements that contain
+    more than one duplicate
+
+    Args:
+        array: The array to check for duplicates.
+
+    Returns:
+        Array of the elements that are duplicates. Returns empty list if
+        there are no duplicates.
+    """
+    duplicates = []
+    non_duplicates = []
+
+    if len(array) != len(set(array)):
+        for item in array:
+            if item not in non_duplicates:
+                non_duplicates.append(item)
+            elif item in non_duplicates and item not in duplicates:
+                duplicates.append(item)
+
+    return duplicates
