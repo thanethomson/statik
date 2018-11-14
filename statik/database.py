@@ -418,6 +418,14 @@ class StatikDatabaseInstance(ContentLoadable):
                     "Attempting to look up primary keys for ManyToMany " +
                     "field relationship: %s", self.field_values[field_name]
                 )
+
+                # check if non-string items are present
+                if not all(isinstance(item, str) for item in self.field_values[field_name]):
+                    logger.warning("Non-string values in array (field: %s, model: %s): %s",
+                                    field_name, self.model.name, self.field_values[field_name])
+                    # convert all items to strings
+                    self.field_values[field_name] = list(map(str, self.field_values[field_name]))
+
                 # convert the list of field values to a query to look up the
                 # primary keys of the corresponding table
                 other_model = globals()[field.field_type]
