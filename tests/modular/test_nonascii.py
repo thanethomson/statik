@@ -10,6 +10,10 @@ from statik.markdown_config import MarkdownConfig
 
 TEST_MARKDOWN_CONTENT = """---
 title: This is a “title” with some non-standard characters
+
+unicode:
+    - "\u2ffa"
+    - "\u2ffb"
 ---
 This is the “Markdown” body with some other non-standard characters.
 """
@@ -27,6 +31,10 @@ class TestNonAsciiChars(unittest.TestCase):
         self.assertEqual(
             "This is a “title” with some non-standard characters",
             parsed.vars['title'],
+        )
+        self.assertEqual(
+            ['⿺', '⿻'],
+            parsed.vars['unicode']
         )
         self.assertEqual(
             "<p>This is the “Markdown” body with some other non-standard characters.</p>",

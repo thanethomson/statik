@@ -428,6 +428,13 @@ class StatikDatabaseInstance(ContentLoadable):
                                    field_name)
                     self.field_values[field_name] = list(set(self.field_values[field_name]))
 
+                # check if non-string items are present
+                for item in self.field_values[field_name]:
+                    if not isinstance(item, ("".__class__, u"".__class__)):
+                        logger.warning("Non-string values found in array " + 
+                                        "(field: %s, instance: %s, model: %s): %s",
+                                        field_name, self.field_values['pk'], self.model.name, item)
+
                 # convert the list of field values to a query to look up the
                 # primary keys of the corresponding table
                 other_model = globals()[field.field_type]
