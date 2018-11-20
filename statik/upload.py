@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 import os
 
 import paramiko
+from netlify_uploader import deploy
 
 from statik.config import StatikConfig
 
@@ -13,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 __all__ = [
     'upload_sftp',
+    'upload_netlify',
 ]
 
 
@@ -73,3 +75,7 @@ def upload_sftp(input_path, output_path, rm_remote=False):
 
     sftp.close()
     logger.info('Connection closed.')
+
+
+def upload_netlify(output_path, netlify_site_id):
+    deploy(netlify_site_id, output_path)

@@ -15,7 +15,7 @@ from statik.utils import generate_quickstart, get_project_config_file
 from statik.watcher import watch
 from statik.project import StatikProject
 from statik.errors import StatikError, StatikErrorContext
-from statik.upload import upload_sftp
+from statik.upload import upload_sftp, upload_netlify
 
 import logging
 logger = logging.getLogger(__name__)
@@ -113,8 +113,15 @@ def main():
     group_remote.add_argument(
         '-u', '--upload',
         action='store',
-        help="Upload project to remote location (supported: SFTP)"
+        help="Upload project to remote location (supported: SFTP, netlify)",
     )
+
+    group_remote.add_argument(
+        '--netlify-site-id',
+        action='store',
+        help="Netlify site id to upload to. (--upload=netlify must be specified too)",
+    )
+
     group_remote.add_argument(
         '-c', '--clear-remote',
         action='store_true',
@@ -217,9 +224,23 @@ def main():
                     output_path,
                     rm_remote=args.clear_remote
                 )
+        elif args.netlify_site_id and args.upload == 'netlify':
+            if args.clear_remote:
+                logger.warning("--clear-remote is not supported when uploading to Netlify")
+
+            upload_netlify(
+                output_path,
+                args.netlify_site_id
+            )
         else:
             if args.clear_remote:
                 logger.warning("Ignoring --clear-remote switch because --upload is not specified")
+
+            if args.netlify_site_id and args.upload != 'netlify' or args.netlify_site_id:
+                logger.warning("Ignoring --netlify-site-id: --upload=netlify not specified")
+
+            if args.upload:
+                logger.warning("Upload format '{}' not supported".format(args.upload))
 
     except StatikError as e:
         sys.exit(e.exit_code)
