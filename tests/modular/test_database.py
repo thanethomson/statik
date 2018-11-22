@@ -121,18 +121,15 @@ class TestStatikDatabase(unittest.TestCase):
         room_tags = db.session.query(RoomTag).order_by(RoomTag.pk).all()
         self.assertEqual(5, len(room_tags))
 
-        blueroom_tags = set([tag.pk for tag in guesthouse_rooms[0].tags])
+        blueroom_tags = list([tag.pk for tag in guesthouse_rooms[0].tags])
         self.assertEqual(4, len(blueroom_tags))
-        self.assertIn('fireplace', blueroom_tags)
-        self.assertIn('double-bed', blueroom_tags)
-        self.assertIn('balcony', blueroom_tags)
-        self.assertIn('shower', blueroom_tags)
+        self.assertEqual(
+            ['fireplace', 'double-bed', 'balcony', 'shower'], blueroom_tags)
 
-        redroom_tags = set([tag.pk for tag in guesthouse_rooms[1].tags])
+        redroom_tags = list([tag.pk for tag in guesthouse_rooms[1].tags])
         self.assertEqual(3, len(redroom_tags))
-        self.assertIn('fireplace', redroom_tags)
-        self.assertIn('single-bed', redroom_tags)
-        self.assertIn('shower', redroom_tags)
+        self.assertEqual(
+            ['fireplace', 'single-bed', 'shower'], redroom_tags)
 
     def assertInstanceEqual(self, expected, inst):
         for field_name, field_value in iteritems(expected):

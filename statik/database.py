@@ -463,11 +463,17 @@ class StatikDatabaseInstance(ContentLoadable):
                     (field.field_type, missing_items)
                 )
 
+                original_values = self.field_values[field_name]
+
                 self.field_values[field_name] = self.session.query(
                     other_model
                 ).filter(
                     other_model.pk.in_(self.field_values[field_name])
-                )
+                ).all()
+
+                # Ensure that values appear in original order
+                self.field_values[field_name].sort(
+                    key=lambda x: original_values.index(x.pk))
 
         # populate any Content field for this model
         if self.model.content_field is not None:
