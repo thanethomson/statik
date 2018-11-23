@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>{{ site_title }}</title>
+    </head>
+    <body>
+
+    {% for field in fields %}
+        {% if field.type == 'StatikStringField' %}
+            <li>{{ field.name }}: {{ '{{' }} {{ model.name }}.{{ field.name }} {{ '}}' }}</li>
+        {% elif field.type == 'StatikForeignKeyField' %}
+            <li>{{ field.name }}: {{ '{{' }} {{ model.name }}.{{ field.name }}.pk {{ '}}' }}</li>
+        {% elif field.type == 'StatikManyToManyField' %}
+            <li>{{ field.name }}:</li>
+            <ul>
+            {{ '{% for item in ' }} {{ model.name}}.{{ field.name }} {{ '%}' }}
+                <li>{{ '{{ item.pk }}' }}</li>
+            {{ '{% endfor %} '}}
+            </ul>
+        {% endif %}
+    {% endfor %}
+
+    </body>
+</html>

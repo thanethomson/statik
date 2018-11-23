@@ -12,6 +12,7 @@ import colorlog
 
 from statik.generator import generate
 from statik.utils import generate_quickstart, get_project_config_file
+from statik.autogen import autogen
 from statik.watcher import watch
 from statik.project import StatikProject
 from statik.errors import StatikError, StatikErrorContext
@@ -61,6 +62,11 @@ def main():
     parser.add_argument(
         '--quickstart',
         help="Statik will generate a basic directory structure for you in the project directory and exit.",
+        action='store_true',
+    )
+    parser.add_argument(
+        '--autogen',
+        help="Statik will generate default views and templates in the project directory for all the models.",
         action='store_true',
     )
 
@@ -202,6 +208,8 @@ def main():
             )
         elif args.quickstart:
             generate_quickstart(project_path)
+        elif args.autogen:
+            autogen(project_path)
         else:
             if args.host and '--host=localhost' in sys.argv[1:]:
                 logger.warning("Ignoring --host argument because --watch is not specified")
