@@ -44,12 +44,12 @@ class StatikContext(object):
     def __str__(self):
         return repr(self)
 
-    def build_dynamic(self, db, safe_mode=False):
+    def build_dynamic(self, db, extra=None, safe_mode=False):
         """Builds the dynamic context based on our current dynamic context entity and the given
         database."""
         result = dict()
         for var, query in iteritems(self.dynamic):
-            result[var] = db.query(query, safe_mode=safe_mode)
+            result[var] = db.query(query, safe_mode=safe_mode, additional_locals=extra)
         return result
 
     def build_for_each(self, db, safe_mode=False, extra=None):
@@ -68,7 +68,7 @@ class StatikContext(object):
         result = copy(self.initial)
         result.update(self.static)
         if self.dynamic:
-            result.update(self.build_dynamic(db, safe_mode=safe_mode))
+            result.update(self.build_dynamic(db, extra=extra, safe_mode=safe_mode))
         if self.for_each and for_each_inst:
             result.update(self.build_for_each(db, safe_mode=safe_mode, extra=extra))
         if isinstance(extra, dict):
