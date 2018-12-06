@@ -8,6 +8,7 @@ lipsum==0.1.2
 Markdown==3.0.1
 MarkupSafe==1.0
 mlalchemy==0.2.2
+mock
 pathtools==0.1.2
 pystache==0.5.4
 python-dateutil==2.7.3
