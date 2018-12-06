@@ -9,6 +9,7 @@ import os.path
 import stat
 from copy import deepcopy, copy
 import shutil
+import re
 
 import six
 
@@ -44,6 +45,7 @@ __all__ = [
     'find_first_file_with_ext',
     'uncapitalize',
     'find_duplicates_in_array',
+    'camel_to_snake',
 ]
 
 DEFAULT_CONFIG_CONTENT = """project-name: Your project name
@@ -382,3 +384,6 @@ def find_duplicates_in_array(array):
                 duplicates.append(item)
 
     return duplicates
+
+def camel_to_snake(camel):
+    return '_'.join(re.findall(r'[A-Z][a-z]*', camel))

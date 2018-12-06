@@ -7,8 +7,10 @@ Jinja2==2.10
 lipsum==0.1.2
 Markdown==3.0.1
 MarkupSafe==1.0
+mock==2.0.0
 mlalchemy==0.2.2
 pathtools==0.1.2
+psycopg2-binary==2.7.6.1
 pystache==0.5.4
 python-dateutil==2.7.3
 python-slugify==1.2.6

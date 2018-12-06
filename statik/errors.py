@@ -26,7 +26,8 @@ __all__ = [
     'NoSupportedTemplateProvidersError',
     'MissingViewFieldError',
     'InvalidViewFieldTypeError',
-    'MarkdownSyntaxError'
+    'MarkdownSyntaxError',
+    'ExternalDatabaseError',
 ]
 
 
@@ -292,3 +293,9 @@ class InvalidViewFieldTypeError(ViewError):
 
 class MarkdownSyntaxError(DataError):
     pass
+
+
+class ExternalDatabaseError(StatikError):
+    """For generic errors related to external database."""
+    error_kind = "External database error"
+    exit_code = 8

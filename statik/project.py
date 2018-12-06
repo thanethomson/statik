@@ -102,6 +102,9 @@ class StatikProject(object):
             self.models = self.load_models()
             self.template_engine = StatikTemplateEngine(self)
 
+            if self.config.external_database is not None:
+                self.config.external_database.write_files(output_path, self.models)
+
             self.views = self.load_views()
             if not self.views:
                 raise NoViewsError()

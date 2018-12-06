@@ -8,6 +8,7 @@ from statik.errors import *
 from statik.common import YamlLoadable
 from statik.utils import underscore_var_names
 from statik.markdown_config import MarkdownConfig
+from statik.external_database import ExternalDatabase
 from statik.templating import DEFAULT_TEMPLATE_PROVIDERS
 
 import logging
@@ -29,6 +30,10 @@ class StatikConfig(YamlLoadable):
         self.encoding = self.vars.get('encoding', 'utf-8')
         self.theme = self.vars.get('theme', None)
         self.markdown_config = MarkdownConfig(self.vars.get('markdown', dict()))
+
+        self.external_database = None
+        if 'external-database' in self.vars:
+            self.external_database = ExternalDatabase(self.vars.get('external-database')).factory()
         # relative to the output folder
         self.assets_src_path = self.assets_dest_path = 'assets'
         if 'assets' in self.vars and isinstance(self.vars['assets'], dict):
