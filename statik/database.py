@@ -593,7 +593,10 @@ def db_model_factory(Base, model, all_models):
                             field_name,
                         )
 
-                    model_fields[field.name] = relationship(field.field_type, **kwargs)
+                    foreign_key = model_fields.get("%s_id" % field.name, None)
+                    model_fields[field.name] = relationship(
+                        field.field_type, foreign_keys=[foreign_key], **kwargs
+                    )
 
             elif isinstance(field, StatikManyToManyField):
                 association_table = get_or_create_association_table(
