@@ -574,8 +574,10 @@ def db_model_factory(Base, model, all_models):
                             model.name, field_name
                         )
 
+                    foreign_key = model_fields.get('%s_id' % field.name, None)
                     model_fields[field.name] = relationship(
                         field.field_type,
+                        foreign_keys=[foreign_key],
                         **kwargs
                     )
 
