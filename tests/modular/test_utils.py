@@ -7,7 +7,6 @@ import xml.etree.ElementTree as ET
 
 from statik.utils import *
 
-
 TEST_XML = """
 <div class="something">
     Hello world!
@@ -84,6 +83,15 @@ class TestStatikUtils(unittest.TestCase):
             get_url_file_ext('/multiple//slashes///slash'),
             ''
         )
+
+    def test_validate_jinja_template(self):
+        from mock import patch, mock_open
+        with patch("statik.utils.logger.warning") as mock_logger:
+            with patch("statik.utils.open", mock_open(read_data="{{ baz }}")):
+                validate_jinja_template('/path/to/somewhere', {'posts': 'foo'})
+                mock_logger.assert_called_with("'baz' was used in a template, "
+                                               "but it's not available to be used. "
+                                               "Template: /path/to/somewhere")
 
 
 if __name__ == "__main__":

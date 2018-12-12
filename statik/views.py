@@ -10,6 +10,7 @@ from statik.common import YamlLoadable
 from statik.errors import *
 from statik.utils import *
 from statik.context import StatikContext
+from statik.utils import validate_jinja_template
 
 import logging
 
@@ -248,9 +249,12 @@ class StatikSimpleViewRenderer(StatikViewRenderer):
     def __str__(self):
         return repr(self)
 
-    def render(self, context, db=None, safe_mode=False, extra_context=None):
+    def render(self, context, db=None, safe_mode=False, extra_context=None, validate_templates=False):
         ctx = context.build(db=db, safe_mode=safe_mode, extra=extra_context)
         logger.debug("Rendering view %s with context: %s", self.view_name, ctx)
+        if validate_templates:
+            validate_jinja_template(self.template.filename, ctx)
+
         return dict_from_path(
             self.path.render(),
             final_value=self.template.render(ctx)
@@ -279,7 +283,7 @@ class StatikComplexViewRenderer(StatikViewRenderer):
     def __str__(self):
         return repr(self)
 
-    def render(self, context, db=None, safe_mode=False, extra_context=None):
+    def render(self, context, db=None, safe_mode=False, extra_context=None, validate_templates=False):
         """Renders the given context using the specified database, returning a dictionary
         containing path segments and rendered view contents."""
         if not db:
@@ -302,6 +306,8 @@ class StatikComplexViewRenderer(StatikViewRenderer):
                 extra=extra_ctx
             )
             inst_path = self.path.render(inst=inst, context=ctx)
+            if validate_templates:
+                validate_jinja_template(self.template.filename, ctx)
             rendered_view = self.template.render(ctx)
             rendered_views = deep_merge_dict(
                 rendered_views,
@@ -387,13 +393,14 @@ class StatikView(YamlLoadable):
     def __str__(self):
         return repr(self)
 
-    def process(self, db, safe_mode=False, extra_context=None):
+    def process(self, db, safe_mode=False, extra_context=None, validate_templates=False):
         """Deprecated. Rather use StatikView.render()."""
         return self.renderer.render(
             self.context,
             db,
             safe_mode=safe_mode,
-            extra_context=extra_context
+            extra_context=extra_context,
+            validate_templates=validate_templates,
         )
 
     def render(self, db, safe_mode=False, extra_context=None):

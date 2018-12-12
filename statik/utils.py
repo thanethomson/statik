@@ -12,6 +12,7 @@ import shutil
 import re
 
 import six
+from jinja2schema import to_json_schema, infer
 
 if six.PY3:
     import importlib.util
@@ -46,6 +47,7 @@ __all__ = [
     'uncapitalize',
     'find_duplicates_in_array',
     'camel_to_snake',
+    'validate_jinja_template',
 ]
 
 DEFAULT_CONFIG_CONTENT = """project-name: Your project name
@@ -385,5 +387,32 @@ def find_duplicates_in_array(array):
 
     return duplicates
 
+
 def camel_to_snake(camel):
     return '_'.join(re.findall(r'[A-Z][a-z]*', camel))
+
+
+def validate_jinja_template(template, ctx):
+    """Checks that variables used in templates are actually available to be used in context.
+    Logs a warning if a variable used in the template is not found in the context.
+
+    Args:
+        template: Path to the template to check
+        ctx: dictionary of the variables in context
+    """
+    tag_re = re.compile(r'(<!--.*?-->|<[^>]*>)')
+    with open(template) as file:
+        stripped_template = tag_re.sub('', file.read())
+        try:
+            result = to_json_schema(infer(stripped_template))
+        except Exception as e:
+            logger.warning(
+                "Template inspection using jinja2schema failed in %s: %s",
+                template, e)
+            return
+
+        for item in result['required']:
+            if item not in list(ctx.keys()):
+                logger.warning("'%s' was used in a template, "
+                               "but it's not available to be used. Template: %s"
+                               % (item, template))
