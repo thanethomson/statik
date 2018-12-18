@@ -166,6 +166,12 @@ def main():
         help='Display version info for Statik',
         action='store_true',
     )
+
+    group_info.add_argument(
+        '--validate-templates',
+        help='Validate that variables used in jinja templates are actually available to be used.',
+        action='store_true',
+    )
     args = parser.parse_args()
 
     error_context = StatikErrorContext()
@@ -223,7 +229,8 @@ def main():
                 output_path=output_path,
                 in_memory=False,
                 safe_mode=args.safe_mode,
-                error_context=error_context
+                error_context=error_context,
+                validate_templates=args.validate_templates,
             )
 
         if args.upload and args.upload == 'SFTP':

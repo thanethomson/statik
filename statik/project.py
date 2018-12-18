@@ -47,6 +47,7 @@ class StatikProject(object):
         """
         self.error_context = kwargs.pop('error_context', None)
         self.error_context = self.error_context or StatikErrorContext()
+        self.validate_templates = kwargs.pop('validate_templates', False)
 
         if 'config' in kwargs and isinstance(kwargs['config'], dict):
             logger.debug("Loading project configuration from constructor arguments")
@@ -251,7 +252,8 @@ class StatikProject(object):
                     view.process(
                         self.db,
                         safe_mode=self.safe_mode,
-                        extra_context=self.project_context
+                        extra_context=self.project_context,
+                        validate_templates=self.validate_templates,
                     )
                 )
             except StatikError as exc:
