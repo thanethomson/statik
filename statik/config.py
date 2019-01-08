@@ -73,6 +73,8 @@ class StatikConfig(YamlLoadable):
                 DEFAULT_TEMPLATE_PROVIDERS,
                 context=self.error_context
             )
+            
+        self.remote = self.vars.get("remote")
 
         logging.debug("%s", self)
 
