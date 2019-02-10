@@ -9,6 +9,7 @@ Markdown==3.0.1
 MarkupSafe==1.0
 mock==2.0.0
 mlalchemy==0.2.2
+mock
 pathtools==0.1.2
 psycopg2-binary==2.7.6.1
 pystache==0.5.4

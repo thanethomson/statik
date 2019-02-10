@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import unicode_literals
+
+import os
 from copy import deepcopy, copy
 
 from future.utils import iteritems
@@ -67,6 +69,7 @@ class StatikContext(object):
         """Builds a dictionary that can be used as context for template rendering."""
         result = copy(self.initial)
         result.update(self.static)
+        result.update(os.environ)
         if self.dynamic:
             result.update(self.build_dynamic(db, extra=extra, safe_mode=safe_mode))
         if self.for_each and for_each_inst:
