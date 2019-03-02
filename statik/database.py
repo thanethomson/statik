@@ -212,7 +212,7 @@ class StatikDatabase(object):
         db_model = globals()[model.name]
         # load the collection data from the collection file
         with open(full_filename, mode='rt', encoding=self.encoding) as f:
-            collection = yaml.full_load(f.read())
+            collection = yaml.load(f.read())
 
         if not isinstance(collection, list):
             raise InvalidModelCollectionDataError(
