@@ -14,10 +14,11 @@ __all__ = [
 class MarkdownConfig(object):
 
     DEFAULT_MARKDOWN_EXTENSIONS = [
-        'markdown.extensions.fenced_code',
-        'markdown.extensions.tables',
-        'markdown.extensions.toc',
-        'markdown.extensions.footnotes'
+        # 'markdown.extensions.fenced_code',
+        # 'markdown.extensions.tables',
+        # 'markdown.extensions.toc',
+        # 'markdown.extensions.footnotes'
+        # NoteExtension()
     ]
 
     def __init__(self, markdown_params=None, error_context=None):
