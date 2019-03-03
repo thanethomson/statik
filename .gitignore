@@ -102,3 +102,7 @@ pip-selfcheck.json
 # Generated folders
 public/
 
+
+Pipfile
+
+Pipfile\.lock
