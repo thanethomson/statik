@@ -11,6 +11,7 @@ import yaml
 from sqlalchemy import String, Integer, Column, Table, ForeignKey, \
     Boolean, DateTime, Text, create_engine
 from sqlalchemy.orm import sessionmaker, relationship, backref
+from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.ext.declarative import declarative_base
 
 import mlalchemy
@@ -357,6 +358,8 @@ class StatikDatabaseInstance(ContentLoadable):
             raise MissingParameterError("model", context=self.error_context)
         self.model = model
 
+        self.implicit_data_items = []
+
         if session is None:
             raise MissingParameterError("session", context=self.error_context)
         self.session = session
@@ -394,11 +397,42 @@ class StatikDatabaseInstance(ContentLoadable):
                 # convert the list of field values to a query to look up the
                 # primary keys of the corresponding table
                 other_model = globals()[field.field_type]
+
+                missing_items = []
+
+                for item in self.field_values[field_name]:
+                    try:
+                        self.session.query(
+                            other_model
+                        ).filter(
+                            other_model.pk == item
+                        ).one()
+                    except NoResultFound:
+                        # Only allow implicit tables if the model
+                        # has no fields other than 'pk'
+                        if len(other_model.__table__._columns) == 1:
+                            missing_items.append({'pk': item})
+                        else:
+                            logger.warning('%s not found in %s' %
+                                           (item, other_model))
+                    else:
+                        logger.debug('%s found', item)
+
+                self.implicit_data_items.append(
+                    (field.field_type, missing_items)
+                )
+
+                original_values = self.field_values[field_name]
+
                 self.field_values[field_name] = self.session.query(
                     other_model
                 ).filter(
                     other_model.pk.in_(self.field_values[field_name])
                 ).all()
+
+                # Ensure that values appear in original order
+                self.field_values[field_name].sort(
+                    key=lambda x: original_values.index(x.pk))
 
         # populate any Content field for this model
         if self.model.content_field is not None:
