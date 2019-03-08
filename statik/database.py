@@ -213,7 +213,7 @@ class StatikDatabase(object):
         db_model = globals()[model.name]
         # load the collection data from the collection file
         with open(full_filename, mode='rt', encoding=self.encoding) as f:
-            collection = yaml.load(f.read())
+            collection = yaml.load(f.read(), Loader=yaml.FullLoader)
 
         if not isinstance(collection, list):
             raise InvalidModelCollectionDataError(
@@ -394,6 +394,24 @@ class StatikDatabaseInstance(ContentLoadable):
                     "Attempting to look up primary keys for ManyToMany " +
                     "field relationship: %s", self.field_values[field_name]
                 )
+
+                duplicates_in_array = find_duplicates_in_array(self.field_values[field_name])
+
+                if duplicates_in_array:
+                    logger.warning("Duplicates found in %s: %s (field: %s)",
+                                   self.filename,
+                                   duplicates_in_array,
+                                   field_name)
+                    self.field_values[field_name] = list(set(self.field_values[field_name]))
+
+                # check if non-string items are present
+                for item in self.field_values[field_name]:
+                    if not isinstance(item, ("".__class__, u"".__class__)):
+                        logger.warning("Non-string values found in array " + 
+                                        "(field: %s, instance: %s, model: %s): %s",
+                                        field_name, self.field_values['pk'], self.model.name, item)
+
+
                 # convert the list of field values to a query to look up the
                 # primary keys of the corresponding table
                 other_model = globals()[field.field_type]
