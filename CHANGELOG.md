@@ -4,6 +4,11 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.23.0` - 5 October 2019
+
+* Remove support for Python 2 in line with upcoming deprecation in 2020
+* Update all dependencies to latest working versions
+
 ### `v0.22.2` - 20 October 2018
 
 * Merging #74 to better organise the growing list of CLI arguments.
