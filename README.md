@@ -29,7 +29,7 @@ See the [wiki](https://github.com/thanethomson/statik/wiki) for more details.
 ## Requirements
 In order to install **Statik**, you will need:
 
-* Python 3.5+
+* Python 3.6+
 * `pip` or `easy_install`
 
 ## Installation
