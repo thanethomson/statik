@@ -8,13 +8,12 @@ import shutil
 
 import colorlog
 
-from statik.generator import generate
-from statik.utils import generate_quickstart, get_project_config_file
-from statik.autogen import autogen
-from statik.watcher import watch
-from statik.project import StatikProject
-from statik.errors import StatikError, StatikErrorContext
-from statik.upload import upload_sftp, upload_netlify
+from .generator import generate
+from .utils import generate_quickstart, get_project_config_file
+from .autogen import autogen
+from .watcher import watch
+from .project import StatikProject
+from .errors import StatikError, StatikErrorContext
 
 import logging
 logger = logging.getLogger(__name__)
@@ -107,45 +106,34 @@ def main():
         default=8000,
     )
     group_server.add_argument(
-        '-n', '--no-browser',
+        '--no-browser',
         action='store_true',
         default=False,
         help="Do not attempt to automatically open a web browser at the served URL when watching for changes"
     )
 
-    group_remote = parser.add_argument_group('remote publishing')
-    group_remote.add_argument(
-        '-u', '--upload',
-        action='store',
-        help="Upload project to remote location (supported: SFTP, netlify)",
+    group_deploy = parser.add_argument_group('remote deployment of built project')
+    group_deploy.add_argument(
+        '--deploy',
+        choices=['sftp', 'netlify'],
+        default=None,
+        required=False,
+        help="Attempt to deploy the project using the specified approach after building the project (options: sftp, netlify)",
     )
 
-    group_remote.add_argument(
-        '--netlify-site-id',
-        action='store',
-        help="Netlify site id to upload to. (--upload=netlify must be specified too)",
-    )
-
-    group_remote.add_argument(
-        '-c', '--clear-remote',
-        action='store_true',
-        help="CAUTION: This will delete ALL files and subfolders in the remote folder before uploading the generated files. " + 
-             "If the subsequent upload fails, your website will no longer be online."
-    )
-
-    group_info = parser.add_argument_group('information about Statik')
-    group_info.add_argument(
+    group_output = parser.add_argument_group('output-related options')
+    group_output.add_argument(
         '-v', '--verbose',
         help="Whether or not to output verbose logging information (default: false).",
         action='store_true',
     )
-    group_info.add_argument(
+    group_output.add_argument(
         '--quiet',
         default=False,
         help="Run Statik in quiet mode, where there will be no output except upon error.",
         action='store_true'
     )
-    group_info.add_argument(
+    group_output.add_argument(
         '--fail-silently',
         default=False,
         help="Only relevant if running Statik in quiet mode - if Statik encounters an error, the only indication "
@@ -153,12 +141,14 @@ def main():
              "on the terminal.",
         action='store_true'
     )
-    group_info.add_argument(
+    group_output.add_argument(
         '--no-colorlog',
         action='store_true',
         help="By default, Statik outputs logging data in colour. By specifying this switch, " +
              "coloured logging will be turned off."
     )
+
+    group_info = parser.add_argument_group('information about Statik')
     group_info.add_argument(
         '--version',
         help='Display version info for Statik',
@@ -221,32 +211,9 @@ def main():
                 output_path=output_path,
                 in_memory=False,
                 safe_mode=args.safe_mode,
+                deploy_method=args.deploy,
                 error_context=error_context
             )
-
-        if args.upload and args.upload == 'SFTP':
-                upload_sftp(
-                    config_file_path,
-                    output_path,
-                    rm_remote=args.clear_remote
-                )
-        elif args.netlify_site_id and args.upload == 'netlify':
-            if args.clear_remote:
-                logger.warning("--clear-remote is not supported when uploading to Netlify")
-
-            upload_netlify(
-                output_path,
-                args.netlify_site_id
-            )
-        else:
-            if args.clear_remote:
-                logger.warning("Ignoring --clear-remote switch because --upload is not specified")
-
-            if args.netlify_site_id and args.upload != 'netlify' or args.netlify_site_id:
-                logger.warning("Ignoring --netlify-site-id: --upload=netlify not specified")
-
-            if args.upload:
-                logger.warning("Upload format '{}' not supported".format(args.upload))
 
     except StatikError as e:
         sys.exit(e.exit_code)

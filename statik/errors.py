@@ -26,6 +26,7 @@ __all__ = [
     'InvalidViewFieldTypeError',
     'MarkdownSyntaxError',
     'ExternalDatabaseError',
+    'DeploymentError',
 ]
 
 
@@ -297,3 +298,10 @@ class ExternalDatabaseError(StatikError):
     """For generic errors related to external database."""
     error_kind = "External database error"
     exit_code = 8
+
+
+class DeploymentError(StatikError):
+    """For errors relating to deployment of built projects."""
+    error_kind = "Deployment-related error"
+    exit_code = 9
+

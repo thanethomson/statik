@@ -6,10 +6,11 @@ import os.path
 import yaml
 from markdown import Markdown
 
-from statik.markdown_exts import *
-from statik.utils import *
-from statik.errors import *
-from statik.markdown_config import MarkdownConfig
+from .markdown_exts import MarkdownYamlMetaExtension, MarkdownLoremIpsumExtension, \
+        MarkdownPermalinkExtension
+from .utils import dict_strip, extract_filename
+from .errors import StatikErrorContext, MissingParameterError, InternalError, StatikError
+from .markdown_config import MarkdownConfig
 
 __all__ = [
     'YamlLoadable',

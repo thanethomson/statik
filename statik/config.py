@@ -2,12 +2,12 @@
 
 from copy import copy
 
-from statik.errors import *
-from statik.common import YamlLoadable
-from statik.utils import underscore_var_names
-from statik.markdown_config import MarkdownConfig
-from statik.external_database import ExternalDatabase
-from statik.templating import DEFAULT_TEMPLATE_PROVIDERS
+from .errors import ProjectConfigurationError, NoSupportedTemplateProvidersError
+from .common import YamlLoadable
+from .utils import underscore_var_names
+from .markdown_config import MarkdownConfig
+from .external_database import ExternalDatabase
+from .templating import DEFAULT_TEMPLATE_PROVIDERS
 
 import logging
 logger = logging.getLogger(__name__)
@@ -72,12 +72,20 @@ class StatikConfig(YamlLoadable):
                 context=self.error_context
             )
 
+        # TODO: Add plugin architecture for deployment options
+        self.deploy = self.vars.get('deploy', dict())
+        if not isinstance(self.deploy, dict):
+            raise ProjectConfigurationError(
+                message="Deployment configuration must be a key/value pair map",
+                context=self.error_context,
+            )
+
         logging.debug("%s", self)
 
     def __repr__(self):
         return ("StatikConfig(project_name=%s, base_path=%s, encoding=%s, theme=%s, " +
                 "template_providers=%s, assets_src_path=%s, assets_dest_path=%s, " +
-                "context_static=%s, context_dynamic=%s)") % (
+                "context_static=%s, context_dynamic=%s, deployment=%s)") % (
                     self.project_name,
                     self.base_path,
                     self.encoding,
@@ -86,5 +94,6 @@ class StatikConfig(YamlLoadable):
                     self.assets_src_path,
                     self.assets_dest_path,
                     self.context_static,
-                    self.context_dynamic
+                    self.context_dynamic,
+                    self.deployment,
                 )

@@ -9,6 +9,7 @@ This is the **Statik** change log as of version `0.6.0`.
 * Remove support for Python 2 in line with upcoming deprecation in 2020
 * Update all dependencies to latest working versions
 * Deprecate support for Python 3.5
+* Update Netlify support with own internal deployment mechanism
 
 ### `v0.22.2` - 20 October 2018
 

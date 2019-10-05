@@ -6,14 +6,17 @@ import traceback
 import os.path
 from copy import copy
 
-from statik.config import StatikConfig
-from statik.utils import *
-from statik.errors import *
-from statik.models import StatikModel
-from statik.views import StatikView
-from statik.database import StatikDatabase
-from statik.templating import StatikTemplateEngine
-from statik.context import StatikContext
+from .config import StatikConfig
+from .utils import get_project_config_file, list_files, extract_filename, deep_merge_dict, \
+        copy_tree
+from .errors import StatikErrorContext, MissingProjectConfig, InternalError, NoViewsError, \
+        StatikError, MissingProjectFolderError, ProjectConfigurationError, ViewError
+from .models import StatikModel
+from .views import StatikView
+from .database import StatikDatabase
+from .templating import StatikTemplateEngine
+from .context import StatikContext
+from .deploy import new_deployment_method_instance
 
 import statik.filters
 import statik.tags
@@ -66,7 +69,7 @@ class StatikProject(object):
         self.db = None
         self.project_context = None
 
-    def generate(self, output_path=None, in_memory=False):
+    def generate(self, output_path=None, in_memory=False, deploy_method=None):
         """Executes the Statik project generator.
 
         Args:
@@ -74,6 +77,7 @@ class StatikProject(object):
             in_memory: Whether or not to generate the results in memory. If True, this will
                 generate the output result as a dictionary. If False, this will write the output
                 to files in the output_path.
+            deploy: If we should deploy the project after generating, this must specify the configuration.
 
         Returns:
             If in_memory is True, this returns a dictionary containing the actual generated static
@@ -95,6 +99,17 @@ class StatikProject(object):
                 logger.debug("Using encoding: %s", self.config.encoding)
             else:
                 logger.debug("Using encoding: %s", self.config.encoding)
+
+            deployer = None
+            if deploy_method is not None:
+                deployer = new_deployment_method_instance(
+                    deploy_method,
+                    self.config.deploy.get(deploy_method, dict()),
+                    error_context=self.error_context,
+                )
+                if deployer is None:
+                    raise ProjectConfigurationError(message="Unrecognized deployment method: \"%s\"" % deploy_method)
+
             self.error_context.clear()
 
             self.models = self.load_models()
@@ -121,7 +136,9 @@ class StatikProject(object):
                 # copy any assets across, recursively
                 self.copy_assets(output_path)
                 result = file_count
-            
+                if deployer is not None:
+                    deployer.execute(output_path)
+
             logger.info("Success!")
 
         except StatikError as exc:
@@ -336,3 +353,4 @@ class StatikProject(object):
                     "Missing assets source path - skipping copying of assets: %s",
                     src_path
                 )
+
