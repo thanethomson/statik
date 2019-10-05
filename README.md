@@ -29,7 +29,7 @@ See the [wiki](https://github.com/thanethomson/statik/wiki) for more details.
 ## Requirements
 In order to install **Statik**, you will need:
 
-* Python 2.7+ or Python 3.5+
+* Python 3.5+
 * `pip` or `easy_install`
 
 ## Installation
@@ -150,7 +150,7 @@ statik --upload=netlify --netlify-site-id=<netlify_site_id>
 ## License
 **The MIT License (MIT)**
 
-Copyright (c) 2016-2018 Thane Thomson
+Copyright (c) 2016-2019 Thane Thomson
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
