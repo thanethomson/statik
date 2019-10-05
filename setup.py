@@ -42,7 +42,8 @@ setup(
         ]
     },
     license='MIT',
-    packages=find_packages(),
+    packages=find_packages('statik'),
+    package_dir={'': 'statik'},
     include_package_data=True,
     classifiers=[
         "Development Status :: 4 - Beta",
