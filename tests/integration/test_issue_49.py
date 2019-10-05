@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Regression test for issue #49."""
 
-from __future__ import unicode_literals
-
 import unittest
 import os.path
 from xml.etree import ElementTree as ET

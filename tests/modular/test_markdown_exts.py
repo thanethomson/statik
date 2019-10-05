@@ -1,13 +1,10 @@
 # -*- coding:utf-8 -*-
 
-from __future__ import unicode_literals
-
 import unittest
 from markdown import Markdown
 import xml.etree.ElementTree as ET
 
 from statik.markdown_exts import *
-from statik.utils import _str
 
 import lipsum
 
@@ -97,7 +94,7 @@ class TestMarkdownYamlExtension(unittest.TestCase):
             ]
         )
         html = "<html><body>"+md.convert(TEST_PERMALINK_CONTENT)+"</body></html>"
-        tree = ET.fromstring(_str(html))
+        tree = ET.fromstring(html)
 
         for tag_id in range(1, 7):
             heading = tree.findall('./body/h%d' % tag_id)[0]
@@ -115,7 +112,7 @@ class TestMarkdownYamlExtension(unittest.TestCase):
             ]
         )
         html = "<html>"+md.convert(TEST_LOREM_IPSUM_CONTENT)+"</html>"
-        tree = ET.fromstring(_str(html))
+        tree = ET.fromstring(html)
         p = tree.findall('./p')[0]
         self.assertEqual(100, lipsum.count_words(p.text))
 
@@ -124,7 +121,7 @@ class TestMarkdownYamlExtension(unittest.TestCase):
         self.assertEqual(3, len(tree.findall('./p')[2:]))
 
         html = "<html>"+md.convert(TEST_LOREM_IPSUM_SINGLE_INSTANCES)+"</html>"
-        tree = ET.fromstring(_str(html))
+        tree = ET.fromstring(html)
         p = tree.findall('./p')[0]
         self.assertEqual(1, lipsum.count_words(p.text))
 

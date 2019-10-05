@@ -1,9 +1,5 @@
 # -*- coding:utf-8 -*-
 
-from __future__ import unicode_literals
-from future.utils import iteritems
-from past.builtins import basestring
-
 from copy import deepcopy, copy
 
 from statik.common import YamlLoadable
@@ -87,7 +83,7 @@ class StatikViewPath(object):
                 output_ext=output_ext,
                 view_name=view_name
             )
-        elif isinstance(path, basestring):
+        elif isinstance(path, str):
             return StatikViewSimplePath(
                 path,
                 output_filename=output_filename,
@@ -161,7 +157,7 @@ class StatikViewComplexPath(StatikViewPath):
             )
         self.raw_template = path['template']
         self.template = template_engine.create_template(self.raw_template)
-        self.variable, self.query = list(iteritems(path['for-each']))[0]
+        self.variable, self.query = list(path['for-each'].items())[0]
 
         super(StatikViewComplexPath, self).__init__(
             path,

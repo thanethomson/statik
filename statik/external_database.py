@@ -1,7 +1,5 @@
 # -*- codig: utf-8 -*-
 
-from __future__ import unicode_literals
-
 import os.path
 
 import psycopg2

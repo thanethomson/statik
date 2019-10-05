@@ -1,7 +1,5 @@
 # -*- coding:utf-8 -*-
 
-from __future__ import unicode_literals
-
 import unittest
 try:
     import unittest.mock as mock
@@ -9,7 +7,6 @@ except ImportError:
     import mock
 
 import psycopg2
-import six
 
 from statik.external_database import *
 from statik.errors import *
@@ -81,7 +78,7 @@ class TestPostgreSQL(unittest.TestCase):
                 'type': 'fantastic_database'
             }).to_dict(self.model, None)
 
-    @mock.patch('builtins.open' if six.PY3 else '__builtin__.open', new_callable=mock.mock_open)
+    @mock.patch('builtins.open', new_callable=mock.mock_open)
     @mock.patch('yaml.dump')
     @mock.patch('psycopg2.connect')
     def test_valid_write_files(self, c, mock_dump, mock_open):

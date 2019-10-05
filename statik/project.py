@@ -1,7 +1,5 @@
 # -*- coding:utf-8 -*-
 
-from __future__ import unicode_literals
-from future.utils import iteritems
 from io import open
 
 import traceback
@@ -244,7 +242,7 @@ class StatikProject(object):
         """Processes the loaded views to generate the required output data."""
         output = {}
         logger.debug("Processing %d view(s)...", len(self.views))
-        for view_name, view in iteritems(self.views):
+        for view_name, view in self.views.items():
             try:
                 output = deep_merge_dict(
                     output,
@@ -280,7 +278,7 @@ class StatikProject(object):
         """
         file_count = 0
         logger.debug("Dumping in-memory processing results to output folder: %s", output_path)
-        for k, v in iteritems(result):
+        for k, v in result.items():
             cur_output_path = os.path.join(output_path, k)
 
             if isinstance(v, dict):

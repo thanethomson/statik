@@ -1,7 +1,5 @@
 # -*- coding:utf-8 -*-
 
-from __future__ import unicode_literals
-
 import os
 import os.path
 import xml.etree.ElementTree as ET
@@ -14,7 +12,7 @@ import logging
 
 from statik.project import StatikProject
 from statik.generator import generate
-from statik.utils import strip_el_text, _str
+from statik.utils import strip_el_text
 from statik.errors import MissingTemplateError, SafetyViolationError
 
 
@@ -117,14 +115,14 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         self.assert_by_author_michael_compiles(self.assert_path_exists("by-author/michael/index.html", output_data))
 
         # Test the custom template tags/filters functionality
-        tt = ET.fromstring(_str(output_data['tag-testing']['index.html']))
+        tt = ET.fromstring(output_data['tag-testing']['index.html'])
         self.assertEqual('html', tt.findall('.')[0].tag)
         para_tags = tt.findall('./body/p')
         self.assertEqual('Hello world!', para_tags[0].text.strip())
         self.assertEqual('an uppercase string', para_tags[1].text.strip())
 
         # Check the contents of the overlapping simple/complex views
-        ov = ET.fromstring(_str(output_data['overlap']['index.html']))
+        ov = ET.fromstring(output_data['overlap']['index.html'])
         self.assertEqual('html', ov.findall('.')[0].tag)
         self.assertEqual('Overlap Test', ov.findall('./head/title')[0].text.strip())
         self.assertEqual('Overlap Test', ov.findall('./body/h1')[0].text.strip())
@@ -164,7 +162,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         )
 
         # Now test for the pagination
-        pp = ET.fromstring(_str(output_data['paged-posts']['1']['index.html']))
+        pp = ET.fromstring(output_data['paged-posts']['1']['index.html'])
         self.assertEqual('html', pp.findall('.')[0].tag)
         self.assertEqual('Page 1 of 4', pp.findall('./head/title')[0].text.strip())
         self.assertEqual('Page 1 of 4', pp.findall('./body/h1')[0].text.strip())
@@ -186,7 +184,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
             pp_link_titles,
         )
 
-        pp = ET.fromstring(_str(output_data['paged-posts']['2']['index.html']))
+        pp = ET.fromstring(output_data['paged-posts']['2']['index.html'])
         self.assertEqual('html', pp.findall('.')[0].tag)
         self.assertEqual('Page 2 of 4', pp.findall('./head/title')[0].text.strip())
         self.assertEqual('Page 2 of 4', pp.findall('./body/h1')[0].text.strip())
@@ -208,7 +206,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
             pp_link_titles,
         )
 
-        pp = ET.fromstring(_str(output_data['paged-posts']['3']['index.html']))
+        pp = ET.fromstring(output_data['paged-posts']['3']['index.html'])
         self.assertEqual('html', pp.findall('.')[0].tag)
         self.assertEqual('Page 3 of 4', pp.findall('./head/title')[0].text.strip())
         self.assertEqual('Page 3 of 4', pp.findall('./body/h1')[0].text.strip())
@@ -230,7 +228,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
             pp_link_titles,
         )
 
-        pp = ET.fromstring(_str(output_data['paged-posts']['4']['index.html']))
+        pp = ET.fromstring(output_data['paged-posts']['4']['index.html'])
         self.assertEqual('html', pp.findall('.')[0].tag)
         self.assertEqual('Page 4 of 4', pp.findall('./head/title')[0].text.strip())
         self.assertEqual('Page 4 of 4', pp.findall('./body/h1')[0].text.strip())
@@ -257,7 +255,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
 
     def assert_homepage_compiles(self, page_content):
         # Parse the home page's XHTML content
-        homepage = ET.fromstring(_str(page_content))
+        homepage = ET.fromstring(page_content)
         self.assertEqual('html', homepage.findall('.')[0].tag)
         self.assertEqual('Welcome to the test blog', homepage.findall('./head/title')[0].text.strip())
         self.assertEqual('Home page', homepage.findall('./body/h1')[0].text.strip())
@@ -322,7 +320,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         self.assertEqual('/scripts/generated.js', script.attrib['src'])
 
     def assert_my_first_post_compiles(self, content):
-        post = ET.fromstring(_str(content))
+        post = ET.fromstring(content)
         self.assertEqual('html', post.findall('.')[0].tag)
         self.assertEqual('My first post', post.findall('./head/title')[0].text.strip())
         self.assertEqual('2016-06-15', post.findall(".//div[@class='published']")[0].text.strip())
@@ -342,7 +340,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         )
 
     def assert_michael_bio_compiles(self, content):
-        bio = ET.fromstring(_str(content))
+        bio = ET.fromstring(content)
         self.assertEqual('html', bio.findall('.')[0].tag)
         self.assertEqual('Michael Anderson', bio.findall('./head/title')[0].text.strip())
         self.assertEqual('mailto:manderson@somewhere.com', bio.findall(".//div[@class='meta']/a")[0].attrib['href'])
@@ -355,7 +353,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         self.assertEqual("This is Michael's bio, in Markdown format.", bio_content_text)
 
     def assert_andrew_bio_compiles(self, content):
-        bio = ET.fromstring(_str(content))
+        bio = ET.fromstring(content)
         self.assertEqual('html', bio.findall('.')[0].tag)
         self.assertEqual('Andrew Michaels', bio.findall('./head/title')[0].text.strip())
         self.assertEqual('mailto:amichaels@somewhere.com', bio.findall(".//div[@class='meta']/a")[0].attrib['href'])
@@ -367,7 +365,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         self.assertEqual("Here's Andrew's bio!", bio_content_text)
 
     def assert_by_author_andrew_compiles(self, content):
-        posts_by_author = ET.fromstring(_str(content))
+        posts_by_author = ET.fromstring(content)
         self.assertEqual('html', posts_by_author.findall('.')[0].tag)
         self.assertEqual('Posts by Andrew', posts_by_author.findall('./head/title')[0].text.strip())
         self.assertEqual('Posts by Andrew', posts_by_author.findall('./body/h1')[0].text.strip())
@@ -394,7 +392,7 @@ class TestSimpleStatikIntegration(unittest.TestCase):
         )
 
     def assert_by_author_michael_compiles(self, content):
-        posts_by_author = ET.fromstring(_str(content))
+        posts_by_author = ET.fromstring(content)
         self.assertEqual('html', posts_by_author.findall('.')[0].tag)
         self.assertEqual('Posts by Michael', posts_by_author.findall('./head/title')[0].text.strip())
         self.assertEqual('Posts by Michael', posts_by_author.findall('./body/h1')[0].text.strip())

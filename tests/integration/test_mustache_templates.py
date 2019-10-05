@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import unicode_literals
-
 import os
 import os.path
 import unittest
@@ -40,7 +38,7 @@ class TestStatikMustacheTemplating(unittest.TestCase):
         # Check that the home page is there
         self.assertIn('index.html', output_data)
         # Parse it
-        homepage = ET.fromstring(_str(output_data['index.html']))
+        homepage = ET.fromstring(output_data['index.html'])
         self.assertEqual('html', homepage.findall(".")[0].tag)
         self.assertEqual('Welcome to the test blog', homepage.findall('./head/title')[0].text.strip())
         self.assertEqual('Home page', homepage.findall('./body/h1')[0].text.strip())

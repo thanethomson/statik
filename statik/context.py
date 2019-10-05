@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import unicode_literals
 from copy import deepcopy, copy
 
-from future.utils import iteritems
 from statik.utils import underscore_var_names
 
 import logging
@@ -48,14 +46,14 @@ class StatikContext(object):
         """Builds the dynamic context based on our current dynamic context entity and the given
         database."""
         result = dict()
-        for var, query in iteritems(self.dynamic):
+        for var, query in self.dynamic.items():
             result[var] = db.query(query, safe_mode=safe_mode, additional_locals=extra)
         return result
 
     def build_for_each(self, db, safe_mode=False, extra=None):
         """Builds the for-each context."""
         result = dict()
-        for var, query in iteritems(self.for_each):
+        for var, query in self.for_each.items():
             result[var] = db.query(
                 query,
                 additional_locals=extra,
@@ -74,3 +72,4 @@ class StatikContext(object):
         if isinstance(extra, dict):
             result.update(extra)
         return result
+

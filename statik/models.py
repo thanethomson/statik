@@ -1,8 +1,5 @@
 # -*- coding:utf-8 -*-
 
-from __future__ import unicode_literals
-from future.utils import iteritems
-
 from statik.common import YamlLoadable
 from statik.fields import *
 from statik.utils import extract_filename
@@ -45,7 +42,7 @@ class StatikModel(YamlLoadable):
         self.foreign_models = set()
 
         # build up all of our fields from the model configuration
-        for field_name, field_type in iteritems(self.vars):
+        for field_name, field_type in self.vars.items():
             if field_type == 'Content':
                 if self.content_field is not None:
                     raise ModelError(
@@ -74,7 +71,7 @@ class StatikModel(YamlLoadable):
         """Attempts to scan for additional relationship fields for this model based on all of the other models'
         structures and relationships.
         """
-        for model_name, model in iteritems(all_models):
+        for model_name, model in all_models.items():
             if model_name != self.name:
                 for field_name in model.field_names:
                     field = model.fields[field_name]

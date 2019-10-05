@@ -1,7 +1,5 @@
 # -*- coding:utf-8 -*-
 
-from __future__ import unicode_literals
-
 from jinja2 import nodes
 from jinja2.ext import Extension
 from jinja2.exceptions import TemplateSyntaxError

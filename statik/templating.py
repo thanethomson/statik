@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import unicode_literals
-
 from io import open
 import os.path
 
@@ -410,7 +408,7 @@ class StatikMustacheTemplateProvider(StatikTemplateProvider):
 
     def create_template(self, s, filename=None):
         return StatikMustacheTemplate(
-            pystache.parse(_unicode(s)),
+            pystache.parse(s),
             self.renderer,
             filename=filename
         )

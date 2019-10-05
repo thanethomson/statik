@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import unicode_literals
-
 import os.path
 import xml.etree.ElementTree as ET
 import unittest
 
 from statik.generator import generate
-from statik.utils import _str
 
 
 class TestCustomMarkdownExtensions(unittest.TestCase):
@@ -26,7 +23,7 @@ class TestCustomMarkdownExtensions(unittest.TestCase):
         self.assertIn('index.html', output_data['test'])
         self.assertIn('index.html', output_data['test-with-code'])
 
-        tree = ET.fromstring(_str(output_data['test-with-code']['index.html']))
+        tree = ET.fromstring(output_data['test-with-code']['index.html'])
         self.assertEqual("Test post with some code", tree.findall('./head/title')[0].text.strip())
         self.assertEqual(
             "This should test the codehilite integration.",

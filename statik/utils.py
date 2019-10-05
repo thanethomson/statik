@@ -1,7 +1,5 @@
 # -*- coding:utf-8 -*-
 
-from __future__ import unicode_literals
-from future.utils import iteritems
 from io import open
 
 import os
@@ -11,12 +9,7 @@ from copy import deepcopy, copy
 import shutil
 import re
 
-import six
-
-if six.PY3:
-    import importlib.util
-elif six.PY2:
-    import imp
+import importlib.util
 
 from glob import glob
 
@@ -40,8 +33,6 @@ __all__ = [
     'dict_strip',
     'strip_str',
     'strip_el_text',
-    '_str',
-    '_unicode',
     'find_first_file_with_ext',
     'uncapitalize',
     'find_duplicates_in_array',
@@ -109,7 +100,7 @@ def deep_merge_dict(a, b):
     _a = copy(a)
     _b = copy(b)
 
-    for key_b, val_b in iteritems(_b):
+    for key_b, val_b in _b.items():
         # if it's a sub-dictionary
         if isinstance(val_b, dict):
             if key_b not in _a or not isinstance(_a[key_b], dict):
@@ -126,7 +117,7 @@ def deep_merge_dict(a, b):
 
 def underscore_var_names(d):
     _d = {}
-    for k, v in iteritems(d):
+    for k, v in d.items():
         _k = k.replace('-', '_')
         # perform the underscoring recursively
         _d[_k] = underscore_var_names(v) if isinstance(v, dict) else v
@@ -233,12 +224,9 @@ def ensure_file_exists(path, default_content):
 
 
 def import_module(module_name, path):
-    if six.PY3:
-        spec = importlib.util.spec_from_file_location(module_name, path)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-    elif six.PY2:
-        imp.load_source(module_name, path)
+    spec = importlib.util.spec_from_file_location(module_name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
 
 
 def import_python_modules_by_path(path):
@@ -246,14 +234,6 @@ def import_python_modules_by_path(path):
     for filename in module_files:
         name = extract_filename(filename)
         import_module(name, filename)
-
-
-def _str(s):
-    return s.encode("utf-8") if six.PY2 else s
-
-
-def _unicode(s):
-    return s.decode("utf-8") if six.PY2 and isinstance(s, str) else s
 
 
 def get_project_config_file(path, default_config_file_name):
@@ -286,7 +266,7 @@ def dict_strip(d):
         A new dictionary object, whose string values' whitespace has been stripped out.
     """
     _d = deepcopy(d)
-    for k, v in iteritems(d):
+    for k, v in d.items():
         if isinstance(v, str):
             _d[k] = v.strip()
         elif isinstance(v, dict):

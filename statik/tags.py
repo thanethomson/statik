@@ -1,8 +1,5 @@
 # -*- coding:utf-8 -*-
 
-from __future__ import unicode_literals
-from future.utils import iteritems
-
 from statik.templatetags import register
 
 
@@ -17,6 +14,6 @@ def echo_arguments(*args, **kwargs):
             {% ditto 1 2 3 %} => "ditto(1, 2, 3)"
     """
     args_string = ', '.join(map(lambda x: str(x), args))
-    kwargs_string = ', '.join(map(lambda k, v: "%s=%s" % (k, v), iteritems(kwargs)))
+    kwargs_string = ', '.join(map(lambda k, v: "%s=%s" % (k, v), kwargs.items()))
     string_lst = filter(lambda x: bool(x), [args_string, kwargs_string])
     return "ditto(%s)" % ", ".join(string_lst)

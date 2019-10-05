@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import unicode_literals
-from six import iteritems
 from copy import copy
 
-from statik.errors import *
+from statik.errors import StatikErrorContext, ProjectConfigurationError
 
 __all__ = [
     'MarkdownConfig'
@@ -51,7 +49,7 @@ class MarkdownConfig(object):
         # if it's a dictionary, first convert it to our list notation
         if isinstance(extension_list, dict):
             extension_list = []
-            for ext_package, config in iteritems(markdown_params['extensions']):
+            for ext_package, config in markdown_params['extensions'].items():
                 extension_list.append({ext_package: config})
 
         # Try to load extensions as requested by config

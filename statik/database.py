@@ -1,8 +1,5 @@
 # -*- coding:utf-8 -*-
 
-from __future__ import unicode_literals
-from future.utils import iteritems
-from past.builtins import basestring
 from io import open
 
 import os.path
@@ -14,6 +11,7 @@ from sqlalchemy.orm import sessionmaker, relationship, backref
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.query import Query
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm.session import close_all_sessions
 
 import mlalchemy
 
@@ -91,7 +89,7 @@ class StatikDatabase(object):
         self.create_db(models)
 
     def find_backrefs(self):
-        for model_name, model in iteritems(self.models):
+        for model_name, model in self.models.items():
             logger.debug('Attempting to find backrefs for model: %s', model_name)
             try:
                 model.find_additional_rels(self.models)
@@ -110,7 +108,7 @@ class StatikDatabase(object):
         self.tables = dict(
             [
                 (model_name, self.create_model_table(model))
-                for model_name, model in iteritems(models)
+                for model_name, model in models.items()
             ]
         )
         # now create the tables in memory
@@ -213,7 +211,7 @@ class StatikDatabase(object):
 
         # load the collection data from the collection file
         with open(full_filename, mode='rt', encoding=self.encoding) as f:
-            collection = yaml.load(f.read())
+            collection = yaml.safe_load(f.read())
 
         if not isinstance(collection, list):
             raise InvalidModelCollectionDataError(
@@ -352,7 +350,7 @@ class StatikDatabase(object):
         else:
             logger.debug("Executing unsafe query (Python exec())")
             if additional_locals is not None:
-                for k, v in iteritems(additional_locals):
+                for k, v in additional_locals.items():
                     locals()[k] = v
 
             exec(
@@ -368,7 +366,7 @@ class StatikDatabase(object):
 
     def shutdown(self):
         """Shuts down the database engine."""
-        self.session.close_all()
+        close_all_sessions()
         self.engine.dispose()
         # clear all tracked global variables
         clear_tracked_globals()
@@ -396,7 +394,7 @@ class StatikDatabaseInstance(ContentLoadable):
         for field_name in self.model.field_names:
             field = self.model.fields[field_name]
             if isinstance(field, StatikDateTimeField) and \
-                    isinstance(self.field_values.get(field_name), basestring):
+                    isinstance(self.field_values.get(field_name), str):
                 # attempt to perform an intelligent date/time parse operation
                 self.field_values[field_name] = dateutil_parse(self.field_values[field_name])
             # if it's a foreign key
@@ -483,7 +481,7 @@ class StatikDatabaseInstance(ContentLoadable):
 
     def __repr__(self):
         result = ["StatikDatabaseInstance(model=%s" % self.model.name]
-        for field_name, field_value in iteritems(self.field_values):
+        for field_name, field_value in self.field_values.items():
             model_field = self.model.fields.get(field_name, None)
             if isinstance(model_field, StatikContentField) or isinstance(model_field, StatikTextField):
                 result.append("%s=<...>" % field_name)
@@ -523,7 +521,7 @@ def db_model_factory(Base, model, all_models):
     }
 
     # populate all of the relevant additional relationships for this model
-    for field_name, rel in iteritems(model.additional_rels):
+    for field_name, rel in model.additional_rels.items():
         kwargs = {}
         if rel.get('back_populates', None) is not None:
             kwargs['back_populates'] = rel['back_populates']

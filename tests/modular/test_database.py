@@ -1,8 +1,5 @@
 # -*- coding:utf-8 -*-
 
-from __future__ import unicode_literals
-from future.utils import iteritems
-
 import os.path
 import unittest
 import logging
@@ -149,7 +146,7 @@ class TestStatikDatabase(unittest.TestCase):
             ['fireplace', 'single-bed', 'shower'], redroom_tags)
 
     def assertInstanceEqual(self, expected, inst):
-        for field_name, field_value in iteritems(expected):
+        for field_name, field_value in expected.items():
             self.assertEqual(field_value, getattr(inst, field_name))
 
 

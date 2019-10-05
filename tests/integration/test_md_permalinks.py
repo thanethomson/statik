@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import unicode_literals
-
 import os.path
 import xml.etree.ElementTree as ET
 import unittest
 
 from statik.generator import generate
-from statik.utils import _str
 
 
 class TestMarkdownPermalinksExtension(unittest.TestCase):
@@ -24,7 +21,7 @@ class TestMarkdownPermalinksExtension(unittest.TestCase):
         self.assertIn('test', output_data)
         self.assertIn('index.html', output_data['test'])
 
-        tree = ET.fromstring(_str(output_data['test']['index.html']))
+        tree = ET.fromstring(output_data['test']['index.html'])
         heading2 = tree.findall('./body/h2')[0]
         self.assertEqual('heres-a-heading', heading2.get('id'))
         permalink2 = tree.findall('./body/h2/a')[0]
