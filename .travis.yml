@@ -1,15 +1,5 @@
 language: python
 
-# Takes inspiration from https://github.com/tornadoweb/tornado/blob/master/.travis.yml
-.mixins:
-- &xenial-mixin
-  dist: xenial
-  sudo: true
-  addons:
-    apt:
-      packages:
-        - libgnutls-dev
-
 stages:
   - test
   - name: deploy
@@ -18,7 +8,6 @@ stages:
 jobs:
   include:
     - python: 3.6
-    - <<: *xenial-mixin
       python: 3.7
 
     - stage: deploy
