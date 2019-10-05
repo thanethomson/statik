@@ -105,7 +105,8 @@ repository. Watch that space!
 
 ## Remote upload
 
-**Statik** can publish your generated site for you through SFTP or through Netlify.
+**Statik** can publish your generated site for you through SFTP or through
+[Netlify](https://netlify.com).
 
 ### SFTP
 To publish your website on a server via SFTP, you can use the remote upload command 
@@ -123,27 +124,28 @@ remote:
 
 ### Netlify
 To publish  your website via Netlify, you will need 2 things: 
-your Netlify access token and your Netlify site id. 
+your Netlify access token and your Netlify site ID.
 
-First, specify your Netlify access token as an environment variable: 
+First, specify your access token and site ID as environment variables:
 
 Linux:
 
 ```bash
-> export NETLIFY_TOKEN=<netlify_token>
+> export NETLIFY_AUTH_TOKEN=<netlify_token>
+> export NETLIFY_SITE_ID=<netlify_site_id>
 ```
 
 Windows
 
 ```bash
-> set NETLIFY_TOKEN=<netlify_token>
+> set NETLIFY_AUTH_TOKEN=<netlify_token>
+> set NETLIFY_SITE_ID=<netlify_site_id>
 ```
 
-Then, run **Statik** by passing in `--upload=netlify` and your Netlify site id
-`--netlify-site-id=<netlify_site_id>`. 
+Then, run **Statik** by passing in `--deploy=netlify`.
 
 ```bash
-statik --upload=netlify --netlify-site-id=<netlify_site_id>
+statik --deploy=netlify
 ```
 **Statik** will upload the static site that it outputs.
 
