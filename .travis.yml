@@ -12,7 +12,7 @@ jobs:
 
     - stage: deploy
       python: 3.6
-      script: "python -m statik.cmdline --upload=netlify --netlify-site-id=$NETLIFY_SITE_ID -p examples/blog"
+      script: "python -m statik.cmdline --deploy=netlify -p examples/blog -v"
 
 install:
   - "pip install -r requirements.txt"
