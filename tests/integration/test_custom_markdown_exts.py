@@ -31,11 +31,7 @@ class TestCustomMarkdownExtensions(unittest.TestCase):
         )
         self.assertEqual(
             "codehilite",
-            tree.findall('./body/pre')[0].get('class')
-        )
-        self.assertEqual(
-            "language-python",
-            tree.findall('./body/pre/code')[0].get('class')
+            tree.findall('./body/div')[0].get('class')
         )
 
         self.assertEqual(
@@ -44,11 +40,7 @@ class TestCustomMarkdownExtensions(unittest.TestCase):
         )
         self.assertEqual(
             "codehilite",
-            tree.findall('./body/pre')[1].get('class')
-        )
-        self.assertEqual(
-            "language-c",
-            tree.findall('./body/pre/code')[1].get('class')
+            tree.findall('./body/div')[1].get('class')
         )
 
 
