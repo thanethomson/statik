@@ -9,7 +9,7 @@ from markdown.extensions import Extension
 from markdown.treeprocessors import Treeprocessor
 from markdown.util import etree
 
-from statik.errors import *
+from statik.errors import StatikErrorContext
 from statik.utils import strip_el_text
 
 import lipsum
