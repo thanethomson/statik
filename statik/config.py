@@ -85,7 +85,7 @@ class StatikConfig(YamlLoadable):
     def __repr__(self):
         return ("StatikConfig(project_name=%s, base_path=%s, encoding=%s, theme=%s, " +
                 "template_providers=%s, assets_src_path=%s, assets_dest_path=%s, " +
-                "context_static=%s, context_dynamic=%s, deployment=%s)") % (
+                "context_static=%s, context_dynamic=%s, deploy=%s)") % (
                     self.project_name,
                     self.base_path,
                     self.encoding,
@@ -95,5 +95,5 @@ class StatikConfig(YamlLoadable):
                     self.assets_dest_path,
                     self.context_static,
                     self.context_dynamic,
-                    self.deployment,
+                    self.deploy,
                 )
