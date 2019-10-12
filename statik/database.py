@@ -6,6 +6,7 @@ from past.builtins import basestring
 from io import open
 
 import os.path
+import glob
 import yaml
 
 from sqlalchemy import String, Integer, Column, Table, ForeignKey, \
@@ -201,70 +202,71 @@ class StatikDatabase(object):
         """
         if os.path.isdir(path):
             # try find a model data collection
-            if os.path.isfile(os.path.join(path, '_all.yml')):
+            if glob.glob(os.path.join(path, "*_.yml")):
                 self.load_model_data_collection(path, model)
             self.load_model_data_from_files(path, model)
             self.session.commit()
 
     def load_model_data_collection(self, path, model):
-        full_filename = os.path.join(path, '_all.yml')
-        self.error_context.update(filename=full_filename)
+        for full_filename in glob.iglob(os.path.join(path, "*_.yml")):
+        # full_filename = os.path.join(path, '_all.yml')
+            self.error_context.update(filename=full_filename)
 
-        db_model = globals()[model.name]
-        # load the collection data from the collection file
-        with open(full_filename, mode='rt', encoding=self.encoding) as f:
-            collection = yaml.load(f.read(), Loader=yaml.FullLoader)
+            db_model = globals()[model.name]
+            # load the collection data from the collection file
+            with open(full_filename, mode='rt', encoding=self.encoding) as f:
+                collection = yaml.load(f.read(), Loader=yaml.FullLoader)
 
-        if not isinstance(collection, list):
-            raise InvalidModelCollectionDataError(
-                model.name,
-                context=self.error_context
-            )
-        seen_entries = set()
-        logger.debug("Loading %d instance(s) for model: %s", len(collection), model.name)
-        for item in collection:
-            if not isinstance(item, dict) or 'pk' not in item:
+            if not isinstance(collection, list):
                 raise InvalidModelCollectionDataError(
                     model.name,
                     context=self.error_context
                 )
+            seen_entries = set()
+            logger.debug("Loading %d instance(s) for model: %s", len(collection), model.name)
+            for item in collection:
+                if not isinstance(item, dict) or 'pk' not in item:
+                    raise InvalidModelCollectionDataError(
+                        model.name,
+                        context=self.error_context
+                    )
 
-            entry = StatikDatabaseInstance(
-                name=item['pk'],
-                from_dict=item,
-                model=model,
-                session=self.session,
-                encoding=self.encoding,
-                markdown_config=self.markdown_config
-            )
-            # duplicate primary key!
-            if entry.field_values['pk'] in seen_entries:
-                raise DuplicateModelInstanceError(
-                    model.name,
-                    pk=entry.field_values['pk'],
-                    context=self.error_context
+                entry = StatikDatabaseInstance(
+                    name=item['pk'],
+                    from_dict=item,
+                    model=model,
+                    session=self.session,
+                    encoding=self.encoding,
+                    markdown_config=self.markdown_config
                 )
-            else:
-                seen_entries.add(entry.field_values['pk'])
+                # duplicate primary key!
+                if entry.field_values['pk'] in seen_entries:
+                    raise DuplicateModelInstanceError(
+                        model.name,
+                        pk=entry.field_values['pk'],
+                        context=self.error_context
+                    )
+                else:
+                    seen_entries.add(entry.field_values['pk'])
 
-            try:
-                db_entry = db_model(**entry.field_values)
-                self.session.add(db_entry)
-            except Exception as exc:
-                raise DataError(
-                    model.name,
-                    pk=entry.field_values['pk'],
-                    message="failed to insert entry into in-memory database.",
-                    orig_exc=exc,
-                    context=self.error_context
-                )
-        
+                try:
+                    db_entry = db_model(**entry.field_values)
+                    self.session.add(db_entry)
+                except Exception as exc:
+                    raise DataError(
+                        model.name,
+                        pk=entry.field_values['pk'],
+                        message="failed to insert entry into in-memory database.",
+                        orig_exc=exc,
+                        context=self.error_context
+                    )
+            
         self.error_context.clear()
 
     def load_model_data_from_files(self, path, model):
         db_model = globals()[model.name]
         entry_files = list_files(path, ['yml', 'yaml', 'md'])
-        entry_files = [f for f in entry_files if not(f.endswith("_all.yml"))]
+        entry_files = [f for f in entry_files if not(f.endswith("_.yml"))]
         seen_entries = set()
         logger.debug("Loading %d instance(s) for model: %s", len(entry_files), model.name)
         for entry_file in entry_files:
