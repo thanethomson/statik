@@ -109,23 +109,68 @@ space!
 [Netlify](https://netlify.com).
 
 ### SFTP
-To publish your website on a server via SFTP, you can use the remote upload
-command line option. The connection parameters must be added to your project's
-`config.yml`.
- 
+
+To publish your website via SFTP, you can configure certain values by way of
+configuration file or environment variable-based options. Some sensitive
+options, however, must be configured exclusively by way of environment
+variables.
+
+For your configuration file:
+
+```yaml
+deploy:
+  sftp:
+    host: your-server.com
+    dest-path: /folder/on/your/server/
+    user: youruserforyourserver
+
+    # you can also optionally specify which SSH private key to use
+    key-file: ~/.ssh/my-private-key
+
+    # optionally specify SFTP port (default: 22)
+    port: 2222
 ```
-remote:
-    sftp:
-        server: 'hostname or IP'
-        dir-base: '/base/directory/'
-        dir-root: 'relative/to/base/directory'  
-        username: 'SSH username'
-        password: 'SSH password'
+
+Set up your sensitive environment variables prior to running Statik:
+
+```bash
+# If your server requires password-based authentication
+> export SFTP_PASSWORD=mysftppassword
+
+# If your SSH key file is encrypted and it requires a password to decrypt
+> export SFTP_KEY_FILE_PASSWORD=mysftpkeyfilepassword
+```
+
+Alternatively, you could set up all SFTP variables through environment variables
+alone:
+
+```bash
+> export SFTP_HOST=your-server.com
+> export SFTP_PORT=2222                  # optionally set SFTP port
+> export SFTP_DEST_PATH=/folder/on/your/server
+> export SFTP_USER=youruserforyourserver
+> export SFTP_PASSWORD=mysftppassword
+> export SFTP_KEY_FILE=~/.ssh/my-private-key
+> export SFTP_KEY_FILE_PASSWORD=mysftpkeyfilepassword
+```
+
+Then run Statik using the following deployment command:
+
+```bash
+> statik --deploy sftp
+```
+
+For troubleshooting SFTP connections, run this using the `-v` flag to increase
+output verbosity:
+
+```bash
+> statik --deploy sftp -v
 ```
 
 ### Netlify
-To publish  your website via Netlify, you will need 2 things: your Netlify
-access token and your Netlify site ID.
+
+To publish your website via Netlify, you will need 2 things: your Netlify access
+token and your Netlify site ID.
 
 First, specify your access token and site ID as environment variables:
 
@@ -146,7 +191,7 @@ Windows
 Then, run **Statik** by passing in `--deploy=netlify`.
 
 ```bash
-statik --deploy=netlify
+statik --deploy netlify
 ```
 **Statik** will upload the static site that it outputs.
 
