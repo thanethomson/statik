@@ -4,13 +4,16 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
-### `v0.23.0` - 5 October 2019
+### `v0.23.0` - 13 October 2019
 
 * Remove support for Python 2 in line with upcoming deprecation in 2020
 * Update all dependencies to latest working versions
 * Remove support for Python 3.5
 * Update Netlify support with own internal deployment mechanism
 * Update SFTP support with own internal deployment mechanism
+* Make all output logging conform to the same standard, with the only difference
+  between normal output logging and verbose (`-v`) logging being the logging
+  level
 
 ### `v0.22.2` - 20 October 2018
 
