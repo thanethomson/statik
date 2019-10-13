@@ -23,14 +23,12 @@ __all__ = [
 ]
 
 
-def configure_logging(verbose=False, quiet=False, fail_silently=False, colourise=True):
-    handler = colorlog.StreamHandler() if colourise else logging.StreamHandler()
+def configure_logging(verbose=False, quiet=False, fail_silently=False, colorize=True):
+    handler = colorlog.StreamHandler() if colorize else logging.StreamHandler()
     formatter = colorlog.ColoredFormatter(
-        '%(log_color)s' + (
-            '%(asctime)s\t%(name)s\t%(levelname)s\t%(message)s' if verbose else '%(message)s'
-        )
-    ) if colourise else logging.Formatter(
-        '%(asctime)s\t%(name)s\t%(levelname)s\t%(message)s' if verbose else '%(message)s'
+        '%(log_color)s%(asctime)s\t%(name)s\t%(levelname)s\t%(message)s'
+    ) if colorize else logging.Formatter(
+        '%(asctime)s\t%(name)s\t%(levelname)s\t%(message)s'
     )
     handler.setFormatter(formatter)
     root_logger = logging.getLogger("")
@@ -170,7 +168,7 @@ def main():
             verbose=args.verbose,
             quiet=args.quiet,
             fail_silently=args.fail_silently,
-            colourise=not args.no_colorlog
+            colorize=not args.no_colorlog
         )
 
         if args.fail_silently and not args.quiet:
