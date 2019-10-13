@@ -105,11 +105,9 @@ def copy_via_sftp(source_path, dest_path, host=None, port=None, user=None,
         logger.info("Connecting to %s:%d" % (host, port))
         try:
             transport.connect(
-                hostkey=get_host_key(host),
                 username=user,
                 password=password,
                 pkey=pkey,
-                rm_dest=rm_dest,
             )
         except paramiko.SSHException as e:
             raise DeploymentError("Failed to connect to %s:%d: %s" %
@@ -243,16 +241,4 @@ def try_load_private_key(filename, password=None, error_context=None):
         message="Failed to load private key for SFTP deployment: %s" % filename,
         context=error_context,
     )
-
-
-def get_host_key(hostname):
-    """Helper to look up the host key for the given hostname."""
-    try:
-        host_keys = paramiko.util.load_host_keys(
-            os.path.expanduser("~/.ssh/known_hosts"),
-        )
-    except IOError as e:
-        logger.debug("Unable to open ~/.ssh/known_hosts: %s" % e)
-        host_keys = dict()
-    return host_keys.get(hostname, None)
 
