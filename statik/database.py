@@ -160,7 +160,7 @@ class StatikDatabase(object):
                 model = self.models[model_names[i]]
                 # check if this model has any dependencies which haven't been taken care of in this round
                 for foreign_model_name in model.foreign_models:
-                    if foreign_model_name not in sorted_models:
+                    if foreign_model_name not in sorted_models and foreign_model_name != model.name:
                         sorted_models.append(foreign_model_name)
 
                 if model.name not in sorted_models:
