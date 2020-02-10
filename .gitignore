@@ -108,3 +108,4 @@ Pipfile
 Pipfile\.lock
 
 .DS_Store
+statik.code-workspace
