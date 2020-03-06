@@ -4,6 +4,25 @@ This is the **Statik** change log as of version `0.6.0`.
 
 ## Release History
 
+### `v0.22.2` - 20 October 2018
+
+* Merging #74 to better organise the growing list of CLI arguments.
+
+### `v0.22.1` - 8 October 2018
+
+* Minor fix to add missing `paramiko` dependency
+
+### `v0.22.0` - 8 October 2018
+
+* Merges #68
+* Merges #73 to add SFTP upload functionality
+* Updates dependency versions in `requirements.txt`
+* Updates Markdown package integration to use new API
+
+### `v0.21.3` - 15 February 2018
+
+* Merging #65 to fix #64.
+
 ### `v0.21.2` - 12 February 2018
 
 * Attempting to fix issues #50 and #63 - automatic translation of special Unicode characters

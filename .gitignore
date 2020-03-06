@@ -102,3 +102,10 @@ pip-selfcheck.json
 # Generated folders
 public/
 
+
+Pipfile
+
+Pipfile\.lock
+
+.DS_Store
+statik.code-workspace

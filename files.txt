@@ -1,0 +1,10 @@
+/usr/local/lib/python3.7/site-packages/statik-0.21.2-py3.7.egg
+/usr/local/bin/statik
+/usr/local/bin/pystache
+/usr/local/bin/pystache-test
+/usr/local/bin/httpwatcher
+/usr/local/bin/slugify
+/usr/local/bin/markdown_py
+/usr/local/bin/futurize
+/usr/local/bin/pasteurize
+/usr/local/bin/watchmedo

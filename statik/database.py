@@ -6,11 +6,22 @@ from past.builtins import basestring
 from io import open
 
 import os.path
+import glob
 import yaml
 
-from sqlalchemy import String, Integer, Column, Table, ForeignKey, \
-    Boolean, DateTime, Text, create_engine
+from sqlalchemy import (
+    String,
+    Integer,
+    Column,
+    Table,
+    ForeignKey,
+    Boolean,
+    DateTime,
+    Text,
+    create_engine,
+)
 from sqlalchemy.orm import sessionmaker, relationship, backref
+from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.ext.declarative import declarative_base
 
 import mlalchemy
@@ -31,40 +42,43 @@ import sqlalchemy
 import math
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 __all__ = [
-    'StatikDatabase',
+    "StatikDatabase",
 ]
 
 SQLALCHEMY_FIELD_MAPPER = {
-    'String': String,
-    'DateTime': DateTime,
-    'Integer': Integer,
-    'Boolean': Boolean,
-    'Content': Text,
-    'Text': Text
+    "String": String,
+    "DateTime": DateTime,
+    "Integer": Integer,
+    "Boolean": Boolean,
+    "Content": Text,
+    "Text": Text,
 }
 
 
 def set_global(name, val):
-    logger.debug('Setting global: %s = %s' % (name, val))
+    logger.debug("Setting global: %s = %s" % (name, val))
     globals()[name] = val
     set_global.tracked_globals.add(name)
+
+
 set_global.tracked_globals = set()
 
 
 def clear_tracked_globals():
     for name in set_global.tracked_globals:
-        logger.debug('Clearing tracked global: %s' % name)
+        logger.debug("Clearing tracked global: %s" % name)
         del globals()[name]
     set_global.tracked_globals = set()
 
 
 class StatikDatabase(object):
-
-    def __init__(self, data_path, models, encoding=None, markdown_config=None,
-            error_context=None):
+    def __init__(
+        self, data_path, models, encoding=None, markdown_config=None, error_context=None
+    ):
         """Constructor.
 
         Args:
@@ -81,16 +95,16 @@ class StatikDatabase(object):
         self.models = models
         self.markdown_config = markdown_config
         self.error_context = error_context or StatikErrorContext()
-        self.engine = create_engine('sqlite:///:memory:')
+        self.engine = create_engine("sqlite:///:memory:")
         self.Base = declarative_base()
         self.session = sessionmaker(bind=self.engine)()
-        set_global('session', self.session)
+        set_global("session", self.session)
         self.find_backrefs()
         self.create_db(models)
 
     def find_backrefs(self):
         for model_name, model in iteritems(self.models):
-            logger.debug('Attempting to find backrefs for model: %s', model_name)
+            logger.debug("Attempting to find backrefs for model: %s", model_name)
             try:
                 model.find_additional_rels(self.models)
             except Exception as exc:
@@ -98,7 +112,7 @@ class StatikDatabase(object):
                     model_name,
                     message="failed to accurately determine model cross-referencing.",
                     orig_exc=exc,
-                    context=self.error_context
+                    context=self.error_context,
                 )
 
     def create_db(self, models):
@@ -117,8 +131,7 @@ class StatikDatabase(object):
             self.Base.metadata.create_all(self.engine)
         except Exception as exc:
             raise StatikError(
-                message="Failed to create in-memory data model.",
-                orig_exc=exc
+                message="Failed to create in-memory data model.", orig_exc=exc
             )
         self.load_all_model_data(models)
 
@@ -144,7 +157,9 @@ class StatikDatabase(object):
             A sorted list containing the names of the models.
         """
         model_names = [
-            table.name for table in self.Base.metadata.sorted_tables if table.name in self.models
+            table.name
+            for table in self.Base.metadata.sorted_tables
+            if table.name in self.models
         ]
         logger.debug("Unsorted models: %s", model_names)
         model_count = len(model_names)
@@ -153,7 +168,7 @@ class StatikDatabase(object):
         sort_round = 0
         while swapped:
             sort_round += 1
-            logger.debug('Sorting round: %d (%s)', sort_round, model_names)
+            logger.debug("Sorting round: %d (%s)", sort_round, model_names)
 
             sorted_models = []
             for i in range(model_count):
@@ -192,7 +207,7 @@ class StatikDatabase(object):
                 model.name,
                 message="failed to create in-memory table.",
                 orig_exc=exc,
-                context=self.error_context
+                context=self.error_context,
             )
 
     def load_model_data(self, path, model):
@@ -200,72 +215,75 @@ class StatikDatabase(object):
         """
         if os.path.isdir(path):
             # try find a model data collection
-            if os.path.isfile(os.path.join(path, '_all.yml')):
+            if glob.glob(os.path.join(path, "*.yml")):
                 self.load_model_data_collection(path, model)
             self.load_model_data_from_files(path, model)
             self.session.commit()
 
     def load_model_data_collection(self, path, model):
-        full_filename = os.path.join(path, '_all.yml')
-        self.error_context.update(filename=full_filename)
+        for full_filename in glob.iglob(os.path.join(path, "*.yml")):
+            # full_filename = os.path.join(path, '_all.yml')
+            self.error_context.update(filename=full_filename)
 
-        db_model = globals()[model.name]
-        # load the collection data from the collection file
-        with open(full_filename, mode='rt', encoding=self.encoding) as f:
-            collection = yaml.load(f.read())
+            db_model = globals()[model.name]
+            # load the collection data from the collection file
+            with open(full_filename, mode="rt", encoding=self.encoding) as f:
+                collection = yaml.load(f.read(), Loader=yaml.FullLoader)
 
-        if not isinstance(collection, list):
-            raise InvalidModelCollectionDataError(
-                model.name,
-                context=self.error_context
-            )
-        seen_entries = set()
-        logger.debug("Loading %d instance(s) for model: %s", len(collection), model.name)
-        for item in collection:
-            if not isinstance(item, dict) or 'pk' not in item:
+            if not isinstance(collection, list):
                 raise InvalidModelCollectionDataError(
-                    model.name,
-                    context=self.error_context
+                    model.name, context=self.error_context
                 )
-
-            entry = StatikDatabaseInstance(
-                name=item['pk'],
-                from_dict=item,
-                model=model,
-                session=self.session,
-                encoding=self.encoding,
-                markdown_config=self.markdown_config
+            seen_entries = set()
+            logger.debug(
+                "Loading %d instance(s) for model: %s", len(collection), model.name
             )
-            # duplicate primary key!
-            if entry.field_values['pk'] in seen_entries:
-                raise DuplicateModelInstanceError(
-                    model.name,
-                    pk=entry.field_values['pk'],
-                    context=self.error_context
-                )
-            else:
-                seen_entries.add(entry.field_values['pk'])
+            for item in collection:
+                if not isinstance(item, dict) or "pk" not in item:
+                    raise InvalidModelCollectionDataError(
+                        model.name, context=self.error_context
+                    )
 
-            try:
-                db_entry = db_model(**entry.field_values)
-                self.session.add(db_entry)
-            except Exception as exc:
-                raise DataError(
-                    model.name,
-                    pk=entry.field_values['pk'],
-                    message="failed to insert entry into in-memory database.",
-                    orig_exc=exc,
-                    context=self.error_context
+                entry = StatikDatabaseInstance(
+                    name=item["pk"],
+                    from_dict=item,
+                    model=model,
+                    session=self.session,
+                    encoding=self.encoding,
+                    markdown_config=self.markdown_config,
                 )
-        
+                # duplicate primary key!
+                if entry.field_values["pk"] in seen_entries:
+                    raise DuplicateModelInstanceError(
+                        model.name,
+                        pk=entry.field_values["pk"],
+                        context=self.error_context,
+                    )
+                else:
+                    seen_entries.add(entry.field_values["pk"])
+
+                try:
+                    db_entry = db_model(**entry.field_values)
+                    self.session.add(db_entry)
+                except Exception as exc:
+                    raise DataError(
+                        model.name,
+                        pk=entry.field_values["pk"],
+                        message="failed to insert entry into in-memory database.",
+                        orig_exc=exc,
+                        context=self.error_context,
+                    )
+
         self.error_context.clear()
 
     def load_model_data_from_files(self, path, model):
         db_model = globals()[model.name]
-        entry_files = list_files(path, ['yml', 'yaml', 'md'])
-        entry_files = [f for f in entry_files if not(f.endswith("_all.yml"))]
+        entry_files = list_files(path, ["yml", "yaml", "md"])
+        entry_files = [f for f in entry_files if not (f.endswith(".yml"))]
         seen_entries = set()
-        logger.debug("Loading %d instance(s) for model: %s", len(entry_files), model.name)
+        logger.debug(
+            "Loading %d instance(s) for model: %s", len(entry_files), model.name
+        )
         for entry_file in entry_files:
             entry = StatikDatabaseInstance(
                 filename=os.path.join(path, entry_file),
@@ -273,17 +291,15 @@ class StatikDatabase(object):
                 session=self.session,
                 encoding=self.encoding,
                 markdown_config=self.markdown_config,
-                error_context=self.error_context
+                error_context=self.error_context,
             )
             # duplicate primary key!
-            if entry.field_values['pk'] in seen_entries:
+            if entry.field_values["pk"] in seen_entries:
                 raise DuplicateModelInstanceError(
-                    model.name,
-                    pk=entry.field_values['pk'],
-                    context=self.error_context
+                    model.name, pk=entry.field_values["pk"], context=self.error_context
                 )
             else:
-                seen_entries.add(entry.field_values['pk'])
+                seen_entries.add(entry.field_values["pk"])
 
             try:
                 db_entry = db_model(**entry.field_values)
@@ -291,10 +307,10 @@ class StatikDatabase(object):
             except Exception as exc:
                 raise DataError(
                     model.name,
-                    pk=entry.field_values['pk'],
+                    pk=entry.field_values["pk"],
                     message="failed to insert entry into in-memory database.",
                     orig_exc=exc,
-                    context=self.error_context
+                    context=self.error_context,
                 )
 
         self.error_context.clear()
@@ -316,13 +332,15 @@ class StatikDatabase(object):
         logger.debug("Attempting to execute database query: %s", query)
 
         if safe_mode and not isinstance(query, dict):
-            raise SafetyViolationError(
-                context=self.error_context
-            )
+            raise SafetyViolationError(context=self.error_context)
 
         if isinstance(query, dict):
             logger.debug("Executing query in safe mode (MLAlchemy)")
-            return mlalchemy.parse_query(query).to_sqlalchemy(self.session, self.tables).all()
+            return (
+                mlalchemy.parse_query(query)
+                .to_sqlalchemy(self.session, self.tables)
+                .all()
+            )
         else:
             logger.debug("Executing unsafe query (Python exec())")
             if additional_locals is not None:
@@ -330,15 +348,11 @@ class StatikDatabase(object):
                     locals()[k] = v
 
             exec(
-                compile(
-                    'result = %s' % query.strip(),
-                    '<string>',
-                    'exec'
-                ),
+                compile("result = %s" % query.strip(), "<string>", "exec"),
                 globals(),
-                locals()
+                locals(),
             )
-            return locals()['result']
+            return locals()["result"]
 
     def shutdown(self):
         """Shuts down the database engine."""
@@ -349,13 +363,15 @@ class StatikDatabase(object):
 
 
 class StatikDatabaseInstance(ContentLoadable):
-
     def __init__(self, model=None, session=None, **kwargs):
-        super(StatikDatabaseInstance, self).__init__(content_field = model.content_field,
-                                                     **kwargs)
+        super(StatikDatabaseInstance, self).__init__(
+            content_field=model.content_field, **kwargs
+        )
         if model is None:
             raise MissingParameterError("model", context=self.error_context)
         self.model = model
+
+        self.implicit_data_items = []
 
         if session is None:
             raise MissingParameterError("session", context=self.error_context)
@@ -363,69 +379,143 @@ class StatikDatabaseInstance(ContentLoadable):
 
         # convert the vars to their underscored representation
         self.field_values = underscore_var_names(self.vars)
-        self.field_values['pk'] = self.name          
+        self.field_values["pk"] = self.name
 
         # run through the foreign key fields to check their assignment
         for field_name in self.model.field_names:
             field = self.model.fields[field_name]
-            if isinstance(field, StatikDateTimeField) and \
-                    isinstance(self.field_values.get(field_name), basestring):
+            if isinstance(field, StatikDateTimeField) and isinstance(
+                self.field_values.get(field_name), basestring
+            ):
                 # attempt to perform an intelligent date/time parse operation
-                self.field_values[field_name] = dateutil_parse(self.field_values[field_name])
+                self.field_values[field_name] = dateutil_parse(
+                    self.field_values[field_name]
+                )
             # if it's a foreign key
             elif isinstance(field, StatikForeignKeyField):
                 # if we've got a pk value for a foreign key field
                 if field_name in self.field_values:
-                    self.field_values['%s_id' % field_name] = self.field_values[field_name]
+                    self.field_values["%s_id" % field_name] = self.field_values[
+                        field_name
+                    ]
                     del self.field_values[field_name]
 
-            elif isinstance(field, StatikManyToManyField) and (field_name in self.field_values):
+            elif isinstance(field, StatikManyToManyField) and (
+                field_name in self.field_values
+            ):
                 if not isinstance(self.field_values[field_name], list):
                     raise InvalidFieldTypeError(
                         self.model.name,
                         field_name,
                         "a list",
-                        context=self.error_context
+                        context=self.error_context,
                     )
                 logger.debug(
-                    "Attempting to look up primary keys for ManyToMany " +
-                    "field relationship: %s", self.field_values[field_name]
+                    "Attempting to look up primary keys for ManyToMany "
+                    + "field relationship: %s",
+                    self.field_values[field_name],
                 )
+
+                duplicates_in_array = find_duplicates_in_array(
+                    self.field_values[field_name]
+                )
+
+                if duplicates_in_array:
+                    logger.warning(
+                        "Duplicates found in %s: %s (field: %s)",
+                        self.filename,
+                        duplicates_in_array,
+                        field_name,
+                    )
+                    self.field_values[field_name] = list(
+                        set(self.field_values[field_name])
+                    )
+
+                # check if non-string items are present
+                for item in self.field_values[field_name]:
+                    if not isinstance(item, ("".__class__, "".__class__)):
+                        logger.warning(
+                            "Non-string values found in array "
+                            + "(field: %s, instance: %s, model: %s): %s",
+                            field_name,
+                            self.field_values["pk"],
+                            self.model.name,
+                            item,
+                        )
+
                 # convert the list of field values to a query to look up the
                 # primary keys of the corresponding table
                 other_model = globals()[field.field_type]
-                self.field_values[field_name] = self.session.query(
-                    other_model
-                ).filter(
-                    other_model.pk.in_(self.field_values[field_name])
-                ).all()
+
+                missing_items = []
+
+                for item in self.field_values[field_name]:
+                    try:
+                        self.session.query(other_model).filter(
+                            other_model.pk == item
+                        ).one()
+                    except NoResultFound:
+                        # Only allow implicit tables if the model
+                        # has no fields other than 'pk'
+                        if len(other_model.__table__._columns) == 1:
+                            missing_items.append({"pk": item})
+                        else:
+                            logger.warning("%s not found in %s" % (item, other_model))
+                    else:
+                        logger.debug("%s found", item)
+
+                self.implicit_data_items.append((field.field_type, missing_items))
+
+                original_values = self.field_values[field_name]
+
+                self.field_values[field_name] = (
+                    self.session.query(other_model)
+                    .filter(other_model.pk.in_(self.field_values[field_name]))
+                    .all()
+                )
+
+                # Ensure that values appear in original order
+                self.field_values[field_name].sort(
+                    key=lambda x: original_values.index(x.pk)
+                )
+
+                # Ensure that values appear in original order
+                self.field_values[field_name].sort(
+                    key=lambda x: original_values.index(x.pk)
+                )
 
         # populate any Content field for this model
         if self.model.content_field is not None:
             self.field_values[self.model.content_field] = self.content
 
-        logger.debug('%s', self)
+        logger.debug("%s", self)
 
     def __repr__(self):
         result = ["StatikDatabaseInstance(model=%s" % self.model.name]
         for field_name, field_value in iteritems(self.field_values):
             model_field = self.model.fields.get(field_name, None)
-            if isinstance(model_field, StatikContentField) or isinstance(model_field, StatikTextField):
+            if isinstance(model_field, StatikContentField) or isinstance(
+                model_field, StatikTextField
+            ):
                 result.append("%s=<...>" % field_name)
             else:
                 result.append("%s=%s" % (field_name, field_value))
-        result[-1] += ')'
-        return ', '.join(result)
+        result[-1] += ")"
+        return ", ".join(result)
 
     def __str__(self):
         return repr(self)
 
 
 def db_model_factory(Base, model, all_models):
-
     def get_or_create_association_table(model1_name, model2_name):
-        _association_table_name = calculate_association_table_name(model1_name, model2_name)
-        logger.debug("Creating/getting ManyToMany relationship table: %s", _association_table_name)
+        _association_table_name = calculate_association_table_name(
+            model1_name, model2_name
+        )
+        logger.debug(
+            "Creating/getting ManyToMany relationship table: %s",
+            _association_table_name,
+        )
         if _association_table_name in globals():
             return globals()[_association_table_name]
 
@@ -433,35 +523,36 @@ def db_model_factory(Base, model, all_models):
         _association_table = Table(
             _association_table_name,
             Base.metadata,
-            Column('%s_pk' % model1_name.lower(), String, ForeignKey('%s.pk' % model1_name)),
-            Column('%s_pk' % model2_name.lower(), String, ForeignKey('%s.pk' % model2_name))
+            Column(
+                "%s_pk" % model1_name.lower(), String, ForeignKey("%s.pk" % model1_name)
+            ),
+            Column(
+                "%s_pk" % model2_name.lower(), String, ForeignKey("%s.pk" % model2_name)
+            ),
         )
         # track it in our globals
         set_global(_association_table_name, _association_table)
         return _association_table
 
-    logger.debug('-----')
+    logger.debug("-----")
     logger.debug("Generating model: %s", model.name)
-    model_fields = {
-        '__tablename__': model.name,
-        'pk': Column(String, primary_key=True)
-    }
+    model_fields = {"__tablename__": model.name, "pk": Column(String, primary_key=True)}
 
     # populate all of the relevant additional relationships for this model
     for field_name, rel in iteritems(model.additional_rels):
         kwargs = {}
-        if rel.get('back_populates', None) is not None:
-            kwargs['back_populates'] = rel['back_populates']
-        if rel.get('secondary', None) is not None:
-            kwargs['secondary'] = get_or_create_association_table(*rel['secondary'])
+        if rel.get("back_populates", None) is not None:
+            kwargs["back_populates"] = rel["back_populates"]
+        if rel.get("secondary", None) is not None:
+            kwargs["secondary"] = get_or_create_association_table(*rel["secondary"])
         logger.debug(
-            'Creating additional relationship %s.%s -> %s (%s)',
+            "Creating additional relationship %s.%s -> %s (%s)",
             model.name,
             field_name,
-            rel['to_model'],
-            kwargs
+            rel["to_model"],
+            kwargs,
         )
-        model_fields[field_name] = relationship(rel['to_model'], **kwargs)
+        model_fields[field_name] = relationship(rel["to_model"], **kwargs)
 
     # now populate all of the standard fields
     for field_name in model.field_names:
@@ -469,67 +560,66 @@ def db_model_factory(Base, model, all_models):
         if field.field_type in SQLALCHEMY_FIELD_MAPPER:
             # if it's a simple field
             model_fields[field.name] = Column(
-                field.name,
-                SQLALCHEMY_FIELD_MAPPER[field.field_type]
+                field.name, SQLALCHEMY_FIELD_MAPPER[field.field_type]
             )
 
         elif field.field_type in all_models:
             # if it's a foreign key reference
             if isinstance(field, StatikForeignKeyField):
-                model_fields['%s_id' % field.name] = Column(
-                    '%s_id' % field.name,
-                    ForeignKey('%s.pk' % field.field_type)
+                model_fields["%s_id" % field.name] = Column(
+                    "%s_id" % field.name, ForeignKey("%s.pk" % field.field_type)
                 )
                 # if it's a self-referencing foreign key
                 if field.field_type == model.name:
-                    back_populates = field.back_populates or 'children'
+                    back_populates = field.back_populates or "children"
                     model_fields[back_populates] = relationship(
                         field.field_type,
-                        backref=backref(field_name, remote_side=[model_fields['pk']])
+                        backref=backref(field_name, remote_side=[model_fields["pk"]]),
                     )
                 else:
                     kwargs = {}
                     if field.back_populates is not None:
-                        kwargs['back_populates'] = field.back_populates
-                        logger.debug('Field %s.%s has back-populates field name: %s',
-                            model.name, field_name, field.back_populates
+                        kwargs["back_populates"] = field.back_populates
+                        logger.debug(
+                            "Field %s.%s has back-populates field name: %s",
+                            model.name,
+                            field_name,
+                            field.back_populates,
                         )
                     else:
-                        logger.debug('No back-populates field name for %s.%s',
-                            model.name, field_name
+                        logger.debug(
+                            "No back-populates field name for %s.%s",
+                            model.name,
+                            field_name,
                         )
 
+                    foreign_key = model_fields.get("%s_id" % field.name, None)
                     model_fields[field.name] = relationship(
-                        field.field_type,
-                        **kwargs
+                        field.field_type, foreign_keys=[foreign_key], **kwargs
                     )
 
             elif isinstance(field, StatikManyToManyField):
-                association_table = get_or_create_association_table(model.name, field.field_type)
+                association_table = get_or_create_association_table(
+                    model.name, field.field_type
+                )
 
-                kwargs = {'secondary': association_table}
+                kwargs = {"secondary": association_table}
                 if field.back_populates is not None:
-                    kwargs['back_populates'] = field.back_populates
+                    kwargs["back_populates"] = field.back_populates
 
-                logger.debug("Creating model ManyToMany field %s.%s -> %s (%s)",
-                    model.name, field.name, field.field_type, kwargs
-                )
-                model_fields[field.name] = relationship(
+                logger.debug(
+                    "Creating model ManyToMany field %s.%s -> %s (%s)",
+                    model.name,
+                    field.name,
                     field.field_type,
-                    **kwargs
+                    kwargs,
                 )
+                model_fields[field.name] = relationship(field.field_type, **kwargs)
 
         else:
-            raise InvalidFieldTypeError(
-                model.name,
-                field.name
-            )
+            raise InvalidFieldTypeError(model.name, field.name)
 
-    Model = type(
-        str(model.name),
-        (Base,),
-        model_fields
-    )
+    Model = type(str(model.name), (Base,), model_fields)
 
     logger.debug("Model %s fields = %s", model.name, model_fields)
 
