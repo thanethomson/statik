@@ -2,7 +2,7 @@ wheel
 argh==0.26.2
 colorlog==4.0.2
 httpwatcher==0.5.2
-Jinja2==2.10.3
+Jinja2==2.11.3
 lipsum==0.1.2
 Markdown==3.1.1
 MarkupSafe==1.1.1
