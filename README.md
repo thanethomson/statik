@@ -4,6 +4,10 @@
 [![PyPI](https://img.shields.io/pypi/v/statik.svg)](https://pypi.python.org/pypi/statik)
 [![PyPI](https://img.shields.io/pypi/pyversions/statik.svg)](https://pypi.python.org/pypi/statik)
 
+*NOTE: I haven't had time in years to maintain this project. If someone wants
+to take it over, please fork it and let me know and I'll add a link to your
+fork in the README here.*
+
 ## Overview
 **Statik** aims to be a simple, yet powerful, generic static web site generator.
 Instead of forcing you to adhere to a particular data structure/model (like the
